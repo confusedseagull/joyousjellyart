@@ -1,0 +1,73 @@
+{
+  "query": "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'orders' AND TABLE_SCHEMA = DATABASE();",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 32A2mULH93Jg89c.d3cdbf750bc0 --database PnZBEkwLgHRKhUgNL3Af8d --execute SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'orders' AND TABLE_SCHEMA = DATABASE();",
+  "rows": [
+    {
+      "COLUMN_NAME": "id"
+    },
+    {
+      "COLUMN_NAME": "customerName"
+    },
+    {
+      "COLUMN_NAME": "customerPhone"
+    },
+    {
+      "COLUMN_NAME": "deliveryMethod"
+    },
+    {
+      "COLUMN_NAME": "deliveryAddress"
+    },
+    {
+      "COLUMN_NAME": "fulfillmentDate"
+    },
+    {
+      "COLUMN_NAME": "shape"
+    },
+    {
+      "COLUMN_NAME": "theme"
+    },
+    {
+      "COLUMN_NAME": "themeCustomText"
+    },
+    {
+      "COLUMN_NAME": "cartoonCharacter"
+    },
+    {
+      "COLUMN_NAME": "primaryColor"
+    },
+    {
+      "COLUMN_NAME": "secondaryColors"
+    },
+    {
+      "COLUMN_NAME": "cakeTextLanguage"
+    },
+    {
+      "COLUMN_NAME": "cakeText"
+    },
+    {
+      "COLUMN_NAME": "flavours"
+    },
+    {
+      "COLUMN_NAME": "createdAt"
+    },
+    {
+      "COLUMN_NAME": "updatedAt"
+    },
+    {
+      "COLUMN_NAME": "instagramReferences"
+    },
+    {
+      "COLUMN_NAME": "orderNumber"
+    },
+    {
+      "COLUMN_NAME": "paymentStatus"
+    },
+    {
+      "COLUMN_NAME": "paymentId"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\nid\ncustomerName\ncustomerPhone\ndeliveryMethod\ndeliveryAddress\nfulfillmentDate\nshape\ntheme\nthemeCustomText\ncartoonCharacter\nprimaryColor\nsecondaryColors\ncakeTextLanguage\ncakeText\nflavours\ncreatedAt\nupdatedAt\ninstagramReferences\norderNumber\npaymentStatus\npaymentId\n",
+  "stderr": "",
+  "execution_time_ms": 1525
+}

@@ -1,0 +1,8 @@
+{
+  "query": "ALTER TABLE cnyOrders DROP INDEX cnyOrders_orderNumber_unique; ALTER TABLE cnyOrders MODIFY COLUMN orderNumber varchar(20) NULL; ALTER TABLE cnyOrders ADD UNIQUE INDEX cnyOrders_orderNumber_unique (orderNumber);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 32A2mULH93Jg89c.d3cdbf750bc0 --database PnZBEkwLgHRKhUgNL3Af8d --execute ALTER TABLE cnyOrders DROP INDEX cnyOrders_orderNumber_unique; ALTER TABLE cnyOrders MODIFY COLUMN orderNumber varchar(20) NULL; ALTER TABLE cnyOrders ADD UNIQUE INDEX cnyOrders_orderNumber_unique (orderNumber);",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1091 (42000) at line 1: index cnyOrders_orderNumber_unique doesn't exist"
+  ]
+}

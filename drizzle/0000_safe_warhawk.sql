@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS `orders` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`customerName` varchar(255) NOT NULL,
+	`customerPhone` varchar(50) NOT NULL,
+	`deliveryMethod` enum('delivery','pickup') NOT NULL,
+	`deliveryAddress` text,
+	`fulfillmentDate` timestamp NOT NULL,
+	`shape` varchar(50) NOT NULL,
+	`theme` varchar(100) NOT NULL,
+	`themeCustomText` text,
+	`cartoonCharacter` text,
+	`primaryColor` varchar(20) NOT NULL,
+	`secondaryColors` json,
+	`cakeTextLanguage` enum('english','chinese'),
+	`cakeText` text,
+	`flavours` json NOT NULL,
+	`status` enum('pending','in_progress','completed') NOT NULL DEFAULT 'pending',
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `orders_id` PRIMARY KEY(`id`)
+);

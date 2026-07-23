@@ -1,0 +1,50 @@
+{
+  "query": "SHOW TABLE STATUS WHERE Name IN ('cnyOrders', 'orders');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 32A2mULH93Jg89c.d3cdbf750bc0 --database PnZBEkwLgHRKhUgNL3Af8d --execute SHOW TABLE STATUS WHERE Name IN ('cnyOrders', 'orders');",
+  "rows": [
+    {
+      "Name": "cnyOrders",
+      "Engine": "InnoDB",
+      "Version": "10",
+      "Row_format": "Compact",
+      "Rows": "0",
+      "Avg_row_length": "0",
+      "Data_length": "0",
+      "Max_data_length": "0",
+      "Index_length": "0",
+      "Data_free": "0",
+      "Auto_increment": "1",
+      "Create_time": "2026-01-20 15:37:23",
+      "Update_time": "NULL",
+      "Check_time": "NULL",
+      "Collation": "utf8mb4_unicode_ci",
+      "Checksum": "",
+      "Create_options": "",
+      "Comment": ""
+    },
+    {
+      "Name": "orders",
+      "Engine": "InnoDB",
+      "Version": "10",
+      "Row_format": "Compact",
+      "Rows": "0",
+      "Avg_row_length": "0",
+      "Data_length": "0",
+      "Max_data_length": "0",
+      "Index_length": "0",
+      "Data_free": "0",
+      "Auto_increment": "1",
+      "Create_time": "2026-01-20 15:37:30",
+      "Update_time": "NULL",
+      "Check_time": "NULL",
+      "Collation": "utf8mb4_unicode_ci",
+      "Checksum": "",
+      "Create_options": "",
+      "Comment": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "Name\tEngine\tVersion\tRow_format\tRows\tAvg_row_length\tData_length\tMax_data_length\tIndex_length\tData_free\tAuto_increment\tCreate_time\tUpdate_time\tCheck_time\tCollation\tChecksum\tCreate_options\tComment\ncnyOrders\tInnoDB\t10\tCompact\t0\t0\t0\t0\t0\t0\t1\t2026-01-20 15:37:23\tNULL\tNULL\tutf8mb4_unicode_ci\t\t\t\norders\tInnoDB\t10\tCompact\t0\t0\t0\t0\t0\t0\t1\t2026-01-20 15:37:30\tNULL\tNULL\tutf8mb4_unicode_ci\t\t\t\n",
+  "stderr": "",
+  "execution_time_ms": 1541
+}

@@ -1,0 +1,19 @@
+{
+  "query": "SELECT id, orderNumber, customerName, paymentStatus, paymentId, total, createdAt FROM cnyOrders WHERE orderNumber = 'CNY450004';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 32A2mULH93Jg89c.d3cdbf750bc0 --database PnZBEkwLgHRKhUgNL3Af8d --execute SELECT id, orderNumber, customerName, paymentStatus, paymentId, total, createdAt FROM cnyOrders WHERE orderNumber = 'CNY450004';",
+  "rows": [
+    {
+      "id": "450004",
+      "orderNumber": "CNY450004",
+      "customerName": "Anthea",
+      "paymentStatus": "pending",
+      "paymentId": "NULL",
+      "total": "136",
+      "createdAt": "2026-02-04 06:47:46"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\torderNumber\tcustomerName\tpaymentStatus\tpaymentId\ttotal\tcreatedAt\n450004\tCNY450004\tAnthea\tpending\tNULL\t136\t2026-02-04 06:47:46\n",
+  "stderr": "",
+  "execution_time_ms": 1655
+}
