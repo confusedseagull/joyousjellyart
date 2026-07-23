@@ -15,7 +15,7 @@ export default function Footer() {
           {/* About Section - Logo */}
           <div className="flex items-center">
             <img 
-              src="https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/BgtjFmrmvmGSIUJd.png" 
+              src="/logo.png" 
               alt="Joyous Jelly Art Logo" 
               className="h-10 w-auto" 
             />

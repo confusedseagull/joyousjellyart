@@ -1,4 +1,4 @@
-import { makeRequest } from './_core/map';
+import { getDistanceMatrix } from './_core/map';
 
 const SHOP_ADDRESS = '2 Jln Lokam, #01-27 KENSINGTON SQUARE, Singapore 537846';
 
@@ -18,11 +18,7 @@ export async function calculateDeliveryFee(
 ): Promise<DeliveryFeeResult> {
   try {
     // Use Google Maps Distance Matrix API to calculate distance
-    const response = await makeRequest('/maps/api/distancematrix/json', {
-      origins: SHOP_ADDRESS,
-      destinations: customerAddress,
-      units: 'metric',
-    }) as any;
+    const response = await getDistanceMatrix(SHOP_ADDRESS, customerAddress);
 
     if (response.status !== 'OK') {
       throw new Error(`Distance Matrix API error: ${response.status}`);

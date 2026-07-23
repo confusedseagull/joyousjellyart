@@ -26,7 +26,7 @@ const cnyDesigns = [
     id: 2,
     name: "Mahjong Huat",
     edition: "Prosperity Edition",
-    image: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/JtWRcqgDvsiGsWXI.jpeg",
+    image: "/MahjongHuat.jpeg",
     dimensions: "8\" / 20 cm or 10\" / 25 cm",
     sizes: [
       { size: "8\"", price: "$128" },
@@ -37,7 +37,7 @@ const cnyDesigns = [
     id: 3,
     name: "Huat Huat Box",
     edition: "Prosperity Edition",
-    image: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/TgniWUzoMxEZDRLu.jpeg",
+    image: "/HuatHuatBox2.jpeg",
     dimensions: "7\" x 5\" / 18 cm x 13 cm",
     sizes: [
       { size: "Standard", price: "$118" }
@@ -68,7 +68,7 @@ const cnyDesigns = [
     id: 6,
     name: "Joyful Koi Lux Platter",
     edition: "Prosperity Edition",
-    image: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/ajqLmsXhmWoYbSXY.jpeg",
+    image: "/JoyfulKoiLuxPlatter.jpeg",
     dimensions: "10\" / 25 cm",
     sizes: [
       { size: "Standard", price: "$128" }
@@ -78,7 +78,7 @@ const cnyDesigns = [
     id: 7,
     name: "Lucky Strike",
     edition: "Prosperity Edition",
-    image: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/WmmbSYScYuynQXfC.jpeg",
+    image: "/LuckyStrike.jpeg",
     dimensions: "3\" / 8 cm each",
     sizes: [
       { size: "Standard", price: "$118" }
@@ -100,7 +100,7 @@ const cnyDesigns = [
     id: 9,
     name: "Abundance Wealth",
     edition: "Blooms Edition",
-    image: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/IAEpIqmXkRBgKEOe.jpeg",
+    image: "/AbundanceWealth.jpeg",
     dimensions: "8\" / 20 cm or 10\" / 25 cm",
     sizes: [
       { size: "8\"", price: "$128" },
@@ -134,7 +134,7 @@ const cnyDesigns = [
     id: 12,
     name: "Prosperity Koi",
     edition: "Fortune Edition",
-    image: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/kAFTMUzLUrjfAilU.png",
+    image: "/ProsperityKoi.png",
     dimensions: "9\" / 23 cm",
     sizes: [
       { size: "Standard", price: "$88.80" }
@@ -144,7 +144,7 @@ const cnyDesigns = [
     id: 13,
     name: "Auspicious Angbao",
     edition: "Fortune Edition",
-    image: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/TaEHGgyhwfMtfkyM.jpeg",
+    image: "/13-AuspiciousAngbao.jpeg",
     dimensions: "11\" x 7\" / 28 cm x 18 cm",
     sizes: [
       { size: "Standard", price: "$88.80" }
@@ -176,7 +176,7 @@ const cnyDesigns = [
     id: 16,
     name: "Fortune Koi",
     edition: "Fortune Edition",
-    image: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/PTDZRqpjmayohSUj.png",
+    image: "/FortuneKoi.png",
     dimensions: "9\" / 23 cm",
     sizes: [
       { size: "Standard", price: "$88.80" }
@@ -196,7 +196,7 @@ const cnyDesigns = [
     id: 18,
     name: "Firecracker",
     edition: "Fortune Edition",
-    image: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/RixxzHOozCqMbzkL.jpeg",
+    image: "/18-Firecracker.jpeg",
     dimensions: "10\" / 25 cm",
     sizes: [
       { size: "Standard", price: "$108" }

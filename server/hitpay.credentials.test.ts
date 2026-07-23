@@ -7,9 +7,9 @@ describe('HitPay Production Credentials', () => {
     expect(process.env.HITPAY_API_KEY!.length).toBeGreaterThan(20);
   });
 
-  it('should have production API secret configured', () => {
-    expect(process.env.HITPAY_API_SECRET).toBeDefined();
-    expect(process.env.HITPAY_API_SECRET!.length).toBeGreaterThan(20);
+  it('should have production webhook salt configured', () => {
+    expect(process.env.HITPAY_SALT).toBeDefined();
+    expect(process.env.HITPAY_SALT!.length).toBeGreaterThan(20);
   });
 
   it('should have production API URL configured', () => {

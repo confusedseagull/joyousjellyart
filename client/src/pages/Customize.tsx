@@ -19,73 +19,73 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 // Theme options
 const THEMES = [
   { value: "floralBouquet", label: "Floral Bouquet", images: [
-    "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/ZUqwpKGsyaHPRSLr.jpg",
-    "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/SdQWuLJZtAetZIfq.png",
-    "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/xBRUHGvcgjDYSlLz.png",
-    "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/vWhiCCGxDMZNsuEH.png",
-    "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/zViSLrCmKWcbUCsE.jpg",
-    "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/nOsucnurUZqlCgkg.jpg",
-    "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/SJBMmZwXIbPIxjUx.jpg"
+    "/customize/floralBouquet-1.jpg",
+    "/customize/floralBouquet-2.png",
+    "/customize/floralBouquet-3.png",
+    "/customize/floralBouquet-4.png",
+    "/customize/floralBouquet-5.jpg",
+    "/customize/floralBouquet-6.jpg",
+    "/customize/floralBouquet-7.jpg"
   ] },
   { value: "cartoonCharacters", label: "Cartoon Characters", images: [
-    "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/PxjSdMlHMrukQcRq.jpg",
-    "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/QKIcHwFQRULONWRa.jpg",
-    "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/jWibWCJYHJZXgKwi.jpg",
-    "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/OpSszXodiMOlgPvB.jpg",
-    "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/AhbSqzWCimftQknM.png",
-    "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/BsgJTRUdlilpneYd.png"
+    "/customize/cartoonCharacters-1.jpg",
+    "/customize/cartoonCharacters-2.jpg",
+    "/customize/cartoonCharacters-3.jpg",
+    "/customize/cartoonCharacters-4.jpg",
+    "/customize/cartoonCharacters-5.png",
+    "/customize/cartoonCharacters-6.png"
   ] },
   { value: "handDrawn", label: "Hand Drawn", images: [
-    "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/ROrIkQnsyjnJnBQW.jpg",
-    "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/EfiFslarQHwlWgPL.png",
-    "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/AqjLYWNjqXzRpWWo.png",
-    "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/lbmNSKtQXgpyJatD.jpg"
+    "/customize/handDrawn-1.jpg",
+    "/customize/handDrawn-2.png",
+    "/customize/handDrawn-3.png",
+    "/customize/handDrawn-4.jpg"
   ] },
   { value: "lego", label: "Lego", images: [
-    "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/TekDQjwyOLQxBXkz.jpg",
-    "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/DimFjnhYlzFsGIAW.jpg",
-    "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/iKEOWrzfyAFYRKGP.jpg",
-    "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/rtCUQeaBXXDCqSZI.jpg"
+    "/customize/lego-1.jpg",
+    "/customize/lego-2.jpg",
+    "/customize/lego-3.jpg",
+    "/customize/lego-4.jpg"
   ] },
   { value: "mahjong", label: "Mahjong", images: [
-    "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/IPfBPxcCthdtVaMc.jpg",
-    "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/WbIQxzALMNGbLLJy.jpg",
-    "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/RLSNwEyxZybjVsze.jpg",
-    "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/VceuzsAQwluFQJKT.jpg"
+    "/customize/mahjong-1.jpg",
+    "/customize/mahjong-2.jpg",
+    "/customize/mahjong-3.jpg",
+    "/customize/mahjong-4.jpg"
   ] },
   { value: "poker", label: "Poker", images: [
-    "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/XhCJCkdxXTaPbxRJ.jpg",
-    "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/TQCNpUUfHSZCXrCz.jpg"
+    "/customize/poker-1.jpg",
+    "/customize/poker-2.jpg"
   ] },
-  { value: "chess", label: "Chess", image: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/snDeEHbVhJlrzJoF.jpg" },
+  { value: "chess", label: "Chess", image: "/customize/chess.jpg" },
   { value: "underTheSea", label: "Under the Sea", images: [
-    "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/ssvYwXdRRyznGJrO.jpg",
-    "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/edhINFyYxYKmMHju.png",
-    "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/LUKfyZsgynTGyKgC.png",
-    "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/OvIMgMHkXEKNbaqO.png",
-    "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/FGIjETymiWcOircH.jpg"
+    "/customize/underTheSea-1.jpg",
+    "/customize/underTheSea-2.png",
+    "/customize/underTheSea-3.png",
+    "/customize/underTheSea-4.png",
+    "/customize/underTheSea-5.jpg"
   ] },
   { value: "animalKingdom", label: "Animal Kingdom", image: "/animal-kingdom.jpg" },
   { value: "unicorn", label: "Unicorn", images: [
-    "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/ObJEyjoSRMoXBxQw.jpg",
-    "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/MrieGKHMKDzkIFyA.jpg",
-    "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/wMgcLCjUXumOalEB.jpg",
-    "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/NoNojgmShfBmKdtf.jpg"
+    "/customize/unicorn-1.jpg",
+    "/customize/unicorn-2.jpg",
+    "/customize/unicorn-3.jpg",
+    "/customize/unicorn-4.jpg"
   ] },
   { value: "dinosaurs", label: "Dinosaurs", image: "/dinosaurs.jpg" },
-  { value: "space", label: "Space", image: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/mNDDUewUhoQZfBMC.jpg" },
+  { value: "space", label: "Space", image: "/customize/space.jpg" },
   { value: "koiPond", label: "Koi Pond", images: [
-    "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/UnXUXGumLaukEskM.jpg",
-    "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/zGwcCazLBIhjqlSR.jpg"
+    "/customize/koiPond-1.jpg",
+    "/customize/koiPond-2.jpg"
   ] },
-  { value: "golf", label: "Golf", image: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/sbKsxvNXcrAgfdhd.jpg" },
-  { value: "cars", label: "Cars", image: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/QzYEVujqqYpMfTra.jpg" },
-  { value: "coutureFashion", label: "Couture/High Fashion", image: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/GBXQwUXUwSmKOddP.jpg" },
-  { value: "cactus", label: "Cactus", image: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/dMRwBKjfFmUyjBLm.jpg" },
+  { value: "golf", label: "Golf", image: "/customize/golf.jpg" },
+  { value: "cars", label: "Cars", image: "/customize/cars.jpg" },
+  { value: "coutureFashion", label: "Couture/High Fashion", image: "/customize/coutureFashion.jpg" },
+  { value: "cactus", label: "Cactus", image: "/customize/cactus.jpg" },
   { value: "foliage", label: "Foliage", image: "/foliage.jpg" },
-  { value: "butterflies", label: "Butterflies", image: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/SPVnqjWNrbrETMVH.jpg" },
+  { value: "butterflies", label: "Butterflies", image: "/customize/butterflies.jpg" },
   { value: "sports", label: "Sports", image: "/sports.jpg" },
-  { value: "mermaid", label: "Mermaid", image: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/rcCLmcWHHrGenTnD.jpg" },
+  { value: "mermaid", label: "Mermaid", image: "/customize/mermaid.jpg" },
   { value: "teddyBear", label: "Teddy Bear", image: "/teddy-bear.jpg" },
 ];
 
@@ -117,21 +117,21 @@ const CARTOON_CHARACTERS = [
 ];
 
 const SHAPES = [
-  { value: "round", label: "Round", image: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/SbgjygJlKUWhSfVv.jpg" },
-  { value: "square", label: "Square", image: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/aAaDHrhyAjhBZloS.jpg" },
-  { value: "octagon", label: "Octagon", image: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/zHRGqmLQjAjJICZC.jpg" },
-  { value: "heart", label: "Heart", image: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/NIjCgxFzDolqJYyM.jpg" },
-  { value: "star", label: "Star", image: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/VUQdiFTtGLQITUpu.jpg" },
-  { value: "teddyBear", label: "Teddy Bear", image: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/eVIWIiDavXQwpwFl.jpg" },
-  { value: "fan", label: "Fan", image: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/znQxoHprXvVDrWvP.jpg" },
-  { value: "rectangle", label: "Rectangle", image: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/LLyVzelrVyrhDSbj.jpg" },
-  { value: "scalloped", label: "Scalloped Round/Rosette", image: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/vVolWVLzXpVNGDud.jpg" },
-  { value: "platter9", label: "Platter of 9", image: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/isMkCrHpJMAhwwvn.jpg" },
-  { value: "platter4", label: "Platter of 4", images: ["https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/KHMvQLYbiJXDdrch.jpg", "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/wzFlbiQmaiqpBjUk.jpg"] },
-  { value: "numbers", label: "Numbers", image: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/TQBhfDyqhpZihhLQ.jpg" },
-  { value: "miniGiftBox", label: "Individual Mini Gift Box", image: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/EKUMfjsIIRVnWdOU.jpg" },
-  { value: "cupcake", label: "Individual Cupcake", image: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/WLwMJVVKqNyMDDEc.jpg" },
-  { value: "sakura", label: "Sakura", image: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/ndDAyzDlEkPTZEzH.jpg" },
+  { value: "round", label: "Round", image: "/customize/round.jpg" },
+  { value: "square", label: "Square", image: "/customize/square.jpg" },
+  { value: "octagon", label: "Octagon", image: "/customize/octagon.jpg" },
+  { value: "heart", label: "Heart", image: "/customize/heart.jpg" },
+  { value: "star", label: "Star", image: "/customize/star.jpg" },
+  { value: "teddyBear", label: "Teddy Bear", image: "/customize/teddyBear.jpg" },
+  { value: "fan", label: "Fan", image: "/customize/fan.jpg" },
+  { value: "rectangle", label: "Rectangle", image: "/customize/rectangle.jpg" },
+  { value: "scalloped", label: "Scalloped Round/Rosette", image: "/customize/scalloped.jpg" },
+  { value: "platter9", label: "Platter of 9", image: "/customize/platter9.jpg" },
+  { value: "platter4", label: "Platter of 4", images: ["/customize/platter4-1.jpg", "/customize/platter4-2.jpg"] },
+  { value: "numbers", label: "Numbers", image: "/customize/numbers.jpg" },
+  { value: "miniGiftBox", label: "Individual Mini Gift Box", image: "/customize/miniGiftBox.jpg" },
+  { value: "cupcake", label: "Individual Cupcake", image: "/customize/cupcake.jpg" },
+  { value: "sakura", label: "Sakura", image: "/customize/sakura.jpg" },
 ];
 
 const PLATTER_INDIVIDUAL_SHAPES = [

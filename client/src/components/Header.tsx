@@ -30,7 +30,7 @@ export default function Header() {
           <div className="flex-1" />
           <Link href="/">
             <img 
-              src="https://files.manuscdn.com/user_upload_by_module/session_file/310519663267774504/BgtjFmrmvmGSIUJd.png" 
+              src="/logo.png" 
               alt="Joyous JellyArt" 
               className="h-10 md:h-16 w-auto"
             />
