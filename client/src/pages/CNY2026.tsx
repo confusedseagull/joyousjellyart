@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useCart } from "@/contexts/CartContext";
 import { CartDrawer } from "@/components/CartDrawer";
 import { Check } from "lucide-react";
@@ -523,12 +524,10 @@ export default function CNY2026() {
               <div className="space-y-3">
                 <Label className="text-base font-semibold">Dietary Requirements (Optional)</Label>
                 <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     id="noDairy"
                     checked={noDairy}
-                    onChange={(e) => setNoDairy(e.target.checked)}
-                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                    onCheckedChange={(checked) => setNoDairy(checked === true)}
                   />
                   <Label htmlFor="noDairy" className="text-sm font-normal cursor-pointer">
                     No Dairy

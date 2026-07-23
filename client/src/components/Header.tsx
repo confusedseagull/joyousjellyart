@@ -21,7 +21,7 @@ export default function Header() {
   return (
     <header 
       className={`sticky top-0 z-[100] transition-colors duration-300 ${
-        isScrolled ? 'bg-[#8CB9BC]' : 'bg-background'
+        isScrolled ? 'bg-primary' : 'bg-background'
       }`}
     >
       <div className="container">

@@ -9,7 +9,7 @@ export default function Footer() {
   const googleMapsUrl = "https://maps.app.goo.gl/TvuRcXYAm97F7q6c9";
 
   return (
-    <footer className="bg-[#8CB9BC] text-white mt-16">
+    <footer className="bg-primary text-white mt-16">
       <div className="container py-12">
         <div className="flex justify-between items-start gap-8">
           {/* About Section - Logo */}
@@ -25,7 +25,7 @@ export default function Footer() {
           <div className="flex gap-8">
             {/* Contact Section */}
             <div className="w-fit">
-              <h3 className="text-xl font-bold mb-4" style={{ fontFamily: '"Red Hat Display", system-ui, -apple-system, sans-serif' }}>
+              <h3 className="text-xl font-bold mb-4">
                 Get in Touch
               </h3>
               <div className="space-y-3">
@@ -52,7 +52,7 @@ export default function Footer() {
 
             {/* Location Section */}
             <div className="w-fit">
-              <h3 className="text-xl font-bold mb-4" style={{ fontFamily: '"Red Hat Display", system-ui, -apple-system, sans-serif' }}>
+              <h3 className="text-xl font-bold mb-4">
                 Location
               </h3>
               <p className="text-sm text-white/90 mb-3">
@@ -63,7 +63,7 @@ export default function Footer() {
                 href={googleMapsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-white text-[#8CB9BC] rounded-md font-medium text-sm hover:bg-white/90 transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-white text-primary rounded-md font-medium text-sm hover:bg-white/90 transition-colors"
               >
                 <MapPin className="h-4 w-4" />
                 View on Google Maps

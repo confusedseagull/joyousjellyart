@@ -7,11 +7,13 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Minus, Plus, Trash2, ShoppingBag, CalendarIcon } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { format } from "date-fns";
+import { formatPrice } from "@/lib/utils";
 
 export default function Cart() {
   const { items, updateQuantity, removeItem, clearCart, totalPrice } = useCart();
@@ -391,31 +393,29 @@ export default function Cart() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="timeRange">Time Range*</Label>
-                    <select
-                      id="timeRange"
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                      value={timeRange}
-                      onChange={(e) => setTimeRange(e.target.value)}
-  
-                    >
-                      <option value="">Select time range</option>
-                      {deliveryMethod === "pickup" ? (
-                        // Pickup time slots: 11-1pm, 1-3pm, 3-5pm, 5-7pm
-                        <>
-                          <option value="11:00-13:00">11:00 AM - 1:00 PM</option>
-                          <option value="13:00-15:00">1:00 PM - 3:00 PM</option>
-                          <option value="15:00-17:00">3:00 PM - 5:00 PM</option>
-                          <option value="17:00-19:00">5:00 PM - 7:00 PM</option>
-                        </>
-                      ) : (
-                        // Delivery time slots: 10-1pm, 2-5pm, 5-7pm
-                        <>
-                          <option value="10:00-13:00">10:00 AM - 1:00 PM</option>
-                          <option value="14:00-17:00">2:00 PM - 5:00 PM</option>
-                          <option value="17:00-19:00">5:00 PM - 7:00 PM</option>
-                        </>
-                      )}
-                    </select>
+                    <Select value={timeRange} onValueChange={setTimeRange}>
+                      <SelectTrigger id="timeRange">
+                        <SelectValue placeholder="Select time range" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {deliveryMethod === "pickup" ? (
+                          // Pickup time slots: 11-1pm, 1-3pm, 3-5pm, 5-7pm
+                          <>
+                            <SelectItem value="11:00-13:00">11:00 AM - 1:00 PM</SelectItem>
+                            <SelectItem value="13:00-15:00">1:00 PM - 3:00 PM</SelectItem>
+                            <SelectItem value="15:00-17:00">3:00 PM - 5:00 PM</SelectItem>
+                            <SelectItem value="17:00-19:00">5:00 PM - 7:00 PM</SelectItem>
+                          </>
+                        ) : (
+                          // Delivery time slots: 10-1pm, 2-5pm, 5-7pm
+                          <>
+                            <SelectItem value="10:00-13:00">10:00 AM - 1:00 PM</SelectItem>
+                            <SelectItem value="14:00-17:00">2:00 PM - 5:00 PM</SelectItem>
+                            <SelectItem value="17:00-19:00">5:00 PM - 7:00 PM</SelectItem>
+                          </>
+                        )}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               </CardContent>
@@ -426,7 +426,7 @@ export default function Cart() {
           <div className="lg:col-span-2 space-y-6">
             {/* Cart Items with Order Summary */}
             <div>
-              <h2 className="text-2xl font-semibold mb-4" style={{fontFamily: '"Red Hat Display", system-ui, -apple-system, sans-serif'}}>Order Summary</h2>
+              <h2 className="text-2xl font-semibold mb-4">Order Summary</h2>
               <div className="space-y-4">
                 {/* Cart Items */}
                 <div className="space-y-4">
@@ -441,7 +441,7 @@ export default function Cart() {
 
                       {/* Details */}
                       <div className="flex-1">
-                        <h3 className="font-semibold text-lg" style={{fontFamily: '"Red Hat Display", system-ui, -apple-system, sans-serif'}}>{item.name}</h3>
+                        <h3 className="font-semibold text-lg">{item.name}</h3>
                         <p className="text-sm text-muted-foreground">{item.edition}</p>
                         <p className="text-sm text-muted-foreground mt-1">
                           Size: {item.size} | Flavor: {item.flavors ? item.flavors.join(', ') : item.flavor}
@@ -492,16 +492,16 @@ export default function Cart() {
                 <div className="pt-4 space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>Subtotal ({items.reduce((sum, item) => sum + item.quantity, 0)} items)</span>
-                    <span>${totalPrice.toFixed(2)}</span>
+                    <span>{formatPrice(totalPrice)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span>
                       {deliveryMethod === 'pickup' ? 'Pick-up' : 'Delivery'}
                     </span>
                     <span>
-                      {deliveryMethod === 'pickup' ? 'Free' : 
-                        deliveryFee > 0 ? `$${deliveryFee.toFixed(2)}` : 
-                        deliveryFeeData === undefined && !deliveryFeeError ? 'Calculating...' : '$0.00'
+                      {deliveryMethod === 'pickup' ? 'Free' :
+                        deliveryFee > 0 ? formatPrice(deliveryFee) :
+                        deliveryFeeData === undefined && !deliveryFeeError ? 'Calculating...' : formatPrice(0)
                       }
                     </span>
                   </div>
@@ -510,7 +510,7 @@ export default function Cart() {
                   )}
                   <div className="flex justify-between font-bold text-lg pt-2 border-t">
                     <span>Total</span>
-                    <span className="text-primary">${(totalPrice + deliveryFee).toFixed(2)}</span>
+                    <span className="text-primary">{formatPrice(totalPrice + deliveryFee)}</span>
                   </div>
                 </div>
               </div>
@@ -518,7 +518,7 @@ export default function Cart() {
 
             {/* Additional Notes */}
             <div>
-              <h2 className="text-2xl font-semibold mb-4" style={{fontFamily: '"Red Hat Display", system-ui, -apple-system, sans-serif', fontSize: '18px'}}>Additional Notes</h2>
+              <h2 className="text-2xl font-semibold mb-4">Additional Notes</h2>
               <div>
                 <Textarea
                   placeholder="E.g., Please include candles, specific packaging requests, etc."

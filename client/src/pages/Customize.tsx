@@ -8,12 +8,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { trpc } from "@/lib/trpc";
-import { Loader2, CalendarIcon, Upload, Check } from "lucide-react";
+import { Loader2, CalendarIcon, Check } from "lucide-react";
 import { ProgressIndicator } from "@/components/ProgressIndicator";
+import { SelectablePill } from "@/components/SelectablePill";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { getCustomOrderPrice } from "../../../shared/customOrderPricing";
+import { formatPrice } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // Theme options
@@ -237,6 +239,23 @@ const DELIVERY_TIME_SLOTS = [
   "5:00 PM - 7:00 PM",
 ];
 
+// Orders store a single fulfillment timestamp (no separate time-range column),
+// so the slot's start time gets merged onto the picked date before submitting.
+function applySlotStartTime(date: Date, slot: string): Date {
+  const match = slot.match(/(\d+):(\d+)\s*(AM|PM)/i);
+  const combined = new Date(date);
+  if (!match) return combined;
+
+  let hours = parseInt(match[1], 10);
+  const minutes = parseInt(match[2], 10);
+  const period = match[3].toUpperCase();
+  if (period === "PM" && hours !== 12) hours += 12;
+  if (period === "AM" && hours === 12) hours = 0;
+
+  combined.setHours(hours, minutes, 0, 0);
+  return combined;
+}
+
 // ThemeCard component with carousel support
 function ThemeCard({ themeOption, isSelected, onClick }: { 
   themeOption: any; 
@@ -366,7 +385,6 @@ export default function Customize() {
   // Text & References state
   const [textOnCake, setTextOnCake] = useState("");
   const [textLanguage, setTextLanguage] = useState("english");
-  const [referencePhotos, setReferencePhotos] = useState<File[]>([]);
   const [referenceLinks, setReferenceLinks] = useState("");
   const [specialInstructions, setSpecialInstructions] = useState("");
 
@@ -381,7 +399,15 @@ export default function Customize() {
 
   const [, navigate] = useLocation();
 
-  // Form submission handled via fetch API
+  const createOrderMutation = trpc.orders.create.useMutation({
+    onSuccess: (order) => {
+      toast.success("Order submitted successfully!");
+      navigate(`/confirmation/${order.id}`);
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to submit order");
+    },
+  });
 
   // Calculate estimated price
   const estimatedPrice = useMemo(() => {
@@ -434,7 +460,7 @@ export default function Customize() {
     return false;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!theme || !shape || !size || selectedFlavors.length === 0) {
@@ -455,59 +481,37 @@ export default function Customize() {
       return;
     }
 
-    const formData = new FormData();
-    formData.append("theme", theme);
-    formData.append("shape", shape);
-    formData.append("size", size);
-    formData.append("flavors", JSON.stringify(selectedFlavors));
-    formData.append("customerName", customerName);
-    formData.append("customerEmail", customerEmail);
-    formData.append("customerPhone", customerPhone);
-    formData.append("deliveryMethod", deliveryMethod);
-    formData.append("fulfillmentDate", fulfillmentDate.toISOString());
-    formData.append("fulfillmentTime", fulfillmentTime);
+    const numbers =
+      shape === "numbers"
+        ? numberCount === 2
+          ? `${number1},${number2}`
+          : number1
+        : undefined;
 
-    if (selectedFlowers.length > 0) formData.append("flowers", JSON.stringify(selectedFlowers));
-    if (selectedColors.length > 0) formData.append("colors", JSON.stringify(selectedColors));
-    if (cartoonCharacter) formData.append("cartoonCharacter", cartoonCharacter);
-    if (handDrawnDesign) formData.append("handDrawnDesign", handDrawnDesign);
-    if (coutureBrand) formData.append("coutureBrand", coutureBrand);
-    if (platterShapes.length > 0) formData.append("platterShapes", JSON.stringify(platterShapes));
-    if (number1 && number2) {
-      formData.append("number1", number1);
-      formData.append("number2", number2);
-    }
-    if (shape === "miniGiftBox" || shape === "cupcake") {
-      formData.append("quantity", quantity.toString());
-    }
-    if (dietaryRequirements.length > 0) formData.append("dietaryRequirements", JSON.stringify(dietaryRequirements));
-    if (textOnCake) {
-      formData.append("textOnCake", textOnCake);
-      formData.append("textLanguage", textLanguage);
-    }
-    if (deliveryMethod === "delivery") formData.append("deliveryAddress", deliveryAddress);
-    if (referenceLinks) formData.append("referenceLinks", referenceLinks);
-    if (specialInstructions) formData.append("specialInstructions", specialInstructions);
-
-    referencePhotos.forEach((file) => {
-      formData.append("referencePhotos", file);
+    createOrderMutation.mutate({
+      customerName,
+      customerEmail,
+      customerPhone,
+      deliveryMethod,
+      deliveryAddress: deliveryMethod === "delivery" ? deliveryAddress : undefined,
+      fulfillmentDate: applySlotStartTime(fulfillmentDate, fulfillmentTime),
+      theme,
+      selectedFlowers: selectedFlowers.length > 0 ? selectedFlowers : undefined,
+      selectedColors: selectedColors.length > 0 ? selectedColors : undefined,
+      cartoonCharacter: cartoonCharacter || undefined,
+      themeCustomText: handDrawnDesign || undefined,
+      fashionBrand: coutureBrand || undefined,
+      shape,
+      size,
+      numbers,
+      platterShapes: platterShapes.length > 0 ? platterShapes : undefined,
+      flavours: selectedFlavors,
+      cakeText: textOnCake || undefined,
+      cakeTextLanguage: textOnCake ? (textLanguage as "english" | "chinese") : undefined,
+      dietaryRequirements: dietaryRequirements.length > 0 ? dietaryRequirements.join(", ") : undefined,
+      referenceLinks: referenceLinks || undefined,
+      specialInstructions: specialInstructions || undefined,
     });
-
-    try {
-      const response = await fetch("/api/orders/custom", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) throw new Error("Failed to submit order");
-
-      const data = await response.json();
-      toast.success("Order submitted successfully!");
-      navigate(`/order-confirmation/${data.orderNumber}`);
-    } catch (error) {
-      toast.error("Failed to submit order");
-      console.error(error);
-    }
   };
 
   const handleFlavorToggle = (flavor: string) => {
@@ -595,25 +599,20 @@ export default function Customize() {
                     const isDisabled = !isSelected && selectedFlowers.length >= 3;
                     
                     return (
-                      <div
+                      <SelectablePill
                         key={flower}
+                        selected={isSelected}
+                        disabled={isDisabled}
                         onClick={() => {
-                          if (isDisabled) return;
                           setSelectedFlowers(prev =>
                             isSelected ? prev.filter(f => f !== flower) : [...prev, flower]
                           );
                         }}
-                        className={`flex items-center justify-between rounded-md border-2 px-4 py-3 cursor-pointer text-sm transition-all ${
-                          isSelected
-                            ? 'border-primary bg-primary/10'
-                            : isDisabled
-                            ? 'border-muted bg-muted/50 opacity-50 cursor-not-allowed'
-                            : 'border-muted bg-popover hover:bg-accent hover:text-accent-foreground'
-                        }`}
+                        className="flex items-center justify-between px-4 py-3"
                       >
                         <span>{flower}</span>
                         {isSelected && <Check className="h-4 w-4 text-primary" />}
-                      </div>
+                      </SelectablePill>
                     );
                   })}
                 </div>
@@ -628,25 +627,20 @@ export default function Customize() {
                     const isDisabled = !isSelected && selectedColors.length >= 3;
                     
                     return (
-                      <div
+                      <SelectablePill
                         key={color.value}
+                        selected={isSelected}
+                        disabled={isDisabled}
                         onClick={() => {
-                          if (isDisabled) return;
                           setSelectedColors(prev =>
                             isSelected ? prev.filter(c => c !== color.value) : [...prev, color.value]
                           );
                         }}
-                        className={`flex items-center justify-between rounded-md border-2 px-4 py-3 cursor-pointer text-sm transition-all ${
-                          isSelected
-                            ? 'border-primary bg-primary/10'
-                            : isDisabled
-                            ? 'border-muted bg-muted/50 opacity-50 cursor-not-allowed'
-                            : 'border-muted bg-popover hover:bg-accent hover:text-accent-foreground'
-                        }`}
+                        className="flex items-center justify-between px-4 py-3"
                       >
                         <span>{color.label}</span>
                         {isSelected && <Check className="h-4 w-4 text-primary" />}
-                      </div>
+                      </SelectablePill>
                     );
                   })}
                 </div>
@@ -662,18 +656,15 @@ export default function Customize() {
             <div className="max-w-4xl mx-auto">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {CARTOON_CHARACTERS.map((character) => (
-                  <div
+                  <SelectablePill
                     key={character}
+                    selected={cartoonCharacter === character}
                     onClick={() => setCartoonCharacter(character)}
-                    className={`flex items-center justify-between rounded-md border-2 px-4 py-3 cursor-pointer text-sm transition-all ${
-                      cartoonCharacter === character
-                        ? 'border-primary bg-primary/10'
-                        : 'border-muted bg-popover hover:bg-accent hover:text-accent-foreground'
-                    }`}
+                    className="flex items-center justify-between px-4 py-3"
                   >
                     <span>{character}</span>
                     {cartoonCharacter === character && <Check className="h-4 w-4 text-primary" />}
-                  </div>
+                  </SelectablePill>
                 ))}
               </div>
             </div>
@@ -786,23 +777,20 @@ export default function Customize() {
                   const price = getCustomOrderPrice(theme, shape, sizeOption.value);
                   
                   return (
-                    <div
+                    <SelectablePill
                       key={sizeOption.value}
+                      selected={size === sizeOption.value}
                       onClick={() => setSize(sizeOption.value)}
-                      className={`flex flex-col items-center justify-center rounded-md border-2 p-6 cursor-pointer transition-all ${
-                        size === sizeOption.value
-                          ? 'border-primary bg-primary/10'
-                          : 'border-muted bg-popover hover:bg-accent hover:text-accent-foreground'
-                      }`}
+                      className="flex flex-col items-center justify-center p-6"
                     >
                       <span className="font-medium text-center mb-2">{sizeOption.label}</span>
                       {price && (
-                        <span className="text-xl font-semibold text-primary">${price}</span>
+                        <span className="text-xl font-semibold text-primary">{formatPrice(price)}</span>
                       )}
                       {size === sizeOption.value && (
                         <Check className="h-5 w-5 text-primary mt-2" />
                       )}
-                    </div>
+                    </SelectablePill>
                   );
                 })}
               </div>
@@ -827,23 +815,16 @@ export default function Customize() {
                   const isDisabled = !isSelected && platterShapes.length >= getMaxShapeSelection();
                   
                   return (
-                    <div
+                    <SelectablePill
                       key={shapeOption.value}
-                      onClick={() => {
-                        if (isDisabled) return;
-                        handlePlatterShapeToggle(shapeOption.value);
-                      }}
-                      className={`flex items-center justify-center rounded-md border-2 px-4 py-6 cursor-pointer text-sm transition-all ${
-                        isSelected
-                          ? 'border-primary bg-primary/10'
-                          : isDisabled
-                          ? 'border-muted bg-muted/50 opacity-50 cursor-not-allowed'
-                          : 'border-muted bg-popover hover:bg-accent hover:text-accent-foreground'
-                      }`}
+                      selected={isSelected}
+                      disabled={isDisabled}
+                      onClick={() => handlePlatterShapeToggle(shapeOption.value)}
+                      className="flex items-center justify-center px-4 py-6"
                     >
                       <span className="font-medium">{shapeOption.label}</span>
                       {isSelected && <Check className="h-4 w-4 text-primary ml-2" />}
-                    </div>
+                    </SelectablePill>
                   );
                 })}
               </div>
@@ -948,7 +929,7 @@ export default function Customize() {
               {estimatedPrice && (
                 <p className="mt-4 text-center">
                   <span className="text-muted-foreground">Total: </span>
-                  <span className="text-2xl font-semibold text-primary">${estimatedPrice}</span>
+                  <span className="text-2xl font-semibold text-primary">{formatPrice(estimatedPrice)}</span>
                 </p>
               )}
             </div>
@@ -973,23 +954,16 @@ export default function Customize() {
                   const isDisabled = !isSelected && selectedFlavors.length >= getRequiredFlavorCount();
                   
                   return (
-                    <div
+                    <SelectablePill
                       key={flavor}
-                      onClick={() => {
-                        if (isDisabled) return;
-                        handleFlavorToggle(flavor);
-                      }}
-                      className={`flex items-center justify-between rounded-md border-2 px-4 py-3 cursor-pointer text-sm transition-all ${
-                        isSelected
-                          ? 'border-primary bg-primary/10'
-                          : isDisabled
-                          ? 'border-muted bg-muted/50 opacity-50 cursor-not-allowed'
-                          : 'border-muted bg-popover hover:bg-accent hover:text-accent-foreground'
-                      }`}
+                      selected={isSelected}
+                      disabled={isDisabled}
+                      onClick={() => handleFlavorToggle(flavor)}
+                      className="flex items-center justify-between px-4 py-3"
                     >
                       <span>{flavor}</span>
                       {isSelected && <Check className="h-4 w-4 text-primary" />}
-                    </div>
+                    </SelectablePill>
                   );
                 })}
               </div>
@@ -1018,28 +992,22 @@ export default function Customize() {
                 <div>
                   <Label>Language</Label>
                   <div className="flex gap-4 mt-2">
-                    <div
+                    <SelectablePill
+                      selected={textLanguage === "english"}
                       onClick={() => setTextLanguage("english")}
-                      className={`flex-1 flex items-center justify-center rounded-md border-2 px-4 py-3 cursor-pointer ${
-                        textLanguage === "english"
-                          ? 'border-primary bg-primary/10'
-                          : 'border-muted bg-popover hover:bg-accent'
-                      }`}
+                      className="flex-1 flex items-center justify-center px-4 py-3"
                     >
                       <span>English</span>
                       {textLanguage === "english" && <Check className="h-4 w-4 text-primary ml-2" />}
-                    </div>
-                    <div
+                    </SelectablePill>
+                    <SelectablePill
+                      selected={textLanguage === "chinese"}
                       onClick={() => setTextLanguage("chinese")}
-                      className={`flex-1 flex items-center justify-center rounded-md border-2 px-4 py-3 cursor-pointer ${
-                        textLanguage === "chinese"
-                          ? 'border-primary bg-primary/10'
-                          : 'border-muted bg-popover hover:bg-accent'
-                      }`}
+                      className="flex-1 flex items-center justify-center px-4 py-3"
                     >
                       <span>Chinese</span>
                       {textLanguage === "chinese" && <Check className="h-4 w-4 text-primary ml-2" />}
-                    </div>
+                    </SelectablePill>
                   </div>
                 </div>
               )}
@@ -1060,18 +1028,15 @@ export default function Customize() {
                   const isSelected = dietaryRequirements.includes(option.value);
                   
                   return (
-                    <div
+                    <SelectablePill
                       key={option.value}
+                      selected={isSelected}
                       onClick={() => handleDietaryToggle(option.value)}
-                      className={`flex items-center justify-between rounded-md border-2 px-4 py-3 cursor-pointer text-sm transition-all ${
-                        isSelected
-                          ? 'border-primary bg-primary/10'
-                          : 'border-muted bg-popover hover:bg-accent hover:text-accent-foreground'
-                      }`}
+                      className="flex items-center justify-between px-4 py-3"
                     >
                       <span>{option.label}</span>
                       {isSelected && <Check className="h-4 w-4 text-primary" />}
-                    </div>
+                    </SelectablePill>
                   );
                 })}
               </div>
@@ -1083,30 +1048,10 @@ export default function Customize() {
         {selectedFlavors.length > 0 && (
           <section className="py-12">
             <h2 className="text-2xl font-semibold mb-8 text-center tracking-tight">
-              {theme === "floralBouquet" || theme === "cartoonCharacters" || theme === "handDrawn" || theme === "coutureFashion" ? "8" : "7"}. Reference Photos & Instructions (Optional)
+              {theme === "floralBouquet" || theme === "cartoonCharacters" || theme === "handDrawn" || theme === "coutureFashion" ? "8" : "7"}. Reference Links & Instructions (Optional)
             </h2>
-            
+
             <div className="max-w-2xl mx-auto space-y-4">
-              <div>
-                <Label>Upload Reference Photos</Label>
-                <Input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  onChange={(e) => {
-                    if (e.target.files) {
-                      setReferencePhotos(Array.from(e.target.files));
-                    }
-                  }}
-                  className="cursor-pointer"
-                />
-                {referencePhotos.length > 0 && (
-                  <p className="text-sm text-muted-foreground mt-2">
-                    {referencePhotos.length} file(s) selected
-                  </p>
-                )}
-              </div>
-              
               <div>
                 <Label>Reference Links</Label>
                 <Input
@@ -1174,28 +1119,22 @@ export default function Customize() {
               <div>
                 <Label>Fulfillment Method *</Label>
                 <div className="flex gap-4 mt-2">
-                  <div
+                  <SelectablePill
+                    selected={deliveryMethod === "pickup"}
                     onClick={() => setDeliveryMethod("pickup")}
-                    className={`flex-1 flex items-center justify-center rounded-md border-2 px-4 py-3 cursor-pointer ${
-                      deliveryMethod === "pickup"
-                        ? 'border-primary bg-primary/10'
-                        : 'border-muted bg-popover hover:bg-accent'
-                    }`}
+                    className="flex-1 flex items-center justify-center px-4 py-3"
                   >
                     <span>Pickup</span>
                     {deliveryMethod === "pickup" && <Check className="h-4 w-4 text-primary ml-2" />}
-                  </div>
-                  <div
+                  </SelectablePill>
+                  <SelectablePill
+                    selected={deliveryMethod === "delivery"}
                     onClick={() => setDeliveryMethod("delivery")}
-                    className={`flex-1 flex items-center justify-center rounded-md border-2 px-4 py-3 cursor-pointer ${
-                      deliveryMethod === "delivery"
-                        ? 'border-primary bg-primary/10'
-                        : 'border-muted bg-popover hover:bg-accent'
-                    }`}
+                    className="flex-1 flex items-center justify-center px-4 py-3"
                   >
                     <span>Delivery</span>
                     {deliveryMethod === "delivery" && <Check className="h-4 w-4 text-primary ml-2" />}
-                  </div>
+                  </SelectablePill>
                 </div>
               </div>
               
@@ -1268,7 +1207,7 @@ export default function Customize() {
               <div className="bg-primary/5 border-2 border-primary/20 rounded-xl p-8 mb-8">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-xl font-semibold">Estimated Price:</h3>
-                  <p className="text-3xl font-bold text-primary">${estimatedPrice}</p>
+                  <p className="text-3xl font-bold text-primary">{formatPrice(estimatedPrice)}</p>
                 </div>
                 <p className="text-sm text-muted-foreground">
                   Final price may vary based on design complexity
@@ -1279,9 +1218,9 @@ export default function Customize() {
                 type="submit"
                 size="lg"
                 className="w-full text-lg py-6 hover:scale-[1.02] transition-transform"
-                disabled={false}
+                disabled={createOrderMutation.isPending}
               >
-                {false ? (
+                {createOrderMutation.isPending ? (
                   <>
                     <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                     Submitting Order...

@@ -28,10 +28,9 @@ export default function Home() {
                 Stunning, customizable artisan jelly cakes that are as beautiful as they are delicious.
               </p>
               <Link href="/cny-2026">
-                <Button 
+                <Button
                   size="lg"
-                  style={{ backgroundColor: '#8CB9BC' }}
-                  className="hover:opacity-90 text-white font-semibold"
+                  className="bg-primary hover:opacity-90 text-primary-foreground font-semibold"
                 >
                   Order Now
                 </Button>

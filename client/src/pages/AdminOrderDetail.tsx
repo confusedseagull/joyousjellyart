@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Loader2, ArrowLeft, Truck, Package, Calendar, Clock, User, Phone, Mail, MapPin, FileText } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { formatPrice } from "@/lib/utils";
 
 export default function AdminOrderDetail() {
   const { admin, loading: authLoading } = useAdminAuth({ redirectOnUnauthenticated: true });
@@ -259,7 +260,7 @@ export default function AdminOrderDetail() {
                           </div>
                           <div className="text-right">
                             <p className="text-sm text-muted-foreground">Price</p>
-                            <p className="text-lg font-semibold">${item.price.toFixed(2)} each</p>
+                            <p className="text-lg font-semibold">{formatPrice(item.price)} each</p>
                           </div>
                         </div>
                       </div>
@@ -272,16 +273,16 @@ export default function AdminOrderDetail() {
                 <div className="space-y-3">
                   <div className="flex justify-between text-lg">
                     <span className="text-muted-foreground">Subtotal</span>
-                    <span className="font-medium">${cnyOrder.subtotal.toFixed(2)}</span>
+                    <span className="font-medium">{formatPrice(cnyOrder.subtotal)}</span>
                   </div>
                   <div className="flex justify-between text-lg">
                     <span className="text-muted-foreground">Delivery Fee</span>
-                    <span className="font-medium">${cnyOrder.deliveryFee.toFixed(2)}</span>
+                    <span className="font-medium">{formatPrice(cnyOrder.deliveryFee)}</span>
                   </div>
                   <Separator />
                   <div className="flex justify-between text-xl">
                     <span className="font-bold">Total</span>
-                    <span className="font-bold">${cnyOrder.total.toFixed(2)}</span>
+                    <span className="font-bold">{formatPrice(cnyOrder.total)}</span>
                   </div>
                 </div>
 
