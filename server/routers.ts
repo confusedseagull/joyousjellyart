@@ -1,24 +1,11 @@
-import { COOKIE_NAME } from "@shared/const";
-import { getSessionCookieOptions } from "./_core/cookies";
-import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import { adminProcedure, publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { createOrder, getAllOrders, getOrderById, updateOrder, createCnyOrder, getAllCnyOrders, getCnyOrderById, updateCnyOrder } from "./db";
 import { createPaymentRequest } from "./hitpay";
 import { TRPCError } from "@trpc/server";
 import { adminAuthRouter } from "./adminAuth";
 import { calculateDeliveryFee } from "./deliveryCalculator";
-
-// Admin-only procedure
-const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
-  if (ctx.user.role !== 'admin') {
-    throw new TRPCError({ 
-      code: 'FORBIDDEN',
-      message: 'Admin access required'
-    });
-  }
-  return next({ ctx });
-});
+import { systemRouter } from "./_core/systemRouter";
 
 export const appRouter = router({
   system: systemRouter,
@@ -74,17 +61,6 @@ export const appRouter = router({
         return paymentRequest;
       }),
   }),
-  auth: router({
-    me: publicProcedure.query(opts => opts.ctx.user),
-    logout: publicProcedure.mutation(({ ctx }) => {
-      const cookieOptions = getSessionCookieOptions(ctx.req);
-      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
-      return {
-        success: true,
-      } as const;
-    }),
-  }),
-
   orders: router({
     // Public procedure for customers to create orders
     create: publicProcedure
@@ -131,8 +107,7 @@ export const appRouter = router({
         return order;
       }),
 
-    // Admin procedures (auth handled client-side via localStorage)
-    list: publicProcedure
+    list: adminProcedure
       .query(async () => {
         return await getAllOrders();
       }),
@@ -154,23 +129,28 @@ export const appRouter = router({
       .input(z.object({
         id: z.number(),
         customerName: z.string().optional(),
+        customerEmail: z.string().email().optional(),
         customerPhone: z.string().optional(),
         deliveryMethod: z.enum(["delivery", "pickup"]).optional(),
         deliveryAddress: z.string().optional(),
         fulfillmentDate: z.date().optional(),
-        shape: z.string().optional(),
         theme: z.string().optional(),
-        themeCustomText: z.string().optional(),
+        selectedFlowers: z.array(z.string()).optional(),
+        selectedColors: z.array(z.string()).optional(),
         cartoonCharacter: z.string().optional(),
-        primaryColor: z.string().optional(),
-        secondaryColors: z.array(z.string()).optional(),
-        cakeTextLanguage: z.enum(["english", "chinese"]).optional(),
-        cakeText: z.string().optional(),
+        themeCustomText: z.string().optional(),
+        fashionBrand: z.string().optional(),
+        shape: z.string().optional(),
+        size: z.string().optional(),
+        numbers: z.string().optional(),
+        platterShapes: z.array(z.string()).optional(),
         flavours: z.array(z.string()).optional(),
-        instagramReferences: z.array(z.object({
-          link: z.string(),
-          description: z.string().optional(),
-        })).optional(),
+        cakeText: z.string().optional(),
+        cakeTextLanguage: z.enum(["english", "chinese"]).optional(),
+        dietaryRequirements: z.string().optional(),
+        referenceLinks: z.string().optional(),
+        specialInstructions: z.string().optional(),
+        paymentStatus: z.enum(["pending", "paid", "failed", "refunded"]).optional(),
       }))
       .mutation(async ({ input }) => {
         const { id, ...updates } = input;
@@ -184,6 +164,21 @@ export const appRouter = router({
         return order;
       }),
 
+    updateStatus: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(["pending", "pending_confirmation", "in_progress", "completed", "delivered"]),
+      }))
+      .mutation(async ({ input }) => {
+        const order = await updateOrder(input.id, { status: input.status });
+        if (!order) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Order not found'
+          });
+        }
+        return order;
+      }),
 
   }),
 
@@ -234,8 +229,7 @@ export const appRouter = router({
         return order;
       }),
 
-    // Admin procedures (auth handled client-side via localStorage)
-    list: publicProcedure
+    list: adminProcedure
       .query(async () => {
         return await getAllCnyOrders();
       }),
@@ -262,7 +256,9 @@ export const appRouter = router({
         deliveryMethod: z.enum(["delivery", "pickup"]).optional(),
         deliveryAddress: z.string().optional(),
         fulfillmentDate: z.date().optional(),
+        timeRange: z.string().optional(),
         notes: z.string().optional(),
+        paymentStatus: z.enum(["pending", "paid", "failed", "refunded"]).optional(),
       }))
       .mutation(async ({ input }) => {
         const { id, ...updates } = input;
@@ -276,6 +272,21 @@ export const appRouter = router({
         return order;
       }),
 
+    updateStatus: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(["pending", "pending_confirmation", "in_progress", "completed", "delivered"]),
+      }))
+      .mutation(async ({ input }) => {
+        const order = await updateCnyOrder(input.id, { status: input.status });
+        if (!order) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'CNY order not found'
+          });
+        }
+        return order;
+      }),
 
   }),
 });

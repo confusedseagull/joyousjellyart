@@ -91,7 +91,12 @@ export const orders = mysqlTable("orders", {
   // Payment tracking
   paymentStatus: mysqlEnum("paymentStatus", ["pending", "paid", "failed", "refunded"]).default("pending"),
   paymentId: varchar("paymentId", { length: 255 }),
-  
+
+  // Fulfillment status
+  status: mysqlEnum("status", ["pending", "pending_confirmation", "in_progress", "completed", "delivered"])
+    .default("pending_confirmation")
+    .notNull(),
+
   // Timestamps
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -144,7 +149,12 @@ export const cnyOrders = mysqlTable("cnyOrders", {
   // Payment tracking
   paymentStatus: mysqlEnum("paymentStatus", ["pending", "paid", "failed", "refunded"]).default("pending"),
   paymentId: varchar("paymentId", { length: 255 }),
-  
+
+  // Fulfillment status
+  status: mysqlEnum("status", ["pending", "pending_confirmation", "in_progress", "completed", "delivered"])
+    .default("pending_confirmation")
+    .notNull(),
+
   // Timestamps
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

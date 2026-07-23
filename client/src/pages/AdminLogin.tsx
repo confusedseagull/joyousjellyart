@@ -12,11 +12,11 @@ export default function AdminLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const utils = trpc.useUtils();
 
   const loginMutation = trpc.adminAuth.login.useMutation({
-    onSuccess: (data) => {
-      // Store admin info in localStorage
-      localStorage.setItem("adminUser", JSON.stringify(data));
+    onSuccess: async () => {
+      await utils.adminAuth.me.invalidate();
       setLocation("/admin/dashboard");
     },
     onError: (err) => {

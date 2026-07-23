@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
 import { useRoute, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,18 +11,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 
 export default function AdminOrderDetail() {
-  // Check localStorage for admin user
-  const [adminUser, setAdminUser] = useState<any>(null);
-  const [authLoading, setAuthLoading] = useState(true);
-
-  useEffect(() => {
-    const storedAdmin = localStorage.getItem("adminUser");
-    if (storedAdmin) {
-      setAdminUser(JSON.parse(storedAdmin));
-    }
-    setAuthLoading(false);
-  }, []);
-
+  const { admin, loading: authLoading } = useAdminAuth({ redirectOnUnauthenticated: true });
   const [, navigate] = useLocation();
   const [, params] = useRoute("/admin/orders/:type/:id");
   const orderType = params?.type as 'custom' | 'cny' | undefined;
@@ -31,30 +20,21 @@ export default function AdminOrderDetail() {
   // Query custom orders
   const { data: customOrder, isLoading: customLoading, refetch: refetchCustom } = trpc.orders.getById.useQuery(
     { id: orderId! },
-    { enabled: !!orderId && orderType === 'custom' && !!adminUser }
+    { enabled: !!orderId && orderType === 'custom' && !!admin }
   );
 
   // Query CNY orders
   const { data: cnyOrder, isLoading: cnyLoading, refetch: refetchCny } = trpc.cnyOrders.getById.useQuery(
     { id: orderId! },
-    { enabled: !!orderId && orderType === 'cny' && !!adminUser }
+    { enabled: !!orderId && orderType === 'cny' && !!admin }
   );
 
   const order = orderType === 'custom' ? customOrder : cnyOrder;
   const isLoading = orderType === 'custom' ? customLoading : cnyLoading;
   const refetch = orderType === 'custom' ? refetchCustom : refetchCny;
 
-
-
-  // Redirect if not admin
-  useEffect(() => {
-    if (!authLoading && !adminUser) {
-      navigate("/admin/login");
-    }
-  }, [authLoading, adminUser, navigate]);
-
   // Early return after all hooks
-  if (!authLoading && !adminUser) {
+  if (!authLoading && !admin) {
     return null;
   }
 

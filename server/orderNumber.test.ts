@@ -78,9 +78,9 @@ describe("Order Number Generation", () => {
         deliveryMethod: "pickup",
         fulfillmentDate: new Date("2026-01-25"),
         shape: "round_large",
+        size: "8 inch",
         theme: "floral_roses",
-        primaryColor: "pink",
-        secondaryColors: ["white", "gold"],
+        selectedColors: ["pink", "white", "gold"],
         flavours: ["longan", "lychee"],
         status: "pending_confirmation"
       };

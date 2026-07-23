@@ -1,0 +1,83 @@
+CREATE TABLE `adminUsers` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`email` varchar(320) NOT NULL,
+	`passwordHash` varchar(255) NOT NULL,
+	`name` text,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	`lastSignedIn` timestamp NOT NULL DEFAULT (now()),
+	CONSTRAINT `adminUsers_id` PRIMARY KEY(`id`),
+	CONSTRAINT `adminUsers_email_unique` UNIQUE(`email`)
+);
+--> statement-breakpoint
+CREATE TABLE `cnyOrders` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`orderNumber` varchar(20),
+	`customerName` varchar(255) NOT NULL,
+	`customerPhone` varchar(50) NOT NULL,
+	`customerEmail` varchar(320),
+	`deliveryMethod` enum('delivery','pickup') NOT NULL,
+	`deliveryAddress` text,
+	`fulfillmentDate` timestamp NOT NULL,
+	`timeRange` varchar(50),
+	`items` json NOT NULL,
+	`subtotal` int NOT NULL,
+	`deliveryFee` int NOT NULL,
+	`total` int NOT NULL,
+	`notes` text,
+	`paymentStatus` enum('pending','paid','failed','refunded') DEFAULT 'pending',
+	`paymentId` varchar(255),
+	`status` enum('pending','pending_confirmation','in_progress','completed','delivered') NOT NULL DEFAULT 'pending_confirmation',
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `cnyOrders_id` PRIMARY KEY(`id`),
+	CONSTRAINT `cnyOrders_orderNumber_unique` UNIQUE(`orderNumber`)
+);
+--> statement-breakpoint
+CREATE TABLE `orders` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`orderNumber` varchar(20),
+	`customerName` varchar(255) NOT NULL,
+	`customerEmail` varchar(320),
+	`customerPhone` varchar(50) NOT NULL,
+	`deliveryMethod` enum('delivery','pickup') NOT NULL,
+	`deliveryAddress` text,
+	`fulfillmentDate` timestamp NOT NULL,
+	`theme` varchar(100) NOT NULL,
+	`selectedFlowers` json,
+	`selectedColors` json,
+	`cartoonCharacter` text,
+	`themeCustomText` text,
+	`fashionBrand` text,
+	`shape` varchar(50) NOT NULL,
+	`size` varchar(50) NOT NULL,
+	`numbers` varchar(10),
+	`platterShapes` json,
+	`flavours` json NOT NULL,
+	`cakeText` text,
+	`cakeTextLanguage` enum('english','chinese'),
+	`dietaryRequirements` text,
+	`referenceLinks` text,
+	`specialInstructions` text,
+	`paymentStatus` enum('pending','paid','failed','refunded') DEFAULT 'pending',
+	`paymentId` varchar(255),
+	`status` enum('pending','pending_confirmation','in_progress','completed','delivered') NOT NULL DEFAULT 'pending_confirmation',
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `orders_id` PRIMARY KEY(`id`),
+	CONSTRAINT `orders_orderNumber_unique` UNIQUE(`orderNumber`)
+);
+--> statement-breakpoint
+CREATE TABLE `users` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`openId` varchar(64) NOT NULL,
+	`name` text,
+	`email` varchar(320),
+	`loginMethod` varchar(64),
+	`role` enum('user','admin') NOT NULL DEFAULT 'user',
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	`lastSignedIn` timestamp NOT NULL DEFAULT (now()),
+	CONSTRAINT `users_id` PRIMARY KEY(`id`),
+	CONSTRAINT `users_openId_unique` UNIQUE(`openId`)
+);

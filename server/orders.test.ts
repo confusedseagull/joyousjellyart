@@ -2,23 +2,21 @@ import { describe, expect, it } from "vitest";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
 
-type AuthenticatedUser = NonNullable<TrpcContext["user"]>;
+type Admin = NonNullable<TrpcContext["admin"]>;
 
 function createAdminContext(): TrpcContext {
-  const user: AuthenticatedUser = {
+  const admin: Admin = {
     id: 1,
-    openId: "admin-user",
     email: "admin@joyousjelly.com",
+    passwordHash: "unused-in-tests",
     name: "Admin User",
-    loginMethod: "manus",
-    role: "admin",
     createdAt: new Date(),
     updatedAt: new Date(),
     lastSignedIn: new Date(),
   };
 
   return {
-    user,
+    admin,
     req: {
       protocol: "https",
       headers: {},
@@ -29,7 +27,7 @@ function createAdminContext(): TrpcContext {
 
 function createPublicContext(): TrpcContext {
   return {
-    user: null,
+    admin: null,
     req: {
       protocol: "https",
       headers: {},
@@ -45,13 +43,14 @@ describe("orders.create", () => {
 
     const orderData = {
       customerName: "John Doe",
+      customerEmail: "john.doe@example.com",
       customerPhone: "+65 1234 5678",
       deliveryMethod: "pickup" as const,
       fulfillmentDate: new Date("2025-02-01T14:00:00"),
       shape: "round_large",
+      size: "8 inch",
       theme: "floral_roses",
-      primaryColor: "#84CECF",
-      secondaryColors: ["#FF6B9D", "#C44569"],
+      selectedColors: ["#84CECF", "#FF6B9D"],
       cakeTextLanguage: "english" as const,
       cakeText: "Happy Birthday",
       flavours: ["lychee"],
@@ -71,13 +70,15 @@ describe("orders.create", () => {
 
     const orderData = {
       customerName: "Jane Smith",
+      customerEmail: "jane.smith@example.com",
       customerPhone: "+65 9876 5432",
       deliveryMethod: "delivery" as const,
       deliveryAddress: "123 Main Street, Singapore 123456",
       fulfillmentDate: new Date("2025-02-15T16:00:00"),
       shape: "set_of_9",
+      size: "Set of 9",
       theme: "under_the_sea",
-      primaryColor: "#00CEC9",
+      selectedColors: ["#00CEC9"],
       flavours: ["coconut", "yuzu", "osmanthus"],
     };
 
@@ -95,13 +96,15 @@ describe("orders.create", () => {
 
     const orderData = {
       customerName: "Alice Wong",
+      customerEmail: "alice.wong@example.com",
       customerPhone: "+65 8888 8888",
       deliveryMethod: "pickup" as const,
       fulfillmentDate: new Date("2025-03-01T10:00:00"),
       shape: "square_large",
+      size: "8 inch",
       theme: "cartoon",
       cartoonCharacter: "Pikachu",
-      primaryColor: "#FFD700",
+      selectedColors: ["#FFD700"],
       flavours: ["cheesecake"],
     };
 
@@ -149,12 +152,14 @@ describe("orders.updateStatus", () => {
     const publicCaller = appRouter.createCaller(createPublicContext());
     const order = await publicCaller.orders.create({
       customerName: "Test User",
+      customerEmail: "test.user@example.com",
       customerPhone: "+65 1111 1111",
       deliveryMethod: "pickup" as const,
       fulfillmentDate: new Date("2025-04-01T12:00:00"),
       shape: "round_large",
+      size: "8 inch",
       theme: "space",
-      primaryColor: "#6C5CE7",
+      selectedColors: ["#6C5CE7"],
       flavours: ["longan"],
     });
 
@@ -187,12 +192,14 @@ describe("orders.update", () => {
     const publicCaller = appRouter.createCaller(createPublicContext());
     const order = await publicCaller.orders.create({
       customerName: "Original Name",
+      customerEmail: "original.name@example.com",
       customerPhone: "+65 2222 2222",
       deliveryMethod: "pickup" as const,
       fulfillmentDate: new Date("2025-05-01T15:00:00"),
       shape: "numbers_large",
+      size: "8 inch",
       theme: "chess",
-      primaryColor: "#000000",
+      selectedColors: ["#000000"],
       flavours: ["lychee"],
     });
 

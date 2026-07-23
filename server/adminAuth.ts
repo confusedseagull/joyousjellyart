@@ -1,14 +1,18 @@
-import { z } from "zod";
-import { publicProcedure, router } from "./_core/trpc";
-import { getDb } from "./db";
-import { adminUsers } from "../drizzle/schema";
-import { eq } from "drizzle-orm";
+import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { TRPCError } from "@trpc/server";
 import bcrypt from "bcryptjs";
+import { eq } from "drizzle-orm";
+import { z } from "zod";
+import { adminUsers } from "../drizzle/schema";
+import { createAdminSessionToken } from "./_core/adminSession";
+import { getSessionCookieOptions } from "./_core/cookies";
+import { adminProcedure, publicProcedure, router } from "./_core/trpc";
+import { getDb } from "./db";
 
 export const adminAuthRouter = router({
-  // Sign up a new admin
-  signup: publicProcedure
+  // Sign up a new admin. Requires an existing admin session so the
+  // dashboard can't be self-served into by anyone who finds the URL.
+  signup: adminProcedure
     .input(
       z.object({
         email: z.string().email(),
@@ -20,7 +24,6 @@ export const adminAuthRouter = router({
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
 
-      // Check if admin already exists
       const existing = await db
         .select()
         .from(adminUsers)
@@ -34,11 +37,9 @@ export const adminAuthRouter = router({
         });
       }
 
-      // Hash password
       const passwordHash = await bcrypt.hash(input.password, 10);
 
-      // Create admin user
-      const [admin] = await db.insert(adminUsers).values({
+      await db.insert(adminUsers).values({
         email: input.email,
         passwordHash,
         name: input.name,
@@ -58,11 +59,10 @@ export const adminAuthRouter = router({
         password: z.string(),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
 
-      // Find admin by email
       const [admin] = await db
         .select()
         .from(adminUsers)
@@ -76,7 +76,6 @@ export const adminAuthRouter = router({
         });
       }
 
-      // Verify password
       const validPassword = await bcrypt.compare(input.password, admin.passwordHash);
 
       if (!validPassword) {
@@ -86,14 +85,15 @@ export const adminAuthRouter = router({
         });
       }
 
-      // Update last signed in
       await db
         .update(adminUsers)
         .set({ lastSignedIn: new Date() })
         .where(eq(adminUsers.id, admin.id));
 
-      // Store admin ID in session (using ctx.req.session if available)
-      // For now, return admin info (client will store in localStorage)
+      const sessionToken = await createAdminSessionToken(admin.id);
+      const cookieOptions = getSessionCookieOptions(ctx.req);
+      ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+
       return {
         id: admin.id,
         email: admin.email,
@@ -102,15 +102,19 @@ export const adminAuthRouter = router({
     }),
 
   // Get current admin session
-  me: publicProcedure.query(async () => {
-    // This would check session/cookie in a real implementation
-    // For now, client will pass admin ID
-    return null;
+  me: publicProcedure.query(({ ctx }) => {
+    if (!ctx.admin) return null;
+    return {
+      id: ctx.admin.id,
+      email: ctx.admin.email,
+      name: ctx.admin.name,
+    };
   }),
 
   // Logout
-  logout: publicProcedure.mutation(async () => {
-    // Clear session
+  logout: publicProcedure.mutation(({ ctx }) => {
+    const cookieOptions = getSessionCookieOptions(ctx.req);
+    ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
     return { success: true };
   }),
 });

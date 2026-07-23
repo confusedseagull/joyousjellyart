@@ -106,3 +106,6 @@ temp/
 *.sqlite
 *.sqlite3
 .project-config.json
+
+# Manus platform local cache (contains DB connection details in query logs)
+.manus/

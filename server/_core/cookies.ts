@@ -42,7 +42,10 @@ export function getSessionCookieOptions(
   return {
     httpOnly: true,
     path: "/",
-    sameSite: "none",
+    // Client and API share one origin (no cross-site redirect flow), so
+    // Lax is correct — and required here, since SameSite=None demands
+    // Secure, which would silently drop the cookie over plain http.
+    sameSite: "lax",
     secure: isSecureRequest(req),
   };
 }

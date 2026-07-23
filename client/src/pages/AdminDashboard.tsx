@@ -1,6 +1,7 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,35 +11,26 @@ import { Loader2, Package, Clock, Eye, Search, Calendar } from "lucide-react";
 import { format, startOfDay, endOfDay, isBefore, isAfter, isWithinInterval } from "date-fns";
 
 export default function AdminDashboard() {
-  // Check localStorage for admin user
-  const [adminUser, setAdminUser] = useState<any>(null);
-  const [authLoading, setAuthLoading] = useState(true);
-
-  useEffect(() => {
-    const storedAdmin = localStorage.getItem("adminUser");
-    if (storedAdmin) {
-      setAdminUser(JSON.parse(storedAdmin));
-    }
-    setAuthLoading(false);
-  }, []);
+  const { admin, loading: authLoading } = useAdminAuth({ redirectOnUnauthenticated: true });
   const [, navigate] = useLocation();
+  const utils = trpc.useUtils();
   const [activeTab, setActiveTab] = useState<string>("upcoming");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [orderTypeFilter, setOrderTypeFilter] = useState<string>("all"); // 'all', 'collection', 'custom'
 
-  // Redirect if not admin
-  useEffect(() => {
-    if (!authLoading && !adminUser) {
-      navigate("/admin/login");
-    }
-  }, [authLoading, adminUser, navigate]);
-
   const { data: customOrders, isLoading: customLoading, error: customError } = trpc.orders.list.useQuery(undefined, {
-    enabled: !!adminUser,
+    enabled: !!admin,
   });
 
   const { data: cnyOrders, isLoading: cnyLoading, error: cnyError } = trpc.cnyOrders.list.useQuery(undefined, {
-    enabled: !!adminUser,
+    enabled: !!admin,
+  });
+
+  const logoutMutation = trpc.adminAuth.logout.useMutation({
+    onSuccess: async () => {
+      await utils.adminAuth.me.invalidate();
+      navigate("/admin/login");
+    },
   });
 
   // Merge and transform orders
@@ -108,7 +100,7 @@ export default function AdminDashboard() {
   );
 
   // Early return after all hooks
-  if (!authLoading && !adminUser) {
+  if (!authLoading && !admin) {
     return null;
   }
 
@@ -232,12 +224,10 @@ export default function AdminDashboard() {
             <h1 className="text-4xl font-bold text-foreground mb-2">Admin Dashboard</h1>
             <p className="text-muted-foreground">Manage customer orders and track progress</p>
           </div>
-          <Button 
-            variant="outline" 
-            onClick={() => {
-              localStorage.removeItem("adminUser");
-              navigate("/admin/login");
-            }}
+          <Button
+            variant="outline"
+            onClick={() => logoutMutation.mutate()}
+            disabled={logoutMutation.isPending}
           >
             Logout
           </Button>

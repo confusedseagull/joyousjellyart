@@ -6,9 +6,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link } from "wouter";
+import { Loader2 } from "lucide-react";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
 
 export default function AdminSignup() {
   const [, setLocation] = useLocation();
+  const { admin, loading: authLoading } = useAdminAuth({ redirectOnUnauthenticated: true });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -17,8 +20,7 @@ export default function AdminSignup() {
 
   const signupMutation = trpc.adminAuth.signup.useMutation({
     onSuccess: () => {
-      // Redirect to login after successful signup
-      setLocation("/admin/login");
+      setLocation("/admin/dashboard");
     },
     onError: (err) => {
       setError(err.message);
@@ -47,12 +49,24 @@ export default function AdminSignup() {
     signupMutation.mutate({ email, password, name: name || undefined });
   };
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!admin) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-md border-0 shadow-sm">
         <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold">Create Admin Account</CardTitle>
-          <CardDescription>Sign up to manage the admin dashboard</CardDescription>
+          <CardTitle className="text-3xl font-bold">Add Admin Account</CardTitle>
+          <CardDescription>Create another admin login for the dashboard</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -121,9 +135,8 @@ export default function AdminSignup() {
             </Button>
 
             <p className="text-center text-sm text-muted-foreground">
-              Already have an account?{" "}
-              <Link href="/admin/login" className="text-primary hover:underline">
-                Sign in
+              <Link href="/admin/dashboard" className="text-primary hover:underline">
+                Back to dashboard
               </Link>
             </p>
           </form>
