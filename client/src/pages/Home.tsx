@@ -40,78 +40,82 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Product Showcase Sections */}
-      <section className="py-12 bg-background">
+      {/* Craft Section */}
+      <section className="py-20 md:py-28 bg-background">
         <div className="container">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center mb-16">
-            <div className="order-2 md:order-1">
-              <h2 className="text-2xl md:text-3xl font-bold mb-3">Handcrafted Symbolism</h2>
-              <p className="text-base text-muted-foreground mb-4">
-                Every element is meticulously sculpted by hand, from intricate auspicious symbols to delicate decorative accents. 
+          <div className="max-w-2xl mb-16 md:mb-20">
+            <span className="text-sm font-semibold uppercase tracking-widest text-primary">Our Craft</span>
+            <h2 className="mt-3 mb-4">The Art of Jelly Sculpture</h2>
+            <p className="font-display italic text-xl md:text-2xl text-muted-foreground">
+              Four techniques, one obsession: cakes that look like they shouldn't be edible, and taste like they should.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-10 md:gap-16 items-center border-t border-brown/15 pt-12 md:pt-16 mb-12 md:mb-16">
+            <div className="md:col-span-2 order-2 md:order-1">
+              <h3 className="mb-3">Handcrafted Symbolism</h3>
+              <p className="text-base text-muted-foreground">
+                Every element is meticulously sculpted by hand, from intricate auspicious symbols to delicate decorative accents.
                 Each piece tells a story of tradition and artistry, suspended perfectly within crystal-clear layers.
               </p>
-
             </div>
-            <div className="order-1 md:order-2">
-              <img 
-                src="/fortune_3.jpg" 
-                alt="Prosperity Edition Jelly Art" 
-                className="w-full h-auto rounded-lg shadow-lg"
+            <div className="md:col-span-3 order-1 md:order-2">
+              <img
+                src="/fortune_3.jpg"
+                alt="Prosperity Edition Jelly Art"
+                className="w-full aspect-[4/5] object-cover"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center mb-16">
-            <div>
-              <img 
-                src="/huatNow2.jpg" 
-                alt="Golden Gallop Collection" 
-                className="w-full h-auto rounded-lg shadow-lg"
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-10 md:gap-16 items-center border-t border-brown/15 pt-12 md:pt-16 mb-12 md:mb-16">
+            <div className="md:col-span-3">
+              <img
+                src="/huatNow2.jpg"
+                alt="Golden Gallop Collection"
+                className="w-full aspect-[4/5] object-cover"
               />
             </div>
-            <div>
-              <h2 className="text-2xl md:text-3xl font-bold mb-3">Three-Dimensional Artistry</h2>
-              <p className="text-base text-muted-foreground mb-4">
-                Our jelly sculptures achieve remarkable depth and dimension through layered construction techniques. 
+            <div className="md:col-span-2">
+              <h3 className="mb-3">Three-Dimensional Artistry</h3>
+              <p className="text-base text-muted-foreground">
+                Our jelly sculptures achieve remarkable depth and dimension through layered construction techniques.
                 Edible gold leaf and hand-painted details create stunning visual effects that shimmer from every angle.
               </p>
-
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center mb-16">
-            <div className="order-2 md:order-1">
-              <h2 className="text-2xl md:text-3xl font-bold mb-3">Playful Character Design</h2>
-              <p className="text-base text-muted-foreground mb-4">
-                Whimsical expressions and personality shine through each character sculpture. 
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-10 md:gap-16 items-center border-t border-brown/15 pt-12 md:pt-16 mb-12 md:mb-16">
+            <div className="md:col-span-2 order-2 md:order-1">
+              <h3 className="mb-3">Playful Character Design</h3>
+              <p className="text-base text-muted-foreground">
+                Whimsical expressions and personality shine through each character sculpture.
                 Careful attention to proportion and detail brings these edible artworks to life with charm and authenticity.
               </p>
-
             </div>
-            <div className="order-1 md:order-2">
-              <img 
-                src="/Image-(48).jpg" 
-                alt="Fortune Lion Jelly Art" 
-                className="w-full h-auto rounded-lg shadow-lg"
+            <div className="md:col-span-3 order-1 md:order-2">
+              <img
+                src="/Image-(48).jpg"
+                alt="Fortune Lion Jelly Art"
+                className="w-full aspect-[4/5] object-cover"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-            <div>
-              <img 
-                src="/IMG_20260115_134503.JPEG" 
-                alt="Blooms Edition" 
-                className="w-full h-auto rounded-lg shadow-lg"
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-10 md:gap-16 items-center border-t border-brown/15 pt-12 md:pt-16">
+            <div className="md:col-span-3">
+              <img
+                src="/IMG_20260115_134503.JPEG"
+                alt="Blooms Edition"
+                className="w-full aspect-[4/5] object-cover"
               />
             </div>
-            <div>
-              <h2 className="text-2xl md:text-3xl font-bold mb-3">Botanical Precision</h2>
-              <p className="text-base text-muted-foreground mb-4">
-                Delicate petals are shaped one by one, capturing the organic beauty of nature in edible form. 
+            <div className="md:col-span-2">
+              <h3 className="mb-3">Botanical Precision</h3>
+              <p className="text-base text-muted-foreground">
+                Delicate petals are shaped one by one, capturing the organic beauty of nature in edible form.
                 Translucent layers showcase the intricate floral arrangements from every perspective, creating living art you can taste.
               </p>
-
             </div>
           </div>
         </div>

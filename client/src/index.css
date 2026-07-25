@@ -102,6 +102,10 @@
   h3 { @apply text-2xl md:text-3xl; }
   h4 { @apply text-xl md:text-2xl; }
   p { @apply leading-relaxed; }
+  /* Editorial "dek" style for section intros - Fraunces italic, distinct from Karla body copy */
+  .font-display {
+    font-family: 'Fraunces', Georgia, serif;
+  }
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
   [type="button"]:not(:disabled),
