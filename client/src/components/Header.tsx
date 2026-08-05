@@ -1,72 +1,49 @@
 import { Link } from "wouter";
-import { useState, useEffect } from "react";
-import { useCart } from "@/contexts/CartContext";
-import { CartDrawer } from "@/components/CartDrawer";
 import { ShoppingCart } from "lucide-react";
+import { useCustomCart } from "@/contexts/CustomCartContext";
 
 export default function Header() {
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
-  const { totalItems } = useCart();
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  const { totalItems } = useCustomCart();
 
   return (
-    <header 
-      className={`sticky top-0 z-[100] transition-colors duration-300 ${
-        isScrolled ? 'bg-primary' : 'bg-background'
-      }`}
-    >
-      <div className="container">
-        {/* Logo and Cart */}
-        <div className="flex justify-between items-center py-4">
-          <div className="flex-1" />
-          <Link href="/">
-            <img 
-              src="/logo.png" 
-              alt="Joyous JellyArt" 
-              className="h-10 md:h-16 w-auto"
-            />
+    <header className="sticky top-0 z-[100] bg-background">
+      <div className="container flex items-center justify-between h-20">
+        <Link href="/">
+          <img
+            src="/logo.png"
+            alt="Joyous JellyArt"
+            className="h-9 md:h-10 w-auto"
+          />
+        </Link>
+
+        <nav className="flex items-center gap-10">
+          <Link href="/customize">
+            <span className="text-[15px] font-medium text-foreground hover:text-primary transition-colors cursor-pointer">
+              Customize
+            </span>
           </Link>
-          <div className="flex-1 flex justify-end">
-            <button 
-              onClick={() => setIsCartDrawerOpen(true)}
-              className="relative p-2 hover:bg-primary/10 rounded-full transition-colors focus:outline-none focus-visible:ring-0"
-            >
-              <ShoppingCart className="h-6 w-6 text-brown" />
+          <Link href="/#gallery">
+            <span className="text-[15px] font-medium text-foreground hover:text-primary transition-colors cursor-pointer">
+              Discover
+            </span>
+          </Link>
+          <Link href="/#footer">
+            <span className="text-[15px] font-medium text-foreground hover:text-primary transition-colors cursor-pointer">
+              About
+            </span>
+          </Link>
+          <Link href="/customize/cart">
+            <span className="relative flex items-center cursor-pointer text-foreground hover:text-primary transition-colors">
+              <ShoppingCart className="h-5 w-5" />
               {totalItems > 0 && (
-                <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-[10px] font-semibold rounded-full h-4 w-4 flex items-center justify-center">
                   {totalItems}
                 </span>
               )}
-            </button>
-          </div>
-        </div>
-
-        {/* Sub-header Navigation */}
-        <nav className="flex justify-center gap-8 pb-3 pt-2">
-          <Link href="/customize">
-            <span className="text-sm md:text-base font-semibold text-foreground hover:text-primary transition-colors tracking-wide cursor-pointer">
-              Custom Order
-            </span>
-          </Link>
-          <Link href="/cny-2026">
-            <span className="text-sm md:text-base font-semibold text-foreground hover:text-primary transition-colors tracking-wide cursor-pointer">
-              2026 CNY Collection
             </span>
           </Link>
         </nav>
       </div>
-      
-      {/* Cart Drawer */}
-      <CartDrawer open={isCartDrawerOpen} onOpenChange={setIsCartDrawerOpen} />
     </header>
   );
 }

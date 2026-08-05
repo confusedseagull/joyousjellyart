@@ -6,6 +6,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import Customize from "./pages/Customize";
+import CustomizeCart from "./pages/CustomizeCart";
 import Confirmation from "./pages/Confirmation";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import AdminLogin from "./pages/AdminLogin";
@@ -37,6 +38,7 @@ function Router() {
       <Switch>
         <Route path={"/"} component={Home} />
         <Route path="/customize" component={Customize} />
+        <Route path="/customize/cart" component={CustomizeCart} />
         <Route path="/cny-2026" component={CNY2026} />
         <Route path="/cart" component={Cart} />
         <Route path="/order-confirmation" component={OrderConfirmation} />

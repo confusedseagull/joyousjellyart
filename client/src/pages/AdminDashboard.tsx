@@ -147,30 +147,21 @@ export default function AdminDashboard() {
         </CardHeader>
         <CardContent>
           <div className="space-y-2 text-sm">
-            {isCnyOrder ? (
-              <>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Items:</span>
-                  <span className="font-medium">{order.items?.length || 0} item(s)</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Total:</span>
-                  <span className="font-medium">${order.total}</span>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Items:</span>
-                  <span className="font-medium">1 custom cake</span>
-                </div>
-              </>
-            )}
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Items:</span>
+              <span className="font-medium">
+                {order.items?.length || 0} {isCnyOrder ? "item(s)" : "cake(s)"}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Total:</span>
+              <span className="font-medium">${order.total}</span>
+            </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Delivery Date:</span>
               <span className="font-medium">{format(new Date(order.fulfillmentDate), 'MMM dd, yyyy')}</span>
             </div>
-            {isCnyOrder && order.timeRange ? (
+            {order.timeRange ? (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Time:</span>
                 <span className="font-medium">{order.timeRange}</span>

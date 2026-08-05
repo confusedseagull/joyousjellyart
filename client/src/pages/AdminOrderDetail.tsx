@@ -289,31 +289,109 @@ export default function AdminOrderDetail() {
 
               </div>
             ) : customOrder ? (
-              <div className="space-y-4">
-                {/* Custom Order Details */}
-                <div>
-                  <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">Product</h4>
-                  <p className="text-lg capitalize">{customOrder.shape?.replace(/_/g, ' ')}</p>
-                </div>
+              <div className="space-y-6">
+                {customOrder.items.map((item: any, idx: number) => (
+                  <div key={item.id ?? idx} className="space-y-4">
+                    {idx > 0 && <Separator />}
 
-                <div>
-                  <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">Theme</h4>
-                  <p className="text-lg capitalize">{customOrder.theme?.replace(/_/g, ' ')}</p>
-                </div>
+                    <div>
+                      <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">Format</h4>
+                      <p className="text-lg capitalize">{item.format?.replace(/([A-Z])/g, ' $1')}</p>
+                    </div>
 
-                {customOrder.flavours && (
+                    <div>
+                      <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">Shape</h4>
+                      <p className="text-lg capitalize">{item.shape?.replace(/_/g, ' ')}</p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">Size</h4>
+                      <p className="text-lg">{item.size}</p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">Theme</h4>
+                      <p className="text-lg capitalize">{item.theme?.replace(/_/g, ' ')}</p>
+                    </div>
+
+                    {item.flavours && item.flavours.length > 0 && (
+                      <div>
+                        <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">Flavours</h4>
+                        <p className="text-lg">{item.flavours.join(', ')}</p>
+                      </div>
+                    )}
+
+                    {item.selectedColors && item.selectedColors.length > 0 && (
+                      <div>
+                        <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">Colors</h4>
+                        <p className="text-lg">{item.selectedColors.join(', ')}</p>
+                      </div>
+                    )}
+
+                    {item.cakeText && (
+                      <div>
+                        <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">Cake Message</h4>
+                        <p className="text-lg whitespace-pre-wrap">{item.cakeText}</p>
+                      </div>
+                    )}
+
+                    {item.dietaryRequirements && (
+                      <div>
+                        <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">Dietary Requirements</h4>
+                        <p className="text-lg">{item.dietaryRequirements}</p>
+                      </div>
+                    )}
+
+                    {item.referenceLinks && (
+                      <div>
+                        <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">Reference Links</h4>
+                        <p className="text-lg">{item.referenceLinks}</p>
+                      </div>
+                    )}
+
+                    {item.specialInstructions && (
+                      <div>
+                        <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">Special Instructions</h4>
+                        <p className="text-lg whitespace-pre-wrap">{item.specialInstructions}</p>
+                      </div>
+                    )}
+
+                    <div className="flex justify-between items-center pt-2 border-t">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Quantity</p>
+                        <p className="text-lg font-medium">{item.quantity}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm text-muted-foreground">Price</p>
+                        <p className="text-lg font-semibold">{formatPrice(item.price)} each</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {customOrder.notes && (
                   <div>
-                    <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">Flavours</h4>
-                    <p className="text-lg">{JSON.parse(JSON.stringify(customOrder.flavours)).join(', ')}</p>
+                    <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">Additional Notes</h4>
+                    <p className="text-lg">{customOrder.notes}</p>
                   </div>
                 )}
 
-                {customOrder.cakeText && (
-                  <div>
-                    <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">Cake Message</h4>
-                    <p className="text-lg whitespace-pre-wrap">{customOrder.cakeText}</p>
+                <Separator className="my-6" />
+                <div className="space-y-3">
+                  <div className="flex justify-between text-lg">
+                    <span className="text-muted-foreground">Subtotal</span>
+                    <span className="font-medium">{formatPrice(customOrder.subtotal)}</span>
                   </div>
-                )}
+                  <div className="flex justify-between text-lg">
+                    <span className="text-muted-foreground">Delivery Fee</span>
+                    <span className="font-medium">{formatPrice(customOrder.deliveryFee)}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between text-xl">
+                    <span className="font-bold">Total</span>
+                    <span className="font-bold">{formatPrice(customOrder.total)}</span>
+                  </div>
+                </div>
               </div>
             ) : null}
           </CardContent>

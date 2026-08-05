@@ -1,22 +1,16 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { trpc } from "@/lib/trpc";
-import { Loader2, CalendarIcon, Check } from "lucide-react";
-import { ProgressIndicator } from "@/components/ProgressIndicator";
+import { Check, Minus, Plus } from "lucide-react";
 import { SelectablePill } from "@/components/SelectablePill";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
-import { format } from "date-fns";
 import { getCustomOrderPrice } from "../../../shared/customOrderPricing";
 import { formatPrice } from "@/lib/utils";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useCustomCart, type CakeFormat } from "@/contexts/CustomCartContext";
 
 // Theme options
 const THEMES = [
@@ -97,22 +91,6 @@ const FLOWERS = [
   "Tulip", "Carnations", "Marigolds", "Dianthus", "Clematis"
 ];
 
-const COLORS = [
-  { value: "red", label: "Red" },
-  { value: "pink", label: "Pink" },
-  { value: "orange", label: "Orange" },
-  { value: "yellow", label: "Yellow" },
-  { value: "blue", label: "Blue" },
-  { value: "purple", label: "Purple" },
-  { value: "white", label: "White" },
-  { value: "pastelPink", label: "Pastel Pink" },
-  { value: "pastelRed", label: "Pastel Red" },
-  { value: "pastelOrange", label: "Pastel Orange" },
-  { value: "pastelYellow", label: "Pastel Yellow" },
-  { value: "pastelBlue", label: "Pastel Blue" },
-  { value: "pastelPurple", label: "Pastel Purple" },
-];
-
 const CARTOON_CHARACTERS = [
   "Pikachu", "Hello Kitty", "Cinnamoroll", "My Melody", "Kuromi",
   "Miffy", "Sumikko Gurashi", "Super Mario", "Winnie the Pooh"
@@ -128,12 +106,23 @@ const SHAPES = [
   { value: "fan", label: "Fan", image: "/customize/fan.jpg" },
   { value: "rectangle", label: "Rectangle", image: "/customize/rectangle.jpg" },
   { value: "scalloped", label: "Scalloped Round/Rosette", image: "/customize/scalloped.jpg" },
+  { value: "numbers", label: "Numbers", image: "/customize/numbers.jpg" },
+  { value: "sakura", label: "Sakura", image: "/customize/sakura.jpg" },
   { value: "platter9", label: "Platter of 9", image: "/customize/platter9.jpg" },
   { value: "platter4", label: "Platter of 4", images: ["/customize/platter4-1.jpg", "/customize/platter4-2.jpg"] },
-  { value: "numbers", label: "Numbers", image: "/customize/numbers.jpg" },
-  { value: "miniGiftBox", label: "Individual Mini Gift Box", image: "/customize/miniGiftBox.jpg" },
-  { value: "cupcake", label: "Individual Cupcake", image: "/customize/cupcake.jpg" },
-  { value: "sakura", label: "Sakura", image: "/customize/sakura.jpg" },
+  { value: "miniGiftBox", label: "Mini Gift Box", image: "/customize/miniGiftBox.jpg" },
+  { value: "cupcake", label: "Cupcake", image: "/customize/cupcake.jpg" },
+];
+
+const CAKE_SHAPE_VALUES = ["round", "square", "octagon", "heart", "star", "teddyBear", "fan", "rectangle", "scalloped", "numbers", "sakura"];
+const CAKE_SHAPES = SHAPES.filter(s => CAKE_SHAPE_VALUES.includes(s.value));
+const PLATTER_FORMAT_SHAPES = SHAPES.filter(s => s.value === "platter9" || s.value === "platter4");
+const GIFT_BOX_FORMAT_SHAPES = SHAPES.filter(s => s.value === "miniGiftBox" || s.value === "cupcake");
+
+const FORMATS: { value: CakeFormat; label: string; image: string }[] = [
+  { value: "cake", label: "Cake", image: "/customize/round.jpg" },
+  { value: "jellyPlatter", label: "Jelly Platter", image: "/customize/platter9.jpg" },
+  { value: "miniGiftBox", label: "Mini Gift Boxes", image: "/customize/miniGiftBox.jpg" },
 ];
 
 const PLATTER_INDIVIDUAL_SHAPES = [
@@ -226,222 +215,186 @@ const DIETARY_OPTIONS = [
   { value: "vegan", label: "Vegan" },
 ];
 
-const PICKUP_TIME_SLOTS = [
-  "11:00 AM - 1:00 PM",
-  "1:00 PM - 3:00 PM",
-  "3:00 PM - 5:00 PM",
-  "5:00 PM - 7:00 PM",
-];
+const inputClass = "h-[52px] rounded-2xl border-[#e5e5e5]";
 
-const DELIVERY_TIME_SLOTS = [
-  "10:00 AM - 1:00 PM",
-  "2:00 PM - 5:00 PM",
-  "5:00 PM - 7:00 PM",
-];
-
-// Orders store a single fulfillment timestamp (no separate time-range column),
-// so the slot's start time gets merged onto the picked date before submitting.
-function applySlotStartTime(date: Date, slot: string): Date {
-  const match = slot.match(/(\d+):(\d+)\s*(AM|PM)/i);
-  const combined = new Date(date);
-  if (!match) return combined;
-
-  let hours = parseInt(match[1], 10);
-  const minutes = parseInt(match[2], 10);
-  const period = match[3].toUpperCase();
-  if (period === "PM" && hours !== 12) hours += 12;
-  if (period === "AM" && hours === 12) hours = 0;
-
-  combined.setHours(hours, minutes, 0, 0);
-  return combined;
+// Numbered section header, matching the Figma order-page pattern (teal index + Newsreader title)
+function StepHeader({ number, title, description }: { number: number; title: string; description?: string }) {
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-baseline gap-4">
+        <span className="font-display font-semibold text-2xl text-primary shrink-0">
+          {String(number).padStart(2, "0")}
+        </span>
+        <h2 className="text-2xl">{title}</h2>
+      </div>
+      {description && <p className="text-muted-foreground text-[15px]">{description}</p>}
+    </div>
+  );
 }
 
-// ThemeCard component with carousel support
-function ThemeCard({ themeOption, isSelected, onClick }: { 
-  themeOption: any; 
-  isSelected: boolean; 
+// Circular photo swatch with carousel/swipe support, used for Format/Theme/Shape selection
+function CircleOption({
+  option,
+  isSelected,
+  onClick,
+  caption,
+}: {
+  option: { value: string; label: string; image?: string; images?: string[] };
+  isSelected: boolean;
   onClick: () => void;
+  caption?: string;
 }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [touchStart, setTouchStart] = useState(0);
   const [touchEnd, setTouchEnd] = useState(0);
-  const images = themeOption.images || [themeOption.image];
-  
-  // Auto-rotate carousel every 3 seconds
+  const images = option.images || (option.image ? [option.image] : []);
+
   useEffect(() => {
     if (images.length <= 1) return;
-    
     const interval = setInterval(() => {
       setCurrentImageIndex((prev) => (prev + 1) % images.length);
     }, 3000);
-    
     return () => clearInterval(interval);
   }, [images.length]);
-  
-  // Handle touch/swipe gestures
+
   const handleTouchStart = (e: React.TouchEvent) => {
     if (images.length <= 1) return;
     setTouchStart(e.targetTouches[0].clientX);
   };
-  
+
   const handleTouchMove = (e: React.TouchEvent) => {
     if (images.length <= 1) return;
     setTouchEnd(e.targetTouches[0].clientX);
   };
-  
+
   const handleTouchEnd = (e: React.TouchEvent) => {
-    if (images.length <= 1) return;
-    if (!touchStart || !touchEnd) return;
-    
+    if (images.length <= 1 || !touchStart || !touchEnd) return;
     const distance = touchStart - touchEnd;
-    const minSwipeDistance = 50;
-    
-    if (Math.abs(distance) < minSwipeDistance) return;
-    
-    // Prevent card click when swiping
+    if (Math.abs(distance) < 50) return;
     e.stopPropagation();
-    
     if (distance > 0) {
-      // Swipe left - next image
       setCurrentImageIndex((prev) => (prev + 1) % images.length);
     } else {
-      // Swipe right - previous image
       setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
     }
-    
     setTouchStart(0);
     setTouchEnd(0);
   };
-  
+
   return (
-    <Card
+    <button
+      type="button"
       onClick={onClick}
-      className={`overflow-hidden group border-0 shadow-none hover:shadow-none transition-smooth p-0 gap-0 bg-transparent cursor-pointer ${
-        isSelected ? 'ring-2 ring-primary' : ''
-      }`}
+      className="flex flex-col items-center gap-2 w-[110px] py-2 group"
     >
-      <div 
-        className="aspect-square overflow-hidden rounded-xl relative"
+      <div
+        className={`relative size-24 rounded-full overflow-hidden transition-all ${
+          isSelected ? "ring-2 ring-primary ring-offset-2" : ""
+        }`}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
         <img
           src={images[currentImageIndex]}
-          alt={themeOption.label}
-          className="w-full h-full object-cover group-hover:scale-110 transition-all duration-500 ease-out"
+          alt={option.label}
+          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
         />
         {isSelected && (
-          <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-1">
-            <Check className="h-5 w-5" />
+          <div className="absolute inset-0 bg-black/10 flex items-center justify-center">
+            <div className="bg-primary text-primary-foreground rounded-full p-1">
+              <Check className="h-4 w-4" />
+            </div>
           </div>
         )}
         {images.length > 1 && (
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
-            {images.map((_: string, index: number) => (
+          <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 flex gap-1">
+            {images.map((_, index) => (
               <div
                 key={index}
-                className={`h-1.5 rounded-full transition-all ${
-                  index === currentImageIndex 
-                    ? 'w-4 bg-white' 
-                    : 'w-1.5 bg-white/50'
+                className={`h-1 rounded-full transition-all ${
+                  index === currentImageIndex ? "w-3 bg-white" : "w-1 bg-white/50"
                 }`}
               />
             ))}
           </div>
         )}
       </div>
-      <CardContent className="pt-3 pb-4 px-0">
-        <h3 className="font-semibold text-base text-center tracking-tight leading-tight">
-          {themeOption.label}
-        </h3>
-      </CardContent>
-    </Card>
+      <span className="text-xs font-semibold text-center leading-tight line-clamp-2">
+        {option.label}
+      </span>
+      {caption && (
+        <span className="text-xs text-muted-foreground text-center leading-tight">{caption}</span>
+      )}
+    </button>
+  );
+}
+
+function QuantityStepper({ value, onChange }: { value: number; onChange: (value: number) => void }) {
+  return (
+    <div className="inline-flex items-center border border-[#e5e5e5] rounded-2xl overflow-hidden">
+      <button
+        type="button"
+        onClick={() => onChange(Math.max(1, value - 1))}
+        className="w-12 h-[52px] flex items-center justify-center hover:bg-muted transition-colors"
+      >
+        <Minus className="h-4 w-4" />
+      </button>
+      <div className="w-14 h-[52px] flex items-center justify-center border-x border-[#e5e5e5] font-medium">
+        {value}
+      </div>
+      <button
+        type="button"
+        onClick={() => onChange(value + 1)}
+        className="w-12 h-[52px] flex items-center justify-center hover:bg-muted transition-colors"
+      >
+        <Plus className="h-4 w-4" />
+      </button>
+    </div>
   );
 }
 
 export default function Customize() {
-  // Theme & Design state
-  const [theme, setTheme] = useState("");
-  const [selectedFlowers, setSelectedFlowers] = useState<string[]>([]);
-  const [selectedColors, setSelectedColors] = useState<string[]>([]);
-  const [cartoonCharacter, setCartoonCharacter] = useState("");
-  const [handDrawnDesign, setHandDrawnDesign] = useState("");
-  const [coutureBrand, setCoutureBrand] = useState("");
+  const [, navigate] = useLocation();
+  const { addItem } = useCustomCart();
 
-  // Shape & Size state
+  // Format, shape & size state
+  const [format, setFormat] = useState<CakeFormat | "">("");
   const [shape, setShape] = useState("");
   const [size, setSize] = useState("");
   const [platterShapes, setPlatterShapes] = useState<string[]>([]);
   const [number1, setNumber1] = useState("");
   const [number2, setNumber2] = useState("");
-  const [numberCount, setNumberCount] = useState<1 | 2>(2); // For Numbers shape: 1 or 2 numbers
+  const [numberCount, setNumberCount] = useState<1 | 2>(2);
   const [quantity, setQuantity] = useState(1);
 
-  // Flavor & Dietary state
-  const [selectedFlavors, setSelectedFlavors] = useState<string[]>([]);
-  const [dietaryRequirements, setDietaryRequirements] = useState<string[]>([]);
-
-  // Text & References state
-  const [textOnCake, setTextOnCake] = useState("");
-  const [textLanguage, setTextLanguage] = useState("english");
+  // Theme & Design state
+  const [theme, setTheme] = useState("");
+  const [selectedFlowers, setSelectedFlowers] = useState<string[]>([]);
+  const [cartoonCharacter, setCartoonCharacter] = useState("");
+  const [handDrawnDesign, setHandDrawnDesign] = useState("");
+  const [coutureBrand, setCoutureBrand] = useState("");
   const [referenceLinks, setReferenceLinks] = useState("");
   const [specialInstructions, setSpecialInstructions] = useState("");
 
-  // Customer Details state
-  const [customerName, setCustomerName] = useState("");
-  const [customerEmail, setCustomerEmail] = useState("");
-  const [customerPhone, setCustomerPhone] = useState("");
-  const [deliveryMethod, setDeliveryMethod] = useState<"pickup" | "delivery">("pickup");
-  const [deliveryAddress, setDeliveryAddress] = useState("");
-  const [fulfillmentDate, setFulfillmentDate] = useState<Date>();
-  const [fulfillmentTime, setFulfillmentTime] = useState("");
+  // Flavor state
+  const [selectedFlavors, setSelectedFlavors] = useState<string[]>([]);
 
-  const [, navigate] = useLocation();
+  // Color preferences (optional, generic, all themes)
+  const [color1, setColor1] = useState("");
+  const [color2, setColor2] = useState("");
+  const [color3, setColor3] = useState("");
 
-  const createOrderMutation = trpc.orders.create.useMutation({
-    onSuccess: (order) => {
-      toast.success("Order submitted successfully!");
-      navigate(`/confirmation/${order.id}`);
-    },
-    onError: (error) => {
-      toast.error(error.message || "Failed to submit order");
-    },
-  });
+  // Personalized text
+  const [textOnCake, setTextOnCake] = useState("");
+  const [textLanguage, setTextLanguage] = useState("english");
 
-  // Calculate estimated price
-  const estimatedPrice = useMemo(() => {
-    if (!theme || !shape || !size) return null;
-    
-    const basePrice = getCustomOrderPrice(theme, shape, size, numberCount);
-    if (!basePrice) return null;
-    
-    // Multiply by quantity for individual items
-    let totalPrice = basePrice;
-    if (shape === "miniGiftBox" || shape === "cupcake") {
-      totalPrice = basePrice * quantity;
-    }
-    
-    // Format to 2 decimal places to avoid floating-point precision errors
-    return Number(totalPrice.toFixed(2));
-  }, [theme, shape, size, quantity, numberCount]);
+  // Dietary requirements
+  const [dietaryRequirements, setDietaryRequirements] = useState<string[]>([]);
 
-  // Progress tracking
-  const progressSteps = useMemo(() => {
-    const steps = [
-      { id: 1, label: "Theme", completed: !!theme, current: !theme },
-      { id: 2, label: "Shape", completed: !!shape, current: !!theme && !shape },
-      { id: 3, label: "Size", completed: !!size, current: !!shape && !size },
-      { id: 4, label: "Flavour", completed: selectedFlavors.length > 0, current: !!size && selectedFlavors.length === 0 },
-      { id: 5, label: "Details", completed: !!customerName && !!customerEmail && !!customerPhone, current: selectedFlavors.length > 0 && (!customerName || !customerEmail || !customerPhone) },
-    ];
+  const shapeOptionsForFormat =
+    format === "cake" ? CAKE_SHAPES : format === "jellyPlatter" ? PLATTER_FORMAT_SHAPES : GIFT_BOX_FORMAT_SHAPES;
 
-    return steps;
-  }, [theme, shape, size, selectedFlavors, customerName, customerEmail, customerPhone]);
-
-  const currentStep = progressSteps.findIndex(s => s.current) + 1 || progressSteps.length;
-
-  // Helper functions
   const getRequiredFlavorCount = () => {
     if (shape === "platter9") return 2;
     if (shape === "platter4") return 2;
@@ -460,64 +413,53 @@ export default function Customize() {
     return false;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  // Calculate estimated unit price
+  const estimatedPrice = useMemo(() => {
+    if (!theme || !shape || !size) return null;
+    const basePrice = getCustomOrderPrice(theme, shape, size, numberCount);
+    if (!basePrice) return null;
+    return Number(basePrice.toFixed(2));
+  }, [theme, shape, size, numberCount]);
 
-    if (!theme || !shape || !size || selectedFlavors.length === 0) {
-      toast.error("Please complete all required fields");
-      return;
+  const totalPrice = useMemo(() => {
+    if (estimatedPrice === null) return null;
+    return format === "miniGiftBox" ? Number((estimatedPrice * quantity).toFixed(2)) : estimatedPrice;
+  }, [estimatedPrice, format, quantity]);
+
+  const shapeSizeComplete = useMemo(() => {
+    if (!shape || !size) return false;
+    if (shape === "platter9" || shape === "platter4") {
+      const maxShapes = getMaxShapeSelection();
+      return maxShapes === 0 || platterShapes.length > 0;
     }
+    if (shape === "numbers") return !!number1;
+    return true;
+  }, [shape, size, platterShapes, number1]);
 
-    if (!fulfillmentDate || !fulfillmentTime) {
-      toast.error("Please select fulfillment date and time");
-      return;
+  const handleFormatSelect = (value: CakeFormat) => {
+    setFormat(value);
+    setShape("");
+    setSize("");
+    setPlatterShapes([]);
+    setQuantity(1);
+    setNumber1("");
+    setNumber2("");
+  };
+
+  const handleShapeSelect = (value: string) => {
+    setShape(value);
+    setPlatterShapes([]);
+    setQuantity(1);
+    if (value === "miniGiftBox" || value === "cupcake") {
+      setSize(SHAPE_SIZES[value][0].value);
+    } else {
+      setSize("");
     }
-
-    // Validate minimum lead time (3 days)
-    const now = new Date();
-    const minDate = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
-    if (fulfillmentDate < minDate) {
-      toast.error("Minimum 3 days advance notice required");
-      return;
-    }
-
-    const numbers =
-      shape === "numbers"
-        ? numberCount === 2
-          ? `${number1},${number2}`
-          : number1
-        : undefined;
-
-    createOrderMutation.mutate({
-      customerName,
-      customerEmail,
-      customerPhone,
-      deliveryMethod,
-      deliveryAddress: deliveryMethod === "delivery" ? deliveryAddress : undefined,
-      fulfillmentDate: applySlotStartTime(fulfillmentDate, fulfillmentTime),
-      theme,
-      selectedFlowers: selectedFlowers.length > 0 ? selectedFlowers : undefined,
-      selectedColors: selectedColors.length > 0 ? selectedColors : undefined,
-      cartoonCharacter: cartoonCharacter || undefined,
-      themeCustomText: handDrawnDesign || undefined,
-      fashionBrand: coutureBrand || undefined,
-      shape,
-      size,
-      numbers,
-      platterShapes: platterShapes.length > 0 ? platterShapes : undefined,
-      flavours: selectedFlavors,
-      cakeText: textOnCake || undefined,
-      cakeTextLanguage: textOnCake ? (textLanguage as "english" | "chinese") : undefined,
-      dietaryRequirements: dietaryRequirements.length > 0 ? dietaryRequirements.join(", ") : undefined,
-      referenceLinks: referenceLinks || undefined,
-      specialInstructions: specialInstructions || undefined,
-    });
   };
 
   const handleFlavorToggle = (flavor: string) => {
     const maxFlavors = getRequiredFlavorCount();
     const isSelected = selectedFlavors.includes(flavor);
-    
     if (isSelected) {
       setSelectedFlavors(prev => prev.filter(f => f !== flavor));
     } else if (selectedFlavors.length < maxFlavors) {
@@ -528,7 +470,6 @@ export default function Customize() {
   const handlePlatterShapeToggle = (shapeValue: string) => {
     const maxShapes = getMaxShapeSelection();
     const isSelected = platterShapes.includes(shapeValue);
-    
     if (isSelected) {
       setPlatterShapes(prev => prev.filter(s => s !== shapeValue));
     } else if (platterShapes.length < maxShapes) {
@@ -538,701 +479,596 @@ export default function Customize() {
 
   const handleDietaryToggle = (requirement: string) => {
     setDietaryRequirements(prev =>
-      prev.includes(requirement)
-        ? prev.filter(r => r !== requirement)
-        : [...prev, requirement]
+      prev.includes(requirement) ? prev.filter(r => r !== requirement) : [...prev, requirement]
     );
   };
 
+  const readyToAddToCart = !!(format && theme && shapeSizeComplete && selectedFlavors.length > 0 && totalPrice);
+
+  const resetBuilder = () => {
+    setFormat("");
+    setShape("");
+    setSize("");
+    setPlatterShapes([]);
+    setNumber1("");
+    setNumber2("");
+    setNumberCount(2);
+    setQuantity(1);
+    setTheme("");
+    setSelectedFlowers([]);
+    setCartoonCharacter("");
+    setHandDrawnDesign("");
+    setCoutureBrand("");
+    setReferenceLinks("");
+    setSpecialInstructions("");
+    setSelectedFlavors([]);
+    setColor1("");
+    setColor2("");
+    setColor3("");
+    setTextOnCake("");
+    setTextLanguage("english");
+    setDietaryRequirements([]);
+  };
+
+  const buildCartItem = () => {
+    if (!format || !theme || !shape || !size || !totalPrice) return null;
+
+    const numbers = shape === "numbers" ? (numberCount === 2 ? `${number1},${number2}` : number1) : undefined;
+    const selectedColors = [color1, color2, color3].filter(Boolean);
+    const themeLabel = THEMES.find(t => t.value === theme)?.label || theme;
+    const shapeLabel = SHAPES.find(s => s.value === shape)?.label || shape;
+    const sizeLabel =
+      shape === "numbers"
+        ? `${numberCount} Number${numberCount > 1 ? "s" : ""}`
+        : SHAPE_SIZES[shape]?.find(s => s.value === size)?.label || size;
+    const image = THEMES.find(t => t.value === theme)?.images?.[0] || THEMES.find(t => t.value === theme)?.image || "";
+
+    return {
+      format,
+      theme,
+      themeLabel,
+      selectedFlowers: selectedFlowers.length > 0 ? selectedFlowers : undefined,
+      selectedColors: selectedColors.length > 0 ? selectedColors : undefined,
+      cartoonCharacter: cartoonCharacter || undefined,
+      themeCustomText: handDrawnDesign || undefined,
+      fashionBrand: coutureBrand || undefined,
+      shape,
+      shapeLabel,
+      size,
+      sizeLabel,
+      numbers,
+      platterShapes: platterShapes.length > 0 ? platterShapes : undefined,
+      flavours: selectedFlavors,
+      cakeText: textOnCake || undefined,
+      cakeTextLanguage: textOnCake ? (textLanguage as "english" | "chinese") : undefined,
+      dietaryRequirements: dietaryRequirements.length > 0 ? dietaryRequirements.join(", ") : undefined,
+      referenceLinks: referenceLinks || undefined,
+      specialInstructions: specialInstructions || undefined,
+      image,
+      price: totalPrice,
+      quantity: format === "miniGiftBox" ? quantity : 1,
+    };
+  };
+
+  const handleAddToCart = () => {
+    const item = buildCartItem();
+    if (!item) {
+      toast.error("Please complete all required fields");
+      return;
+    }
+    addItem(item);
+    toast.success("Added to cart");
+    resetBuilder();
+  };
+
+  const handleOrderNow = () => {
+    const item = buildCartItem();
+    if (!item) {
+      toast.error("Please complete all required fields");
+      return;
+    }
+    addItem(item);
+    navigate("/customize/cart");
+  };
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero Section */}
-      <section className="relative bg-background">
-        <div className="container text-center">
-          <h1 className="text-foreground mb-6 font-semibold" style={{ fontSize: "44px" }}>
-            Create Your Custom Jelly Cake
-          </h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-            Customize every detail of your perfect jelly art cake
-          </p>
-        </div>
+      {/* Hero */}
+      <section className="container pt-12 pb-8 md:pt-16 md:pb-10">
+        <h1>Customise your jelly cake</h1>
+        <p className="text-muted-foreground text-base md:text-lg mt-4 max-w-2xl">
+          Customize every detail of your perfect jelly art cake — from format and shape to flavour and finishing touches.
+        </p>
       </section>
 
-      {/* Progress Indicator */}
-      <ProgressIndicator 
-        steps={progressSteps}
-        currentStep={currentStep}
-        totalSteps={progressSteps.length}
-      />
+      <div className="h-px w-full bg-[#e5e5e5]" />
 
-      <form onSubmit={handleSubmit} className="container pb-16">
-        {/* Step 1: Theme Selection */}
-        <section className="py-12">
-          <h2 className="text-2xl font-semibold mb-8 text-center tracking-tight">1. Select Your Theme</h2>
-          <p className="text-center text-muted-foreground mb-8">Choose the design theme for your jelly cake</p>
-          
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {THEMES.map((themeOption) => (
-              <ThemeCard
-                key={themeOption.value}
-                themeOption={themeOption}
-                isSelected={theme === themeOption.value}
-                onClick={() => setTheme(themeOption.value)}
+      <div className="container py-12">
+        <div className="flex flex-col lg:flex-row gap-10 items-start">
+          {/* Main builder column */}
+          <div className="flex-1 min-w-0 flex flex-col gap-12">
+            {/* 01 Format */}
+            <section className="flex flex-col gap-6">
+              <StepHeader
+                number={1}
+                title="Choose a format"
+                description="Choose between a full sized cake, a platter of jellies, or individually packaged jellies"
               />
-            ))}
-          </div>
-        </section>
-
-        {/* Theme-specific design options */}
-        {theme === "floralBouquet" && (
-          <section className="py-12">
-            <h2 className="text-2xl font-semibold mb-8 text-center tracking-tight">2. Choose Flowers & Colors</h2>
-            
-            <div className="max-w-4xl mx-auto space-y-8">
-              {/* Flower Selection */}
-              <div>
-                <Label className="text-lg font-semibold mb-4 block">Select Flowers (up to 3)</Label>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {FLOWERS.map((flower) => {
-                    const isSelected = selectedFlowers.includes(flower);
-                    const isDisabled = !isSelected && selectedFlowers.length >= 3;
-                    
-                    return (
-                      <SelectablePill
-                        key={flower}
-                        selected={isSelected}
-                        disabled={isDisabled}
-                        onClick={() => {
-                          setSelectedFlowers(prev =>
-                            isSelected ? prev.filter(f => f !== flower) : [...prev, flower]
-                          );
-                        }}
-                        className="flex items-center justify-between px-4 py-3"
-                      >
-                        <span>{flower}</span>
-                        {isSelected && <Check className="h-4 w-4 text-primary" />}
-                      </SelectablePill>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Color Selection */}
-              <div>
-                <Label className="text-lg font-semibold mb-4 block">Select Colors (up to 3)</Label>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {COLORS.map((color) => {
-                    const isSelected = selectedColors.includes(color.value);
-                    const isDisabled = !isSelected && selectedColors.length >= 3;
-                    
-                    return (
-                      <SelectablePill
-                        key={color.value}
-                        selected={isSelected}
-                        disabled={isDisabled}
-                        onClick={() => {
-                          setSelectedColors(prev =>
-                            isSelected ? prev.filter(c => c !== color.value) : [...prev, color.value]
-                          );
-                        }}
-                        className="flex items-center justify-between px-4 py-3"
-                      >
-                        <span>{color.label}</span>
-                        {isSelected && <Check className="h-4 w-4 text-primary" />}
-                      </SelectablePill>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
-
-        {theme === "cartoonCharacters" && (
-          <section className="py-12">
-            <h2 className="text-2xl font-semibold mb-8 text-center tracking-tight">2. Select Character</h2>
-            
-            <div className="max-w-4xl mx-auto">
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {CARTOON_CHARACTERS.map((character) => (
-                  <SelectablePill
-                    key={character}
-                    selected={cartoonCharacter === character}
-                    onClick={() => setCartoonCharacter(character)}
-                    className="flex items-center justify-between px-4 py-3"
-                  >
-                    <span>{character}</span>
-                    {cartoonCharacter === character && <Check className="h-4 w-4 text-primary" />}
-                  </SelectablePill>
+              <div className="flex flex-wrap gap-6">
+                {FORMATS.map((formatOption) => (
+                  <CircleOption
+                    key={formatOption.value}
+                    option={formatOption}
+                    isSelected={format === formatOption.value}
+                    onClick={() => handleFormatSelect(formatOption.value)}
+                  />
                 ))}
               </div>
-            </div>
-          </section>
-        )}
+            </section>
 
-        {theme === "handDrawn" && (
-          <section className="py-12">
-            <h2 className="text-2xl font-semibold mb-8 text-center tracking-tight">2. Custom Hand Drawn Design</h2>
-            
-            <div className="max-w-2xl mx-auto">
-              <Textarea
-                value={handDrawnDesign}
-                onChange={(e) => setHandDrawnDesign(e.target.value)}
-                placeholder="Describe your custom hand-drawn design..."
-                className="min-h-[120px]"
-              />
-            </div>
-          </section>
-        )}
-
-        {theme === "coutureFashion" && (
-          <section className="py-12">
-            <h2 className="text-2xl font-semibold mb-8 text-center tracking-tight">2. Specify Brand</h2>
-            
-            <div className="max-w-2xl mx-auto">
-              <Input
-                value={coutureBrand}
-                onChange={(e) => setCoutureBrand(e.target.value)}
-                placeholder="Enter brand name (e.g., Chanel, Dior)..."
-              />
-            </div>
-          </section>
-        )}
-
-
-        {/* Step 2: Shape Selection */}
-        {theme && (
-          <section className="py-12">
-            <h2 className="text-2xl font-semibold mb-8 text-center tracking-tight">
-              {theme === "floralBouquet" || theme === "cartoonCharacters" || theme === "handDrawn" || theme === "coutureFashion" ? "3" : "2"}. Select Shape
-            </h2>
-            <p className="text-center text-muted-foreground mb-8">Choose the shape for your jelly cake</p>
-            
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {SHAPES.map((shapeOption) => {
-                // Check if this shape has multiple images (carousel)
-                const hasCarousel = 'images' in shapeOption && Array.isArray(shapeOption.images);
-                
-                return hasCarousel ? (
-                  <ThemeCard
-                    key={shapeOption.value}
-                    themeOption={shapeOption}
-                    isSelected={shape === shapeOption.value}
-                    onClick={() => {
-                      setShape(shapeOption.value);
-                      setSize("");
-                      setPlatterShapes([]);
-                      setQuantity(1);
-                    }}
-                  />
-                ) : (
-                  <Card
-                    key={shapeOption.value}
-                    onClick={() => {
-                      setShape(shapeOption.value);
-                      setSize("");
-                      setPlatterShapes([]);
-                      setQuantity(1);
-                    }}
-                    className={`overflow-hidden group border-0 shadow-none hover:shadow-none transition-smooth p-0 gap-0 bg-transparent cursor-pointer ${
-                      shape === shapeOption.value ? 'ring-2 ring-primary' : ''
-                    }`}
-                  >
-                    <div className="aspect-square overflow-hidden rounded-xl relative">
-                      <img
-                        src={shapeOption.image}
-                        alt={shapeOption.label}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-all duration-500 ease-out"
-                      />
-                      {shape === shapeOption.value && (
-                        <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-1">
-                          <Check className="h-5 w-5" />
-                        </div>
-                      )}
-                    </div>
-                    <CardContent className="pt-3 pb-4 px-0">
-                      <h3 className="font-semibold text-base text-center tracking-tight leading-tight">
-                        {shapeOption.label}
-                      </h3>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
-        {/* Step 3: Size Selection */}
-        {shape && SHAPE_SIZES[shape] && shape !== "numbers" && (
-          <section className="py-12">
-            <h2 className="text-2xl font-semibold mb-8 text-center tracking-tight">
-              {theme === "floralBouquet" || theme === "cartoonCharacters" || theme === "handDrawn" || theme === "coutureFashion" ? "4" : "3"}. Select Size
-            </h2>
-            <p className="text-center text-muted-foreground mb-8">Choose the size for your {SHAPES.find(s => s.value === shape)?.label} cake</p>
-            
-            <div className="max-w-4xl mx-auto">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {SHAPE_SIZES[shape].map((sizeOption) => {
-                  const price = getCustomOrderPrice(theme, shape, sizeOption.value);
-                  
-                  return (
-                    <SelectablePill
-                      key={sizeOption.value}
-                      selected={size === sizeOption.value}
-                      onClick={() => setSize(sizeOption.value)}
-                      className="flex flex-col items-center justify-center p-6"
-                    >
-                      <span className="font-medium text-center mb-2">{sizeOption.label}</span>
-                      {price && (
-                        <span className="text-xl font-semibold text-primary">{formatPrice(price)}</span>
-                      )}
-                      {size === sizeOption.value && (
-                        <Check className="h-5 w-5 text-primary mt-2" />
-                      )}
-                    </SelectablePill>
-                  );
-                })}
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* Platter Individual Shapes Selection */}
-        {shouldShowPlatterShapeSelection() && (
-          <section className="py-12">
-            <h2 className="text-2xl font-semibold mb-8 text-center tracking-tight">
-              {theme === "floralBouquet" || theme === "cartoonCharacters" || theme === "handDrawn" || theme === "coutureFashion" ? "4.5" : "3.5"}. Choose Individual Shapes
-            </h2>
-            <p className="text-center text-muted-foreground mb-8">
-              Select up to {getMaxShapeSelection()} different shapes for your {shape === "platter9" ? "4" : "2"} pieces
-            </p>
-            
-            <div className="max-w-2xl mx-auto">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {PLATTER_INDIVIDUAL_SHAPES.map((shapeOption) => {
-                  const isSelected = platterShapes.includes(shapeOption.value);
-                  const isDisabled = !isSelected && platterShapes.length >= getMaxShapeSelection();
-                  
-                  return (
-                    <SelectablePill
+            {/* 02 Shape & Size */}
+            {format && (
+              <section className="flex flex-col gap-6">
+                <StepHeader
+                  number={2}
+                  title="Choose a shape and size"
+                  description="Choose a shape to view available size options for the shape."
+                />
+                <div className="flex flex-wrap gap-6">
+                  {shapeOptionsForFormat.map((shapeOption) => (
+                    <CircleOption
                       key={shapeOption.value}
-                      selected={isSelected}
-                      disabled={isDisabled}
-                      onClick={() => handlePlatterShapeToggle(shapeOption.value)}
-                      className="flex items-center justify-center px-4 py-6"
-                    >
-                      <span className="font-medium">{shapeOption.label}</span>
-                      {isSelected && <Check className="h-4 w-4 text-primary ml-2" />}
-                    </SelectablePill>
-                  );
-                })}
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* Numbers Configuration - Combined Size and Number Selection */}
-        {shape === "numbers" && (
-          <section className="py-12">
-            <h2 className="text-2xl font-semibold mb-8 text-center tracking-tight">
-              {theme === "floralBouquet" || theme === "cartoonCharacters" || theme === "handDrawn" || theme === "coutureFashion" ? "4" : "3"}. Configure Your Numbers
-            </h2>
-            
-            <div className="max-w-md mx-auto space-y-6">
-              {/* Number Count Selection with Size and Price */}
-              <div>
-                <div className="grid grid-cols-2 gap-4">
-                  <Card
-                    className={`cursor-pointer transition-all ${
-                      numberCount === 1
-                        ? "ring-2 ring-primary bg-primary/5"
-                        : "hover:border-primary/50"
-                    }`}
-                    onClick={() => {
-                      setNumberCount(1);
-                      setSize("8inch"); // Set size when selecting number count
-                      setNumber2(""); // Clear second number when switching to 1
-                    }}
-                  >
-                    <CardContent className="p-6 text-center">
-                      <div className="text-2xl font-bold mb-2">1 Number</div>
-                      <div className="text-sm text-muted-foreground mb-1">8" / 20.3 cm</div>
-                      <div className="text-lg font-semibold text-primary">$118</div>
-                    </CardContent>
-                  </Card>
-                  <Card
-                    className={`cursor-pointer transition-all ${
-                      numberCount === 2
-                        ? "ring-2 ring-primary bg-primary/5"
-                        : "hover:border-primary/50"
-                    }`}
-                    onClick={() => {
-                      setNumberCount(2);
-                      setSize("8inch+8inch"); // Set size when selecting number count
-                    }}
-                  >
-                    <CardContent className="p-6 text-center">
-                      <div className="text-2xl font-bold mb-2">2 Numbers</div>
-                      <div className="text-sm text-muted-foreground mb-1">8" + 8" / 20.3 cm</div>
-                      <div className="text-lg font-semibold text-primary">$158</div>
-                    </CardContent>
-                  </Card>
+                      option={shapeOption}
+                      isSelected={shape === shapeOption.value}
+                      onClick={() => handleShapeSelect(shapeOption.value)}
+                      caption={
+                        format === "miniGiftBox"
+                          ? shapeOption.value === "miniGiftBox"
+                            ? "Square | 10cm"
+                            : "Circle | 6cm"
+                          : undefined
+                      }
+                    />
+                  ))}
                 </div>
-              </div>
 
-              {/* Number Inputs */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label style={{ paddingBottom: "12px" }}>First Number</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    max="9"
-                    value={number1}
-                    onChange={(e) => setNumber1(e.target.value)}
-                    placeholder="0-9"
+                {/* Cake format: size options (or numbers config) */}
+                {format === "cake" && shape && shape !== "numbers" && SHAPE_SIZES[shape] && (
+                  <>
+                    <div className="h-px w-full bg-[#e5e5e5]" />
+                    <div className="flex flex-wrap gap-4">
+                      {SHAPE_SIZES[shape].map((sizeOption) => {
+                        const price = getCustomOrderPrice(theme, shape, sizeOption.value);
+                        return (
+                          <SelectablePill
+                            key={sizeOption.value}
+                            selected={size === sizeOption.value}
+                            onClick={() => setSize(sizeOption.value)}
+                            className="flex flex-col items-center justify-center p-6 min-w-[150px]"
+                          >
+                            <span className="font-medium text-center mb-2">{sizeOption.label}</span>
+                            {price && <span className="text-xl font-semibold text-primary">{formatPrice(price)}</span>}
+                            {size === sizeOption.value && <Check className="h-5 w-5 text-primary mt-2" />}
+                          </SelectablePill>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+
+                {format === "cake" && shape === "numbers" && (
+                  <>
+                    <div className="h-px w-full bg-[#e5e5e5]" />
+                    <div className="max-w-md space-y-6">
+                      <div className="grid grid-cols-2 gap-4">
+                        <Card
+                          className={`cursor-pointer transition-all rounded-2xl ${
+                            numberCount === 1 ? "ring-2 ring-primary bg-primary/5" : "border-[#e5e5e5] hover:border-primary/40"
+                          }`}
+                          onClick={() => {
+                            setNumberCount(1);
+                            setSize("8inch");
+                            setNumber2("");
+                          }}
+                        >
+                          <CardContent className="p-6 text-center">
+                            <div className="text-2xl font-semibold mb-2">1 Number</div>
+                            <div className="text-sm text-muted-foreground mb-1">8" / 20.3 cm</div>
+                            <div className="text-lg font-semibold text-primary">$118</div>
+                          </CardContent>
+                        </Card>
+                        <Card
+                          className={`cursor-pointer transition-all rounded-2xl ${
+                            numberCount === 2 ? "ring-2 ring-primary bg-primary/5" : "border-[#e5e5e5] hover:border-primary/40"
+                          }`}
+                          onClick={() => {
+                            setNumberCount(2);
+                            setSize("8inch+8inch");
+                          }}
+                        >
+                          <CardContent className="p-6 text-center">
+                            <div className="text-2xl font-semibold mb-2">2 Numbers</div>
+                            <div className="text-sm text-muted-foreground mb-1">8" + 8" / 20.3 cm</div>
+                            <div className="text-lg font-semibold text-primary">$158</div>
+                          </CardContent>
+                        </Card>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label className="mb-2 block">First Number</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            max="9"
+                            value={number1}
+                            onChange={(e) => setNumber1(e.target.value)}
+                            placeholder="0-9"
+                            className={inputClass}
+                          />
+                        </div>
+                        {numberCount === 2 && (
+                          <div>
+                            <Label className="mb-2 block">Second Number</Label>
+                            <Input
+                              type="number"
+                              min="0"
+                              max="9"
+                              value={number2}
+                              onChange={(e) => setNumber2(e.target.value)}
+                              placeholder="0-9"
+                              className={inputClass}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Jelly Platter format: size, then individual piece shapes */}
+                {format === "jellyPlatter" && shape && SHAPE_SIZES[shape] && (
+                  <>
+                    <div className="h-px w-full bg-[#e5e5e5]" />
+                    <div className="flex flex-wrap gap-4">
+                      {SHAPE_SIZES[shape].map((sizeOption) => {
+                        const price = getCustomOrderPrice(theme, shape, sizeOption.value);
+                        return (
+                          <SelectablePill
+                            key={sizeOption.value}
+                            selected={size === sizeOption.value}
+                            onClick={() => {
+                              setSize(sizeOption.value);
+                              setPlatterShapes([]);
+                            }}
+                            className="flex flex-col items-center justify-center p-6 min-w-[150px]"
+                          >
+                            <span className="font-medium text-center mb-2">{sizeOption.label}</span>
+                            {price && <span className="text-xl font-semibold text-primary">{formatPrice(price)}</span>}
+                            {size === sizeOption.value && <Check className="h-5 w-5 text-primary mt-2" />}
+                          </SelectablePill>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+
+                {format === "jellyPlatter" && shouldShowPlatterShapeSelection() && (
+                  <>
+                    <div className="h-px w-full bg-[#e5e5e5]" />
+                    <p className="text-muted-foreground text-[15px]">
+                      Select up to {getMaxShapeSelection()} different shapes for your {shape === "platter9" ? "9" : "4"} pieces
+                    </p>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl">
+                      {PLATTER_INDIVIDUAL_SHAPES.map((shapeOption) => {
+                        const isSelected = platterShapes.includes(shapeOption.value);
+                        const isDisabled = !isSelected && platterShapes.length >= getMaxShapeSelection();
+                        return (
+                          <SelectablePill
+                            key={shapeOption.value}
+                            selected={isSelected}
+                            disabled={isDisabled}
+                            onClick={() => handlePlatterShapeToggle(shapeOption.value)}
+                            className="flex items-center justify-center px-4 py-6"
+                          >
+                            <span className="font-medium">{shapeOption.label}</span>
+                            {isSelected && <Check className="h-4 w-4 text-primary ml-2" />}
+                          </SelectablePill>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+
+                {/* Mini Gift Box format: quantity stepper */}
+                {format === "miniGiftBox" && shape && (
+                  <>
+                    <div className="h-px w-full bg-[#e5e5e5]" />
+                    <div>
+                      <Label className="mb-2 block">Quantity</Label>
+                      <QuantityStepper value={quantity} onChange={setQuantity} />
+                    </div>
+                  </>
+                )}
+              </section>
+            )}
+
+            {/* 03 Theme */}
+            {format && shapeSizeComplete && (
+              <section className="flex flex-col gap-6">
+                <StepHeader number={3} title="Choose a theme" description="Choose the design theme for your jelly cake" />
+                <div className="flex flex-wrap gap-6">
+                  {THEMES.map((themeOption) => (
+                    <CircleOption
+                      key={themeOption.value}
+                      option={themeOption}
+                      isSelected={theme === themeOption.value}
+                      onClick={() => setTheme(themeOption.value)}
+                    />
+                  ))}
+                </div>
+
+                {theme === "floralBouquet" && (
+                  <div className="max-w-4xl">
+                    <Label className="text-base font-semibold mb-4 block">Select Flowers (up to 3)</Label>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                      {FLOWERS.map((flower) => {
+                        const isSelected = selectedFlowers.includes(flower);
+                        const isDisabled = !isSelected && selectedFlowers.length >= 3;
+                        return (
+                          <SelectablePill
+                            key={flower}
+                            selected={isSelected}
+                            disabled={isDisabled}
+                            onClick={() => {
+                              setSelectedFlowers(prev =>
+                                isSelected ? prev.filter(f => f !== flower) : [...prev, flower]
+                              );
+                            }}
+                            className="flex items-center justify-between px-4 py-3"
+                          >
+                            <span>{flower}</span>
+                            {isSelected && <Check className="h-4 w-4 text-primary" />}
+                          </SelectablePill>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {theme === "cartoonCharacters" && (
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-4xl">
+                    {CARTOON_CHARACTERS.map((character) => (
+                      <SelectablePill
+                        key={character}
+                        selected={cartoonCharacter === character}
+                        onClick={() => setCartoonCharacter(character)}
+                        className="flex items-center justify-between px-4 py-3"
+                      >
+                        <span>{character}</span>
+                        {cartoonCharacter === character && <Check className="h-4 w-4 text-primary" />}
+                      </SelectablePill>
+                    ))}
+                  </div>
+                )}
+
+                {theme === "handDrawn" && (
+                  <Textarea
+                    value={handDrawnDesign}
+                    onChange={(e) => setHandDrawnDesign(e.target.value)}
+                    placeholder="Describe your custom hand-drawn design..."
+                    className="min-h-[120px] rounded-2xl border-[#e5e5e5] max-w-2xl"
                   />
-                </div>
-                {numberCount === 2 && (
-                  <div>
-                    <Label style={{ paddingBottom: "12px" }}>Second Number</Label>
+                )}
+
+                {theme === "coutureFashion" && (
+                  <Input
+                    value={coutureBrand}
+                    onChange={(e) => setCoutureBrand(e.target.value)}
+                    placeholder="Enter brand name (e.g., Chanel, Dior)..."
+                    className={`${inputClass} max-w-2xl`}
+                  />
+                )}
+
+                {theme && (
+                  <div className="max-w-2xl space-y-3">
                     <Input
-                      type="number"
-                      min="0"
-                      max="9"
-                      value={number2}
-                      onChange={(e) => setNumber2(e.target.value)}
-                      placeholder="0-9"
+                      value={referenceLinks}
+                      onChange={(e) => setReferenceLinks(e.target.value)}
+                      placeholder="Reference links (optional)"
+                      className={inputClass}
+                    />
+                    <Textarea
+                      value={specialInstructions}
+                      onChange={(e) => setSpecialInstructions(e.target.value)}
+                      placeholder="Additional notes — tell us more about what your loved one likes, or any special requests"
+                      className="min-h-[90px] rounded-2xl border-[#e5e5e5]"
                     />
                   </div>
                 )}
-              </div>
-            </div>
-          </section>
-        )}
+              </section>
+            )}
 
-        {/* Quantity Input for Individual Items */}
-        {(shape === "miniGiftBox" || shape === "cupcake") && size && (
-          <section className="py-12">
-            <h2 className="text-2xl font-semibold mb-8 text-center tracking-tight">Select Quantity</h2>
-            
-            <div className="max-w-md mx-auto">
-              <Label>How many would you like to order?</Label>
-              <Input
-                type="number"
-                min="1"
-                value={quantity}
-                onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-                placeholder="Enter quantity"
-              />
-              {estimatedPrice && (
-                <p className="mt-4 text-center">
-                  <span className="text-muted-foreground">Total: </span>
-                  <span className="text-2xl font-semibold text-primary">{formatPrice(estimatedPrice)}</span>
-                </p>
-              )}
-            </div>
-          </section>
-        )}
-
-
-        {/* Step 4: Flavor Selection */}
-        {size && (shape !== "platter9" || (shape === "platter9" && platterShapes.length > 0)) && (shape !== "platter4" || (shape === "platter4" && (size === "10cm" || platterShapes.length > 0))) && (
-          <section className="py-12">
-            <h2 className="text-2xl font-semibold mb-8 text-center tracking-tight">
-              {theme === "floralBouquet" || theme === "cartoonCharacters" || theme === "handDrawn" || theme === "coutureFashion" ? "5" : "4"}. Select Base Flavours
-            </h2>
-            <p className="text-center text-muted-foreground mb-8">
-              Choose {getRequiredFlavorCount()} flavour{getRequiredFlavorCount() > 1 ? 's' : ''} for your jelly cake
-            </p>
-            
-            <div className="max-w-4xl mx-auto">
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                {BASE_FLAVORS.map((flavor) => {
-                  const isSelected = selectedFlavors.includes(flavor);
-                  const isDisabled = !isSelected && selectedFlavors.length >= getRequiredFlavorCount();
-                  
-                  return (
-                    <SelectablePill
-                      key={flavor}
-                      selected={isSelected}
-                      disabled={isDisabled}
-                      onClick={() => handleFlavorToggle(flavor)}
-                      className="flex items-center justify-between px-4 py-3"
-                    >
-                      <span>{flavor}</span>
-                      {isSelected && <Check className="h-4 w-4 text-primary" />}
-                    </SelectablePill>
-                  );
-                })}
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* Step 5: Text on Cake */}
-        {selectedFlavors.length > 0 && (
-          <section className="py-12">
-            <h2 className="text-2xl font-semibold mb-8 text-center tracking-tight">
-              {theme === "floralBouquet" || theme === "cartoonCharacters" || theme === "handDrawn" || theme === "coutureFashion" ? "6" : "5"}. Text on Cake (Optional)
-            </h2>
-            
-            <div className="max-w-2xl mx-auto space-y-4">
-              <div>
-                <Label>Text (English or Chinese)</Label>
-                <Input
-                  value={textOnCake}
-                  onChange={(e) => setTextOnCake(e.target.value)}
-                  placeholder="Enter text for your cake..."
+            {/* 04 Base Flavour */}
+            {theme && (
+              <section className="flex flex-col gap-6">
+                <StepHeader
+                  number={4}
+                  title="Choose a base flavour"
+                  description={`Choose ${getRequiredFlavorCount()} flavour${getRequiredFlavorCount() > 1 ? "s" : ""} for your jelly cake`}
                 />
-              </div>
-              
-              {textOnCake && (
-                <div>
-                  <Label>Language</Label>
-                  <div className="flex gap-4 mt-2">
-                    <SelectablePill
-                      selected={textLanguage === "english"}
-                      onClick={() => setTextLanguage("english")}
-                      className="flex-1 flex items-center justify-center px-4 py-3"
-                    >
-                      <span>English</span>
-                      {textLanguage === "english" && <Check className="h-4 w-4 text-primary ml-2" />}
-                    </SelectablePill>
-                    <SelectablePill
-                      selected={textLanguage === "chinese"}
-                      onClick={() => setTextLanguage("chinese")}
-                      className="flex-1 flex items-center justify-center px-4 py-3"
-                    >
-                      <span>Chinese</span>
-                      {textLanguage === "chinese" && <Check className="h-4 w-4 text-primary ml-2" />}
-                    </SelectablePill>
-                  </div>
-                </div>
-              )}
-            </div>
-          </section>
-        )}
-
-        {/* Step 6: Dietary Requirements */}
-        {selectedFlavors.length > 0 && (
-          <section className="py-12">
-            <h2 className="text-2xl font-semibold mb-8 text-center tracking-tight">
-              {theme === "floralBouquet" || theme === "cartoonCharacters" || theme === "handDrawn" || theme === "coutureFashion" ? "7" : "6"}. Dietary Requirements (Optional)
-            </h2>
-            
-            <div className="max-w-2xl mx-auto">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {DIETARY_OPTIONS.map((option) => {
-                  const isSelected = dietaryRequirements.includes(option.value);
-                  
-                  return (
-                    <SelectablePill
-                      key={option.value}
-                      selected={isSelected}
-                      onClick={() => handleDietaryToggle(option.value)}
-                      className="flex items-center justify-between px-4 py-3"
-                    >
-                      <span>{option.label}</span>
-                      {isSelected && <Check className="h-4 w-4 text-primary" />}
-                    </SelectablePill>
-                  );
-                })}
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* Step 7: Reference Photos */}
-        {selectedFlavors.length > 0 && (
-          <section className="py-12">
-            <h2 className="text-2xl font-semibold mb-8 text-center tracking-tight">
-              {theme === "floralBouquet" || theme === "cartoonCharacters" || theme === "handDrawn" || theme === "coutureFashion" ? "8" : "7"}. Reference Links & Instructions (Optional)
-            </h2>
-
-            <div className="max-w-2xl mx-auto space-y-4">
-              <div>
-                <Label>Reference Links</Label>
-                <Input
-                  value={referenceLinks}
-                  onChange={(e) => setReferenceLinks(e.target.value)}
-                  placeholder="Paste links to reference images..."
-                />
-              </div>
-              
-              <div>
-                <Label>Special Instructions</Label>
-                <Textarea
-                  value={specialInstructions}
-                  onChange={(e) => setSpecialInstructions(e.target.value)}
-                  placeholder="Any additional instructions or requests..."
-                  className="min-h-[100px]"
-                />
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* Step 8: Customer Details */}
-        {selectedFlavors.length > 0 && (
-          <section className="py-12">
-            <h2 className="text-2xl font-semibold mb-8 text-center tracking-tight">
-              {theme === "floralBouquet" || theme === "cartoonCharacters" || theme === "handDrawn" || theme === "coutureFashion" ? "9" : "8"}. Your Details
-            </h2>
-            
-            <div className="max-w-2xl mx-auto space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label>Name *</Label>
-                  <Input
-                    required
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    placeholder="Your name"
-                  />
-                </div>
-                
-                <div>
-                  <Label>Email *</Label>
-                  <Input
-                    required
-                    type="email"
-                    value={customerEmail}
-                    onChange={(e) => setCustomerEmail(e.target.value)}
-                    placeholder="your@email.com"
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <Label>Phone *</Label>
-                <Input
-                  required
-                  type="tel"
-                  value={customerPhone}
-                  onChange={(e) => setCustomerPhone(e.target.value)}
-                  placeholder="+65 1234 5678"
-                />
-              </div>
-              
-              <div>
-                <Label>Fulfillment Method *</Label>
-                <div className="flex gap-4 mt-2">
-                  <SelectablePill
-                    selected={deliveryMethod === "pickup"}
-                    onClick={() => setDeliveryMethod("pickup")}
-                    className="flex-1 flex items-center justify-center px-4 py-3"
-                  >
-                    <span>Pickup</span>
-                    {deliveryMethod === "pickup" && <Check className="h-4 w-4 text-primary ml-2" />}
-                  </SelectablePill>
-                  <SelectablePill
-                    selected={deliveryMethod === "delivery"}
-                    onClick={() => setDeliveryMethod("delivery")}
-                    className="flex-1 flex items-center justify-center px-4 py-3"
-                  >
-                    <span>Delivery</span>
-                    {deliveryMethod === "delivery" && <Check className="h-4 w-4 text-primary ml-2" />}
-                  </SelectablePill>
-                </div>
-              </div>
-              
-              {deliveryMethod === "delivery" && (
-                <div>
-                  <Label>Delivery Address *</Label>
-                  <Textarea
-                    required
-                    value={deliveryAddress}
-                    onChange={(e) => setDeliveryAddress(e.target.value)}
-                    placeholder="Enter your delivery address..."
-                    className="min-h-[80px]"
-                  />
-                </div>
-              )}
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label>Fulfillment Date * (Min. 3 days advance notice)</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start text-left font-normal"
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-w-4xl">
+                  {BASE_FLAVORS.map((flavor) => {
+                    const isSelected = selectedFlavors.includes(flavor);
+                    const isDisabled = !isSelected && selectedFlavors.length >= getRequiredFlavorCount();
+                    return (
+                      <SelectablePill
+                        key={flavor}
+                        selected={isSelected}
+                        disabled={isDisabled}
+                        onClick={() => handleFlavorToggle(flavor)}
+                        className="flex items-center justify-between px-4 py-3"
                       >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {fulfillmentDate ? format(fulfillmentDate, "PPP") : "Pick a date"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={fulfillmentDate}
-                        onSelect={setFulfillmentDate}
-                        disabled={(date) => {
-                          const now = new Date();
-                          const minDate = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
-                          return date < minDate;
-                        }}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
+                        <span>{flavor}</span>
+                        {isSelected && <Check className="h-4 w-4 text-primary" />}
+                      </SelectablePill>
+                    );
+                  })}
                 </div>
-                
-                <div>
-                  <Label>Fulfillment Time *</Label>
-                  <Select value={fulfillmentTime} onValueChange={setFulfillmentTime}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select time slot" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(deliveryMethod === "pickup" ? PICKUP_TIME_SLOTS : DELIVERY_TIME_SLOTS).map((slot) => (
-                        <SelectItem key={slot} value={slot}>
-                          {slot}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
+              </section>
+            )}
 
-        {/* Estimated Price & Submit */}
-        {estimatedPrice && customerName && customerEmail && customerPhone && (
-          <section className="py-12">
-            <div className="max-w-2xl mx-auto">
-              <div className="bg-primary/5 border-2 border-primary/20 rounded-xl p-8 mb-8">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-semibold">Estimated Price:</h3>
-                  <p className="text-3xl font-bold text-primary">{formatPrice(estimatedPrice)}</p>
+            {/* 05 Color preferences (optional) */}
+            {selectedFlavors.length > 0 && (
+              <section className="flex flex-col gap-6">
+                <StepHeader
+                  number={5}
+                  title="Let us know your color preferences (optional)"
+                  description="Specify up to three colors that you would like on your cake."
+                />
+                <div className="max-w-2xl space-y-3">
+                  <Input value={color1} onChange={(e) => setColor1(e.target.value)} placeholder="Color 1" className={inputClass} />
+                  <Input value={color2} onChange={(e) => setColor2(e.target.value)} placeholder="Color 2" className={inputClass} />
+                  <Input value={color3} onChange={(e) => setColor3(e.target.value)} placeholder="Color 3" className={inputClass} />
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  Final price may vary based on design complexity
-                </p>
-              </div>
-              
-              <Button
-                type="submit"
-                size="lg"
-                className="w-full text-lg py-6 hover:scale-[1.02] transition-transform"
-                disabled={createOrderMutation.isPending}
-              >
-                {createOrderMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Submitting Order...
-                  </>
-                ) : (
-                  "Submit Custom Order"
+              </section>
+            )}
+
+            {/* 06 Personalized text (optional) */}
+            {selectedFlavors.length > 0 && (
+              <section className="flex flex-col gap-6">
+                <StepHeader number={6} title="Add personalized text (optional)" description="The number of characters is limited to 25." />
+                <div className="max-w-2xl space-y-4">
+                  <Input
+                    value={textOnCake}
+                    onChange={(e) => setTextOnCake(e.target.value.slice(0, 25))}
+                    placeholder="Text on cake (English or Chinese)"
+                    className={inputClass}
+                  />
+                  {textOnCake && (
+                    <div className="flex gap-4">
+                      <SelectablePill
+                        selected={textLanguage === "english"}
+                        onClick={() => setTextLanguage("english")}
+                        className="flex-1 flex items-center justify-center px-4 py-3"
+                      >
+                        <span>English</span>
+                        {textLanguage === "english" && <Check className="h-4 w-4 text-primary ml-2" />}
+                      </SelectablePill>
+                      <SelectablePill
+                        selected={textLanguage === "chinese"}
+                        onClick={() => setTextLanguage("chinese")}
+                        className="flex-1 flex items-center justify-center px-4 py-3"
+                      >
+                        <span>Chinese</span>
+                        {textLanguage === "chinese" && <Check className="h-4 w-4 text-primary ml-2" />}
+                      </SelectablePill>
+                    </div>
+                  )}
+                </div>
+              </section>
+            )}
+
+            {/* 07 Dietary requirements (optional) */}
+            {selectedFlavors.length > 0 && (
+              <section className="flex flex-col gap-6">
+                <StepHeader number={7} title="Dietary requirements (optional)" />
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-2xl">
+                  {DIETARY_OPTIONS.map((option) => {
+                    const isSelected = dietaryRequirements.includes(option.value);
+                    return (
+                      <SelectablePill
+                        key={option.value}
+                        selected={isSelected}
+                        onClick={() => handleDietaryToggle(option.value)}
+                        className="flex items-center justify-between px-4 py-3"
+                      >
+                        <span>{option.label}</span>
+                        {isSelected && <Check className="h-4 w-4 text-primary" />}
+                      </SelectablePill>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+          </div>
+
+          {/* Sticky order summary sidebar */}
+          <div className="w-full lg:w-[380px] shrink-0 lg:sticky lg:top-24">
+            <div className="bg-[#faf7f3] rounded-2xl p-8 flex flex-col gap-6">
+              <h2 className="text-2xl">My Order</h2>
+
+              <div className="flex flex-col">
+                {format && (
+                  <div className="border-t border-[#e4e6e8] py-4">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Format</p>
+                    <p className="font-display text-lg">{FORMATS.find(f => f.value === format)?.label}</p>
+                  </div>
                 )}
-              </Button>
+                {shape && (
+                  <div className="border-t border-[#e4e6e8] py-4">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Shape</p>
+                    <p className="font-display text-lg">{SHAPES.find(s => s.value === shape)?.label}</p>
+                  </div>
+                )}
+                {shape && size && (
+                  <div className="border-t border-[#e4e6e8] py-4">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Size</p>
+                    <p className="font-display text-lg">
+                      {shape === "numbers"
+                        ? `8" ${numberCount === 2 ? '+ 8"' : ""}`
+                        : SHAPE_SIZES[shape]?.find(s => s.value === size)?.label}
+                    </p>
+                  </div>
+                )}
+                {theme && (
+                  <div className="border-t border-[#e4e6e8] py-4">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Theme</p>
+                    <p className="font-display text-lg">{THEMES.find(t => t.value === theme)?.label}</p>
+                  </div>
+                )}
+                {selectedFlavors.length > 0 && (
+                  <div className="border-t border-[#e4e6e8] py-4">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Base Flavour</p>
+                    <p className="font-display text-lg">{selectedFlavors.join(", ")}</p>
+                  </div>
+                )}
+                {totalPrice && (
+                  <div className="border-t border-[#e4e6e8] py-4 flex items-center justify-between">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Price</p>
+                    <p className="font-display text-2xl font-medium text-primary">{formatPrice(totalPrice)}</p>
+                  </div>
+                )}
+                {!format && (
+                  <p className="text-sm text-muted-foreground py-4">
+                    Your selections will appear here as you build your cake.
+                  </p>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <Button
+                  type="button"
+                  size="lg"
+                  onClick={handleAddToCart}
+                  disabled={!readyToAddToCart}
+                  className="w-full h-[52px] rounded-full text-base bg-[#91b9bb] hover:opacity-90 text-white"
+                >
+                  Add to Cart
+                </Button>
+                <Button
+                  type="button"
+                  size="lg"
+                  onClick={handleOrderNow}
+                  disabled={!readyToAddToCart}
+                  className="w-full h-[52px] rounded-full text-base bg-primary hover:opacity-90 text-primary-foreground"
+                >
+                  Order Now
+                </Button>
+              </div>
             </div>
-          </section>
-        )}
-      </form>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

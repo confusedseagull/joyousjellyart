@@ -5,78 +5,51 @@ export default function Footer() {
   const whatsappNumber = "6582999559";
   const whatsappMessage = encodeURIComponent("Hi! I'm interested in ordering from Joyous Jelly Art.");
   const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
-  const locationAddress = "2 Jln Lokam #01-27, Singapore 548182";
   const googleMapsUrl = "https://maps.app.goo.gl/TvuRcXYAm97F7q6c9";
 
   return (
-    <footer className="bg-primary text-white mt-16">
-      <div className="container py-12">
-        <div className="flex justify-between items-start gap-8">
-          {/* About Section - Logo */}
-          <div className="flex items-center">
-            <img 
-              src="/logo.png" 
-              alt="Joyous Jelly Art Logo" 
-              className="h-10 w-auto" 
-            />
-          </div>
-
-          {/* Right Section - Contact and Location */}
-          <div className="flex gap-8">
-            {/* Contact Section */}
-            <div className="w-fit">
-              <h3 className="text-xl font-bold mb-4">
-                Get in Touch
-              </h3>
-              <div className="space-y-3">
-                <a
-                  href={instagramUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-sm text-white/90 hover:text-white transition-colors"
-                >
-                  <Instagram className="h-5 w-5" />
-                  <span>@joyousjellyart</span>
-                </a>
-                <a
-                  href={whatsappUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-sm text-white/90 hover:text-white transition-colors"
-                >
-                  <MessageCircle className="h-5 w-5" />
-                  <span>WhatsApp Us</span>
-                </a>
-              </div>
-            </div>
-
-            {/* Location Section */}
-            <div className="w-fit">
-              <h3 className="text-xl font-bold mb-4">
-                Location
-              </h3>
-              <p className="text-sm text-white/90 mb-3">
-                2 Jln Lokam #01-27,<br />
-                Singapore 548182
-              </p>
-              <a
-                href={googleMapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-white text-primary rounded-md font-medium text-sm hover:bg-white/90 transition-colors"
-              >
-                <MapPin className="h-4 w-4" />
-                View on Google Maps
-              </a>
-            </div>
-          </div>
+    <footer id="footer" className="bg-[#faf8f5] mt-16">
+      <div className="container flex flex-col gap-10 pt-16 pb-12">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <img src="/logo.png" alt="Joyous JellyArt" className="h-8 w-auto" />
+          <p className="text-sm text-muted-foreground">
+            Handcrafted Jellies • Crafted Memories • Joyous Moments
+          </p>
         </div>
 
-        {/* Bottom Bar */}
-        <div className="border-t border-white/20 mt-8 pt-6 text-center">
-          <p className="text-sm text-white/80">
-            © {new Date().getFullYear()} Joyous Jelly Art. All rights reserved.
-          </p>
+        <div className="h-px w-full bg-[#eae6e1]" />
+
+        <div className="flex items-center justify-between gap-4 flex-wrap text-[13px] text-muted-foreground">
+          <p>© {new Date().getFullYear()} Joyous JellyArt. All rights reserved.</p>
+          <div className="flex items-center gap-6">
+            <a
+              href={instagramUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 hover:text-primary transition-colors"
+            >
+              <Instagram className="h-4 w-4" />
+              Instagram
+            </a>
+            <a
+              href={whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 hover:text-primary transition-colors"
+            >
+              <MessageCircle className="h-4 w-4" />
+              WhatsApp
+            </a>
+            <a
+              href={googleMapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 hover:text-primary transition-colors"
+            >
+              <MapPin className="h-4 w-4" />
+              Location
+            </a>
+          </div>
         </div>
       </div>
     </footer>

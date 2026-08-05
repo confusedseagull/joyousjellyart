@@ -77,11 +77,20 @@ describe("Order Number Generation", () => {
         customerPhone: "+65 9123 4567",
         deliveryMethod: "pickup",
         fulfillmentDate: new Date("2026-01-25"),
-        shape: "round_large",
-        size: "8 inch",
-        theme: "floral_roses",
-        selectedColors: ["pink", "white", "gold"],
-        flavours: ["longan", "lychee"],
+        items: [{
+          id: "test-item",
+          format: "cake",
+          theme: "floralBouquet",
+          shape: "round",
+          size: "8inch",
+          selectedColors: ["pink", "white", "gold"],
+          flavours: ["longan", "lychee"],
+          price: 108,
+          quantity: 1,
+        }],
+        subtotal: 108,
+        deliveryFee: 0,
+        total: 108,
         status: "pending_confirmation"
       };
 

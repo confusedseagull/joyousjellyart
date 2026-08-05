@@ -45,8 +45,8 @@
 
 :root {
   /* Joyous JellyArt brand colors - Teal theme */
-  --primary: oklch(0.78 0.08 197); /* #84CECF brand teal */
-  --primary-foreground: oklch(0.2 0.015 65); /* dark text for contrast on the light teal */
+  --primary: #6fa4a6; /* brand teal */
+  --primary-foreground: #ffffff; /* white text for contrast on the teal */
   --sidebar-primary: oklch(0.72 0.04 200);
   --sidebar-primary-foreground: oklch(0.98 0 0);
   --chart-1: var(--color-blue-300);
@@ -87,14 +87,11 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Karla', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
-    letter-spacing: -0.011em;
+    font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   }
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Fraunces', Georgia, serif;
-    font-weight: 600;
-    letter-spacing: -0.025em;
+    font-family: 'Newsreader', Georgia, serif;
+    font-weight: 500;
     line-height: 1.2;
   }
   h1 { @apply text-4xl md:text-5xl lg:text-6xl; }
@@ -102,9 +99,9 @@
   h3 { @apply text-2xl md:text-3xl; }
   h4 { @apply text-xl md:text-2xl; }
   p { @apply leading-relaxed; }
-  /* Editorial "dek" style for section intros - Fraunces italic, distinct from Karla body copy */
+  /* Editorial "dek" style for section intros - Newsreader italic, distinct from Instrument Sans body copy */
   .font-display {
-    font-family: 'Fraunces', Georgia, serif;
+    font-family: 'Newsreader', Georgia, serif;
   }
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),

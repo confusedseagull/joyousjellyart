@@ -42,52 +42,58 @@ export type AdminUser = typeof adminUsers.$inferSelect;
 export type InsertAdminUser = typeof adminUsers.$inferInsert;
 
 /**
- * Orders table storing jelly cake customization and customer details
+ * Orders table storing a cart of custom jelly cake configurations plus customer/delivery details.
+ * Mirrors the cnyOrders table's "items array + order-level fields" shape.
  */
 export const orders = mysqlTable("orders", {
   id: int("id").autoincrement().primaryKey(),
   orderNumber: varchar("orderNumber", { length: 20 }).unique(),
-  
+
   // Customer details
   customerName: varchar("customerName", { length: 255 }).notNull(),
   customerEmail: varchar("customerEmail", { length: 320 }),
   customerPhone: varchar("customerPhone", { length: 50 }).notNull(),
-  
+
   // Delivery details
   deliveryMethod: mysqlEnum("deliveryMethod", ["delivery", "pickup"]).notNull(),
   deliveryAddress: text("deliveryAddress"), // Only for delivery orders
-  
+
   // Order timing
   fulfillmentDate: timestamp("fulfillmentDate").notNull(),
-  
-  // Theme and design
-  theme: varchar("theme", { length: 100 }).notNull(),
-  selectedFlowers: json("selectedFlowers").$type<string[]>(), // For floral bouquet theme
-  selectedColors: json("selectedColors").$type<string[]>(), // For floral bouquet theme
-  cartoonCharacter: text("cartoonCharacter"), // For cartoon characters theme
-  themeCustomText: text("themeCustomText"), // For hand-drawn theme
-  fashionBrand: text("fashionBrand"), // For couture/high fashion theme
-  
-  // Shape and size
-  shape: varchar("shape", { length: 50 }).notNull(),
-  size: varchar("size", { length: 50 }).notNull(),
-  numbers: varchar("numbers", { length: 10 }), // For number shapes
-  platterShapes: json("platterShapes").$type<string[]>(), // For platter of 9/4 - individual shapes
-  
-  // Flavours stored as JSON array
-  flavours: json("flavours").$type<string[]>().notNull(),
-  
-  // Text on cake
-  cakeText: text("cakeText"),
-  cakeTextLanguage: mysqlEnum("cakeTextLanguage", ["english", "chinese"]),
-  
-  // Dietary requirements
-  dietaryRequirements: text("dietaryRequirements"),
-  
-  // References and instructions
-  referenceLinks: text("referenceLinks"),
-  specialInstructions: text("specialInstructions"),
-  
+  timeRange: varchar("timeRange", { length: 50 }), // e.g., "11:00 AM - 1:00 PM"
+
+  // Cart items: one entry per custom cake configuration
+  items: json("items").$type<Array<{
+    id: string;
+    format: "cake" | "jellyPlatter" | "miniGiftBox";
+    theme: string;
+    selectedFlowers?: string[];
+    selectedColors?: string[];
+    cartoonCharacter?: string;
+    themeCustomText?: string;
+    fashionBrand?: string;
+    shape: string;
+    size: string;
+    numbers?: string;
+    platterShapes?: string[];
+    flavours: string[];
+    cakeText?: string;
+    cakeTextLanguage?: "english" | "chinese";
+    dietaryRequirements?: string;
+    referenceLinks?: string;
+    specialInstructions?: string;
+    price: number;
+    quantity: number;
+  }>>().notNull(),
+
+  // Order totals
+  subtotal: int("subtotal").notNull(),
+  deliveryFee: int("deliveryFee").notNull(),
+  total: int("total").notNull(),
+
+  // Order-level additional notes (distinct from each item's own specialInstructions)
+  notes: text("notes"),
+
   // Payment tracking
   paymentStatus: mysqlEnum("paymentStatus", ["pending", "paid", "failed", "refunded"]).default("pending"),
   paymentId: varchar("paymentId", { length: 255 }),
@@ -104,6 +110,7 @@ export const orders = mysqlTable("orders", {
 
 export type Order = typeof orders.$inferSelect;
 export type InsertOrder = typeof orders.$inferInsert;
+export type OrderItem = Order["items"][number];
 
 /**
  * CNY Collection cart orders table

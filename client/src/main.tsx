@@ -6,6 +6,7 @@ import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
 import { CartProvider } from "./contexts/CartContext";
+import { CustomCartProvider } from "./contexts/CustomCartContext";
 import "./index.css";
 
 const queryClient = new QueryClient();
@@ -57,7 +58,9 @@ createRoot(document.getElementById("root")!).render(
   <trpc.Provider client={trpcClient} queryClient={queryClient}>
     <QueryClientProvider client={queryClient}>
       <CartProvider>
-        <App />
+        <CustomCartProvider>
+          <App />
+        </CustomCartProvider>
       </CartProvider>
     </QueryClientProvider>
   </trpc.Provider>
