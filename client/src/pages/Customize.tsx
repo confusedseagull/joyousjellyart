@@ -97,21 +97,21 @@ const CARTOON_CHARACTERS = [
 ];
 
 const SHAPES = [
-  { value: "round", label: "Round", image: "/customize/round.jpg" },
-  { value: "square", label: "Square", image: "/customize/square.jpg" },
-  { value: "octagon", label: "Octagon", image: "/customize/octagon.jpg" },
-  { value: "heart", label: "Heart", image: "/customize/heart.jpg" },
-  { value: "star", label: "Star", image: "/customize/star.jpg" },
-  { value: "teddyBear", label: "Teddy Bear", image: "/customize/teddyBear.jpg" },
-  { value: "fan", label: "Fan", image: "/customize/fan.jpg" },
-  { value: "rectangle", label: "Rectangle", image: "/customize/rectangle.jpg" },
-  { value: "scalloped", label: "Scalloped Round/Rosette", image: "/customize/scalloped.jpg" },
-  { value: "numbers", label: "Numbers", image: "/customize/numbers.jpg" },
-  { value: "sakura", label: "Sakura", image: "/customize/sakura.jpg" },
-  { value: "platter9", label: "Platter of 9", image: "/customize/platter9.jpg" },
-  { value: "platter4", label: "Platter of 4", images: ["/customize/platter4-1.jpg", "/customize/platter4-2.jpg"] },
-  { value: "miniGiftBox", label: "Mini Gift Box", image: "/customize/miniGiftBox.jpg" },
-  { value: "cupcake", label: "Cupcake", image: "/customize/cupcake.jpg" },
+  { value: "round", label: "Round", image: "/customize/shape-round.png" },
+  { value: "square", label: "Square", image: "/customize/shape-square.png" },
+  { value: "octagon", label: "Octagon", image: "/customize/shape-octagon.png" },
+  { value: "heart", label: "Heart", image: "/customize/shape-heart.png" },
+  { value: "star", label: "Star", image: "/customize/shape-star.png" },
+  { value: "teddyBear", label: "Teddy Bear", image: "/customize/shape-teddyBear.png" },
+  { value: "fan", label: "Fan", image: "/customize/shape-fan.png" },
+  { value: "rectangle", label: "Rectangle", image: "/customize/shape-rectangle.png" },
+  { value: "scalloped", label: "Scalloped Round/Rosette", image: "/customize/shape-scalloped.png" },
+  { value: "numbers", label: "Numbers", image: "/customize/shape-numbers.png" },
+  { value: "sakura", label: "Sakura", image: "/customize/shape-sakura.png" },
+  { value: "platter9", label: "Platter of 9", image: "/customize/shape-platter9.png" },
+  { value: "platter4", label: "Platter of 4", image: "/customize/shape-platter4.png" },
+  { value: "miniGiftBox", label: "Mini Gift Box", image: "/customize/shape-miniGiftBox.png" },
+  { value: "cupcake", label: "Cupcake", image: "/customize/shape-cupcake.png" },
 ];
 
 const CAKE_SHAPE_VALUES = ["round", "square", "octagon", "heart", "star", "teddyBear", "fan", "rectangle", "scalloped", "numbers", "sakura"];
@@ -126,9 +126,9 @@ const FORMATS: { value: CakeFormat; label: string; image: string }[] = [
 ];
 
 const PLATTER_INDIVIDUAL_SHAPES = [
-  { value: "heart", label: "Heart" },
-  { value: "square", label: "Square" },
-  { value: "circle", label: "Round" },
+  { value: "heart", label: "Heart", image: "/customize/shape-platter-heart.png" },
+  { value: "square", label: "Square", image: "/customize/shape-platter-square.png" },
+  { value: "circle", label: "Round", image: "/customize/shape-platter-circle.png" },
   { value: "clover", label: "Clover" },
 ];
 
@@ -238,11 +238,13 @@ function CircleOption({
   isSelected,
   onClick,
   caption,
+  disabled,
 }: {
   option: { value: string; label: string; image?: string; images?: string[] };
   isSelected: boolean;
   onClick: () => void;
   caption?: string;
+  disabled?: boolean;
 }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [touchStart, setTouchStart] = useState(0);
@@ -284,22 +286,27 @@ function CircleOption({
   return (
     <button
       type="button"
-      onClick={onClick}
-      className="flex flex-col items-center gap-2 w-[110px] py-2 group"
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
+      className={`flex flex-col items-center gap-2 w-[110px] py-2 group ${
+        disabled ? "opacity-40 cursor-not-allowed" : ""
+      }`}
     >
       <div
         className={`relative size-24 rounded-full overflow-hidden transition-all ${
           isSelected ? "ring-2 ring-primary ring-offset-2" : ""
-        }`}
+        } ${images.length === 0 ? "bg-muted" : ""}`}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        <img
-          src={images[currentImageIndex]}
-          alt={option.label}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
-        />
+        {images.length > 0 && (
+          <img
+            src={images[currentImageIndex]}
+            alt={option.label}
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
+          />
+        )}
         {isSelected && (
           <div className="absolute inset-0 bg-black/10 flex items-center justify-center">
             <div className="bg-primary text-primary-foreground rounded-full p-1">
@@ -758,21 +765,18 @@ export default function Customize() {
                     <p className="text-muted-foreground text-[15px]">
                       Select up to {getMaxShapeSelection()} different shapes for your {shape === "platter9" ? "9" : "4"} pieces
                     </p>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl">
+                    <div className="flex flex-wrap gap-6">
                       {PLATTER_INDIVIDUAL_SHAPES.map((shapeOption) => {
                         const isSelected = platterShapes.includes(shapeOption.value);
                         const isDisabled = !isSelected && platterShapes.length >= getMaxShapeSelection();
                         return (
-                          <SelectablePill
+                          <CircleOption
                             key={shapeOption.value}
-                            selected={isSelected}
+                            option={shapeOption}
+                            isSelected={isSelected}
                             disabled={isDisabled}
                             onClick={() => handlePlatterShapeToggle(shapeOption.value)}
-                            className="flex items-center justify-center px-4 py-6"
-                          >
-                            <span className="font-medium">{shapeOption.label}</span>
-                            {isSelected && <Check className="h-4 w-4 text-primary ml-2" />}
-                          </SelectablePill>
+                          />
                         );
                       })}
                     </div>
