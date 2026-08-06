@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -374,8 +374,9 @@ export default function Customize() {
   const [cartoonCharacter, setCartoonCharacter] = useState("");
   const [handDrawnDesign, setHandDrawnDesign] = useState("");
   const [coutureBrand, setCoutureBrand] = useState("");
-  const [referenceLinks, setReferenceLinks] = useState("");
   const [specialInstructions, setSpecialInstructions] = useState("");
+  const [referenceImageNames, setReferenceImageNames] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Flavor state
   const [selectedFlavors, setSelectedFlavors] = useState<string[]>([]);
@@ -499,8 +500,8 @@ export default function Customize() {
     setCartoonCharacter("");
     setHandDrawnDesign("");
     setCoutureBrand("");
-    setReferenceLinks("");
     setSpecialInstructions("");
+    setReferenceImageNames([]);
     setSelectedFlavors([]);
     setColor1("");
     setColor2("");
@@ -542,12 +543,19 @@ export default function Customize() {
       cakeText: textOnCake || undefined,
       cakeTextLanguage: textOnCake ? (textLanguage as "english" | "chinese") : undefined,
       dietaryRequirements: dietaryRequirements.length > 0 ? dietaryRequirements.join(", ") : undefined,
-      referenceLinks: referenceLinks || undefined,
+      referenceLinks: referenceImageNames.length > 0 ? `Reference images: ${referenceImageNames.join(", ")}` : undefined,
       specialInstructions: specialInstructions || undefined,
       image,
       price: totalPrice,
       quantity: format === "miniGiftBox" ? quantity : 1,
     };
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      setReferenceImageNames(files.map(f => f.name));
+    }
   };
 
   const handleAddToCart = () => {
@@ -867,19 +875,36 @@ export default function Customize() {
                 )}
 
                 {theme && (
-                  <div className="max-w-2xl space-y-3">
-                    <Input
-                      value={referenceLinks}
-                      onChange={(e) => setReferenceLinks(e.target.value)}
-                      placeholder="Reference links (optional)"
-                      className={inputClass}
+                  <div className="flex flex-col gap-3">
+                    <div className="border border-[#e5e5e5] rounded-2xl h-[52px] flex items-center gap-7 px-4">
+                      <label className="shrink-0 text-sm text-foreground">Additional Notes</label>
+                      <input
+                        value={specialInstructions}
+                        onChange={(e) => setSpecialInstructions(e.target.value)}
+                        placeholder="Tell us more about what your loved one likes or add web links to references"
+                        className="flex-1 min-w-0 text-sm bg-transparent outline-none placeholder:text-[#808582]"
+                      />
+                    </div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleFileSelect}
+                      className="hidden"
                     />
-                    <Textarea
-                      value={specialInstructions}
-                      onChange={(e) => setSpecialInstructions(e.target.value)}
-                      placeholder="Additional notes — tell us more about what your loved one likes, or any special requests"
-                      className="min-h-[90px] rounded-2xl border-[#e5e5e5]"
-                    />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="border border-[#e5e5e5] rounded-2xl h-[52px] flex items-center justify-center gap-2 px-4 text-sm hover:border-primary/40 transition-colors"
+                    >
+                      <img src="/customize/icon-cloud-upload.svg" alt="" className="size-[18px]" />
+                      <span>
+                        {referenceImageNames.length > 0
+                          ? referenceImageNames.join(", ")
+                          : "Upload reference images"}
+                      </span>
+                    </button>
                   </div>
                 )}
               </section>
