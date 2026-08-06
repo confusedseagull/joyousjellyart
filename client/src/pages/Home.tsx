@@ -18,16 +18,17 @@ const gallery = [
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="relative isolate min-h-screen bg-background">
+      <img
+        src="/rose-watermark.png"
+        alt=""
+        aria-hidden="true"
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[1100px] max-w-none opacity-[0.02] pointer-events-none select-none -z-10"
+      />
+
       {/* Hero */}
-      <section className="relative isolate flex flex-col items-center justify-center text-center gap-8 pt-16 pb-12 md:pt-24 md:pb-16 container">
-        <img
-          src="/rose-watermark.png"
-          alt=""
-          aria-hidden="true"
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-[1100px] max-w-none opacity-[0.02] pointer-events-none select-none -z-10"
-        />
-        <div className="relative flex flex-col items-center gap-4 max-w-3xl">
+      <section className="flex flex-col items-center justify-center text-center gap-8 pt-16 pb-12 md:pt-24 md:pb-16 container">
+        <div className="flex flex-col items-center gap-4 max-w-3xl">
           <p className="font-display text-2xl md:text-4xl text-muted-foreground">
             Making memories, creating magical moments
           </p>
@@ -35,7 +36,7 @@ export default function Home() {
             Create a jelly your loved ones will remember
           </h1>
         </div>
-        <Link href="/customize" className="relative">
+        <Link href="/customize">
           <Button
             size="lg"
             className="bg-primary hover:opacity-90 text-primary-foreground font-medium text-lg md:text-xl rounded-full px-8 py-6"
