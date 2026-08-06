@@ -619,7 +619,9 @@ export default function Customize() {
 
             {/* 02 Shape & Size */}
             {format && (
-              <section className="flex flex-col gap-6">
+              <>
+                <div className="h-px w-full bg-[#e5e5e5]" />
+                <section className="flex flex-col gap-6">
                 <StepHeader
                   number={2}
                   title="Choose a shape and size"
@@ -798,11 +800,14 @@ export default function Customize() {
                   </>
                 )}
               </section>
+              </>
             )}
 
             {/* 03 Theme */}
             {format && shapeSizeComplete && (
-              <section className="flex flex-col gap-6">
+              <>
+                <div className="h-px w-full bg-[#e5e5e5]" />
+                <section className="flex flex-col gap-6">
                 <StepHeader number={3} title="Choose a theme" description="Choose the design theme for your jelly cake" />
                 <div className="flex flex-wrap gap-6">
                   {THEMES.map((themeOption) => (
@@ -911,11 +916,14 @@ export default function Customize() {
                   </div>
                 )}
               </section>
+              </>
             )}
 
             {/* 04 Base Flavour */}
             {theme && (
-              <section className="flex flex-col gap-6">
+              <>
+                <div className="h-px w-full bg-[#e5e5e5]" />
+                <section className="flex flex-col gap-6">
                 <StepHeader
                   number={4}
                   title="Choose a base flavour"
@@ -935,11 +943,14 @@ export default function Customize() {
                   })}
                 </div>
               </section>
+              </>
             )}
 
             {/* 05 Color preferences (optional) */}
             {selectedFlavors.length > 0 && (
-              <section className="flex flex-col gap-6">
+              <>
+                <div className="h-px w-full bg-[#e5e5e5]" />
+                <section className="flex flex-col gap-6">
                 <StepHeader
                   number={5}
                   title="Let us know your color preferences (optional)"
@@ -951,11 +962,14 @@ export default function Customize() {
                   <Input value={color3} onChange={(e) => setColor3(e.target.value)} placeholder="Color 3" className={inputClass} />
                 </div>
               </section>
+              </>
             )}
 
             {/* 06 Personalized text (optional) */}
             {selectedFlavors.length > 0 && (
-              <section className="flex flex-col gap-6">
+              <>
+                <div className="h-px w-full bg-[#e5e5e5]" />
+                <section className="flex flex-col gap-6">
                 <StepHeader number={6} title="Add personalized text (optional)" description="The number of characters is limited to 25." />
                 <div className="max-w-2xl space-y-4">
                   <Input
@@ -986,11 +1000,14 @@ export default function Customize() {
                   )}
                 </div>
               </section>
+              </>
             )}
 
             {/* 07 Dietary requirements (optional) */}
             {selectedFlavors.length > 0 && (
-              <section className="flex flex-col gap-6">
+              <>
+                <div className="h-px w-full bg-[#e5e5e5]" />
+                <section className="flex flex-col gap-6">
                 <StepHeader number={7} title="Dietary requirements (optional)" />
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-2xl">
                   {DIETARY_OPTIONS.map((option) => {
@@ -1009,6 +1026,7 @@ export default function Customize() {
                   })}
                 </div>
               </section>
+              </>
             )}
           </div>
 
