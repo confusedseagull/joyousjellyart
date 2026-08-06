@@ -465,6 +465,9 @@ export default function Customize() {
       setSelectedFlavors(prev => prev.filter(f => f !== flavor));
     } else if (selectedFlavors.length < maxFlavors) {
       setSelectedFlavors(prev => [...prev, flavor]);
+    } else {
+      // Already at capacity: swap out the oldest pick for the new one
+      setSelectedFlavors(prev => [...prev.slice(1), flavor]);
     }
   };
 
@@ -921,13 +924,11 @@ export default function Customize() {
                 <div className="flex flex-wrap gap-6">
                   {BASE_FLAVORS.map((flavor) => {
                     const isSelected = selectedFlavors.includes(flavor.value);
-                    const isDisabled = !isSelected && selectedFlavors.length >= getRequiredFlavorCount();
                     return (
                       <CircleOption
                         key={flavor.value}
                         option={flavor}
                         isSelected={isSelected}
-                        disabled={isDisabled}
                         onClick={() => handleFlavorToggle(flavor.value)}
                       />
                     );
