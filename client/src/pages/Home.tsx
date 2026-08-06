@@ -25,7 +25,7 @@ export default function Home() {
           src="/rose-watermark.png"
           alt=""
           aria-hidden="true"
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-[1100px] max-w-none opacity-[0.02] pointer-events-none select-none"
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[1100px] max-w-none opacity-[0.02] pointer-events-none select-none -z-10"
         />
         <div className="relative flex flex-col items-center gap-4 max-w-3xl">
           <p className="font-display text-2xl md:text-4xl text-muted-foreground">
