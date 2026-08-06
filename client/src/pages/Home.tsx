@@ -20,7 +20,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero */}
-      <section className="relative flex flex-col items-center justify-center text-center gap-8 pt-16 pb-12 md:pt-24 md:pb-16 container">
+      <section className="relative isolate flex flex-col items-center justify-center text-center gap-8 pt-16 pb-12 md:pt-24 md:pb-16 container">
         <img
           src="/rose-watermark.png"
           alt=""
