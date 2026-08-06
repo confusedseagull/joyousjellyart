@@ -573,20 +573,20 @@ export default function Customize() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero */}
-      <section className="container pt-12 pb-8 md:pt-16 md:pb-10">
-        <h1>Customise your jelly cake</h1>
-        <p className="text-muted-foreground text-base md:text-lg mt-4 max-w-2xl">
-          Customize every detail of your perfect jelly art cake — from format and shape to flavour and finishing touches.
-        </p>
-      </section>
-
-      <div className="h-px w-full bg-[#e5e5e5]" />
-
       <div className="container py-12">
         <div className="flex flex-col lg:flex-row gap-10 items-stretch">
           {/* Main builder column */}
           <div className="flex-1 min-w-0 flex flex-col gap-12">
+            {/* Hero */}
+            <section className="flex flex-col gap-4">
+              <h1>Customise your jelly cake</h1>
+              <p className="text-muted-foreground text-base md:text-lg max-w-2xl">
+                Customize every detail of your perfect jelly art cake — from format and shape to flavour and finishing touches.
+              </p>
+            </section>
+
+            <div className="h-px w-full bg-[#e5e5e5]" />
+
             {/* 01 Format */}
             <section className="flex flex-col gap-6">
               <StepHeader
