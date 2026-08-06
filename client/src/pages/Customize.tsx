@@ -193,19 +193,19 @@ const SHAPE_SIZES: { [key: string]: { value: string; label: string }[] } = {
 };
 
 const BASE_FLAVORS = [
-  "Longan",
-  "Lychee",
-  "Coconut",
-  "Osmanthus Bloom",
-  "Yuzu",
-  "Taro",
-  "Strawberry",
-  "Jujube & Gojiberries",
-  "Pineapple",
-  "Valrhona Chocolate",
-  "Passionfruit",
-  "Berries Delight",
-  "Cheesecake",
+  { value: "Longan", label: "Longan", image: "/customize/flavour-longan.png" },
+  { value: "Lychee", label: "Lychee", image: "/customize/flavour-lychee.png" },
+  { value: "Coconut", label: "Coconut", image: "/customize/flavour-coconut.png" },
+  { value: "Osmanthus Bloom", label: "Osmanthus Bloom", image: "/customize/flavour-osmanthusBloom.png" },
+  { value: "Yuzu", label: "Yuzu", image: "/customize/flavour-yuzu.png" },
+  { value: "Taro", label: "Taro", image: "/customize/flavour-taro.png" },
+  { value: "Strawberry", label: "Strawberry", image: "/customize/flavour-strawberry.png" },
+  { value: "Jujube & Gojiberries", label: "Jujube & Gojiberries", image: "/customize/flavour-jujubeGojiberries.png" },
+  { value: "Pineapple", label: "Pineapple" },
+  { value: "Valrhona Chocolate", label: "Valrhona Chocolate", image: "/customize/flavour-valrhonaChocolate.png" },
+  { value: "Passionfruit", label: "Passionfruit", image: "/customize/flavour-passionfruit.png" },
+  { value: "Berries Delight", label: "Berries Delight", image: "/customize/flavour-berriesDelight.png" },
+  { value: "Cheesecake", label: "Cheesecake" },
 ];
 
 const DIETARY_OPTIONS = [
@@ -900,21 +900,18 @@ export default function Customize() {
                   title="Choose a base flavour"
                   description={`Choose ${getRequiredFlavorCount()} flavour${getRequiredFlavorCount() > 1 ? "s" : ""} for your jelly cake`}
                 />
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-w-4xl">
+                <div className="flex flex-wrap gap-6">
                   {BASE_FLAVORS.map((flavor) => {
-                    const isSelected = selectedFlavors.includes(flavor);
+                    const isSelected = selectedFlavors.includes(flavor.value);
                     const isDisabled = !isSelected && selectedFlavors.length >= getRequiredFlavorCount();
                     return (
-                      <SelectablePill
-                        key={flavor}
-                        selected={isSelected}
+                      <CircleOption
+                        key={flavor.value}
+                        option={flavor}
+                        isSelected={isSelected}
                         disabled={isDisabled}
-                        onClick={() => handleFlavorToggle(flavor)}
-                        className="flex items-center justify-between px-4 py-3"
-                      >
-                        <span>{flavor}</span>
-                        {isSelected && <Check className="h-4 w-4 text-primary" />}
-                      </SelectablePill>
+                        onClick={() => handleFlavorToggle(flavor.value)}
+                      />
                     );
                   })}
                 </div>
