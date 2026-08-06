@@ -584,7 +584,7 @@ export default function Customize() {
       <div className="h-px w-full bg-[#e5e5e5]" />
 
       <div className="container py-12">
-        <div className="flex flex-col lg:flex-row gap-10 items-start">
+        <div className="flex flex-col lg:flex-row gap-10 items-stretch">
           {/* Main builder column */}
           <div className="flex-1 min-w-0 flex flex-col gap-12">
             {/* 01 Format */}
@@ -986,9 +986,9 @@ export default function Customize() {
             )}
           </div>
 
-          {/* Sticky order summary sidebar */}
-          <div className="w-full lg:w-[380px] shrink-0 lg:sticky lg:top-24">
-            <div className="bg-[#faf7f3] rounded-2xl p-8 flex flex-col gap-6">
+          {/* Order summary sidebar */}
+          <div className="w-full lg:w-[380px] shrink-0">
+            <div className="bg-[#faf7f3] h-full p-10 flex flex-col gap-6">
               <h2 className="text-2xl">My Order</h2>
 
               <div className="flex flex-col">
