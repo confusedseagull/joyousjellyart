@@ -288,14 +288,14 @@ function CircleOption({
       type="button"
       onClick={disabled ? undefined : onClick}
       disabled={disabled}
-      className={`flex flex-col items-center gap-2 w-[110px] py-2 group ${
-        disabled ? "opacity-40 cursor-not-allowed" : ""
-      }`}
+      className={`flex flex-col items-center gap-2 w-[110px] py-2 rounded-lg group transition-colors ${
+        isSelected ? "bg-[#faf7f3]" : ""
+      } ${disabled ? "opacity-40 cursor-not-allowed" : ""}`}
     >
       <div
         className={`relative size-24 rounded-full overflow-hidden transition-all ${
-          isSelected ? "ring-2 ring-primary ring-offset-2" : ""
-        } ${images.length === 0 ? "bg-muted" : ""}`}
+          images.length === 0 ? "bg-muted" : ""
+        }`}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -306,13 +306,6 @@ function CircleOption({
             alt={option.label}
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
           />
-        )}
-        {isSelected && (
-          <div className="absolute inset-0 bg-black/10 flex items-center justify-center">
-            <div className="bg-primary text-primary-foreground rounded-full p-1">
-              <Check className="h-4 w-4" />
-            </div>
-          </div>
         )}
         {images.length > 1 && (
           <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 flex gap-1">
@@ -670,7 +663,7 @@ export default function Customize() {
                       <div className="grid grid-cols-2 gap-4">
                         <Card
                           className={`cursor-pointer transition-all rounded-2xl ${
-                            numberCount === 1 ? "ring-2 ring-primary bg-primary/5" : "border-[#e5e5e5] hover:border-primary/40"
+                            numberCount === 1 ? "border-[#e5e5e5] bg-[#faf7f3]" : "border-[#e5e5e5] hover:border-primary/40"
                           }`}
                           onClick={() => {
                             setNumberCount(1);
@@ -686,7 +679,7 @@ export default function Customize() {
                         </Card>
                         <Card
                           className={`cursor-pointer transition-all rounded-2xl ${
-                            numberCount === 2 ? "ring-2 ring-primary bg-primary/5" : "border-[#e5e5e5] hover:border-primary/40"
+                            numberCount === 2 ? "border-[#e5e5e5] bg-[#faf7f3]" : "border-[#e5e5e5] hover:border-primary/40"
                           }`}
                           onClick={() => {
                             setNumberCount(2);
@@ -1000,21 +993,21 @@ export default function Customize() {
 
               <div className="flex flex-col">
                 {format && (
-                  <div className="border-t border-[#e4e6e8] py-4">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Format</p>
-                    <p className="font-display text-lg">{FORMATS.find(f => f.value === format)?.label}</p>
+                  <div className="border border-[#e4e6e8] min-h-[95px] flex flex-col justify-center gap-3 px-4 py-6">
+                    <p className="text-sm uppercase tracking-wide text-muted-foreground">Format</p>
+                    <p className="font-display text-xl">{FORMATS.find(f => f.value === format)?.label}</p>
                   </div>
                 )}
                 {shape && (
-                  <div className="border-t border-[#e4e6e8] py-4">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Shape</p>
-                    <p className="font-display text-lg">{SHAPES.find(s => s.value === shape)?.label}</p>
+                  <div className="border border-[#e4e6e8] min-h-[95px] flex flex-col justify-center gap-3 px-4 py-6">
+                    <p className="text-sm uppercase tracking-wide text-muted-foreground">Shape</p>
+                    <p className="font-display text-xl">{SHAPES.find(s => s.value === shape)?.label}</p>
                   </div>
                 )}
                 {shape && size && (
-                  <div className="border-t border-[#e4e6e8] py-4">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Size</p>
-                    <p className="font-display text-lg">
+                  <div className="border border-[#e4e6e8] min-h-[95px] flex flex-col justify-center gap-3 px-4 py-6">
+                    <p className="text-sm uppercase tracking-wide text-muted-foreground">Size</p>
+                    <p className="font-display text-xl">
                       {shape === "numbers"
                         ? `8" ${numberCount === 2 ? '+ 8"' : ""}`
                         : SHAPE_SIZES[shape]?.find(s => s.value === size)?.label}
@@ -1022,21 +1015,21 @@ export default function Customize() {
                   </div>
                 )}
                 {theme && (
-                  <div className="border-t border-[#e4e6e8] py-4">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Theme</p>
-                    <p className="font-display text-lg">{THEMES.find(t => t.value === theme)?.label}</p>
+                  <div className="border border-[#e4e6e8] min-h-[95px] flex flex-col justify-center gap-3 px-4 py-6">
+                    <p className="text-sm uppercase tracking-wide text-muted-foreground">Theme</p>
+                    <p className="font-display text-xl">{THEMES.find(t => t.value === theme)?.label}</p>
                   </div>
                 )}
                 {selectedFlavors.length > 0 && (
-                  <div className="border-t border-[#e4e6e8] py-4">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Base Flavour</p>
-                    <p className="font-display text-lg">{selectedFlavors.join(", ")}</p>
+                  <div className="border border-[#e4e6e8] min-h-[95px] flex flex-col justify-center gap-3 px-4 py-6">
+                    <p className="text-sm uppercase tracking-wide text-muted-foreground">Base Flavour</p>
+                    <p className="font-display text-xl">{selectedFlavors.join(", ")}</p>
                   </div>
                 )}
                 {totalPrice && (
-                  <div className="border-t border-[#e4e6e8] py-4 flex items-center justify-between">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Price</p>
-                    <p className="font-display text-2xl font-medium text-primary">{formatPrice(totalPrice)}</p>
+                  <div className="border border-[#e4e6e8] min-h-[95px] flex items-center justify-between px-4 py-6">
+                    <p className="text-sm uppercase tracking-wide text-muted-foreground">Price</p>
+                    <p className="font-display text-2xl font-medium">{formatPrice(totalPrice)}</p>
                   </div>
                 )}
                 {!format && (

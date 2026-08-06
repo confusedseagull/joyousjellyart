@@ -19,7 +19,7 @@ export function SelectablePill({
       className={cn(
         "rounded-2xl border cursor-pointer text-sm transition-colors",
         selected
-          ? "border-primary bg-primary/5"
+          ? "border-[#e5e5e5] bg-[#faf7f3]"
           : disabled
             ? "border-[#e5e5e5] bg-muted/50 opacity-50 cursor-not-allowed"
             : "border-[#e5e5e5] bg-white hover:border-primary/40",
