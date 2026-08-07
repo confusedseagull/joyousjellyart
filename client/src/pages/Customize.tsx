@@ -354,6 +354,65 @@ function QuantityStepper({ value, onChange }: { value: number; onChange: (value:
   );
 }
 
+// "Serves X pax" copy from the Figma size-options frame, keyed by SHAPE_SIZES value.
+// Only round/square share this exact size set with real servings data from Figma.
+const SERVES_INFO: Record<string, string> = {
+  "6inch": "serves 8-12 pax",
+  "8inch": "serves 16-22 pax",
+  "10inch": "serves 26-38 pax",
+  "2tier_6_8": "serves 26-38 pax",
+  "2tier_6_10": "serves 26-38 pax",
+  "2tier_8_10": "serves 26-38 pax",
+};
+
+function getSizeBadge(value: string): string {
+  const tierMatch = value.match(/^2tier_(\d+)_(\d+)$/);
+  if (tierMatch) return `${tierMatch[1]}+${tierMatch[2]}”`;
+  const inchMatch = value.match(/^(\d+)inch$/);
+  if (inchMatch) return `${inchMatch[1]}”`;
+  const cmMatch = value.match(/^(\d+)cm$/);
+  if (cmMatch) return `${cmMatch[1]}cm`;
+  const leadingNumber = value.match(/^(\d+)/);
+  return leadingNumber ? leadingNumber[1] : value.slice(0, 3);
+}
+
+// Size option matching the Figma "size-options" frame: a mint circle badge,
+// dimension + servings caption, and price below.
+function SizeOption({
+  option,
+  price,
+  isSelected,
+  onClick,
+}: {
+  option: { value: string; label: string };
+  price: number | null;
+  isSelected: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex flex-col items-center gap-2 w-[110px] py-2 rounded-lg transition-colors ${
+        isSelected ? "bg-[#faf7f3]" : ""
+      }`}
+    >
+      <div className="size-20 rounded-full bg-[#c8e5e4] flex items-center justify-center">
+        <span className="font-display text-black text-2xl md:text-[28px] leading-none">
+          {getSizeBadge(option.value)}
+        </span>
+      </div>
+      <div className="text-center text-xs leading-tight">
+        <p className="font-semibold text-foreground">{option.label}</p>
+        {SERVES_INFO[option.value] && (
+          <p className="text-muted-foreground">{SERVES_INFO[option.value]}</p>
+        )}
+      </div>
+      {price && <p className="font-display text-base font-medium">{formatPrice(price)}</p>}
+    </button>
+  );
+}
+
 export default function Customize() {
   const [, navigate] = useLocation();
   const { addItem } = useCustomCart();
@@ -649,20 +708,17 @@ export default function Customize() {
                 {format === "cake" && shape && shape !== "numbers" && SHAPE_SIZES[shape] && (
                   <>
                     <div className="h-px w-full bg-[#e5e5e5]" />
-                    <div className="flex flex-wrap gap-4">
+                    <div className="flex flex-wrap gap-6">
                       {SHAPE_SIZES[shape].map((sizeOption) => {
                         const price = getCustomOrderPrice(theme, shape, sizeOption.value);
                         return (
-                          <SelectablePill
+                          <SizeOption
                             key={sizeOption.value}
-                            selected={size === sizeOption.value}
+                            option={sizeOption}
+                            price={price}
+                            isSelected={size === sizeOption.value}
                             onClick={() => setSize(sizeOption.value)}
-                            className="flex flex-col items-center justify-center p-6 min-w-[150px]"
-                          >
-                            <span className="font-medium text-center mb-2">{sizeOption.label}</span>
-                            {price && <span className="text-xl font-semibold text-primary">{formatPrice(price)}</span>}
-                            {size === sizeOption.value && <Check className="h-5 w-5 text-primary mt-2" />}
-                          </SelectablePill>
+                          />
                         );
                       })}
                     </div>
@@ -742,23 +798,20 @@ export default function Customize() {
                 {format === "jellyPlatter" && shape && SHAPE_SIZES[shape] && (
                   <>
                     <div className="h-px w-full bg-[#e5e5e5]" />
-                    <div className="flex flex-wrap gap-4">
+                    <div className="flex flex-wrap gap-6">
                       {SHAPE_SIZES[shape].map((sizeOption) => {
                         const price = getCustomOrderPrice(theme, shape, sizeOption.value);
                         return (
-                          <SelectablePill
+                          <SizeOption
                             key={sizeOption.value}
-                            selected={size === sizeOption.value}
+                            option={sizeOption}
+                            price={price}
+                            isSelected={size === sizeOption.value}
                             onClick={() => {
                               setSize(sizeOption.value);
                               setPlatterShapes([]);
                             }}
-                            className="flex flex-col items-center justify-center p-6 min-w-[150px]"
-                          >
-                            <span className="font-medium text-center mb-2">{sizeOption.label}</span>
-                            {price && <span className="text-xl font-semibold text-primary">{formatPrice(price)}</span>}
-                            {size === sizeOption.value && <Check className="h-5 w-5 text-primary mt-2" />}
-                          </SelectablePill>
+                          />
                         );
                       })}
                     </div>
