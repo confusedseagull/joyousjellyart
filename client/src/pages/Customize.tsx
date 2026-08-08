@@ -158,6 +158,9 @@ const SHAPE_SIZES: { [key: string]: { value: string; label: string }[] } = {
     { value: "7inch", label: '7" / 17.8 cm' },
     { value: "8inch", label: '8" / 20.3 cm' },
     { value: "10inch", label: '10" / 25.4 cm' },
+    { value: "2tier_7_8", label: '2 Tier: 7" + 8"' },
+    { value: "2tier_7_10", label: '2 Tier: 7" + 10"' },
+    { value: "2tier_8_10", label: '2 Tier: 8" + 10"' },
   ],
   star: [
     { value: "10inch", label: '10" / 25.4 cm' },
@@ -169,10 +172,15 @@ const SHAPE_SIZES: { [key: string]: { value: string; label: string }[] } = {
     { value: "10inch", label: '10" / 25.4 cm' },
   ],
   rectangle: [
-    { value: "10x7", label: '10" x 7" / 25.4 cm x 17.8 cm' },
+    { value: "10x7inch", label: '10" x 7" / 25.4 cm x 17.8 cm' },
   ],
   scalloped: [
-    { value: "10inch", label: '10" / 25.4 cm' },
+    { value: "8inch", label: '8" / 20.3 cm' },
+  ],
+  sakura: [
+    { value: "6inch", label: '6" / 15.2 cm' },
+    { value: "8inch", label: '8" / 20.3 cm' },
+    { value: "2tier_6_8", label: '2 Tier: 6" + 8"' },
   ],
   platter9: [
     { value: "6cm", label: '6cm (Choose up to 3 shapes: Heart, Square, Round, Clover)' },
@@ -736,14 +744,16 @@ export default function Customize() {
                           }`}
                           onClick={() => {
                             setNumberCount(1);
-                            setSize("8inch");
+                            setSize("8x8");
                             setNumber2("");
                           }}
                         >
                           <CardContent className="p-6 text-center">
                             <div className="text-2xl font-semibold mb-2">1 Number</div>
                             <div className="text-sm text-muted-foreground mb-1">8" / 20.3 cm</div>
-                            <div className="text-lg font-semibold text-primary">$118</div>
+                            <div className="text-lg font-semibold text-primary">
+                              {formatPrice(getCustomOrderPrice(theme, "numbers", "8x8", 1) || 0)}
+                            </div>
                           </CardContent>
                         </Card>
                         <Card
@@ -752,13 +762,15 @@ export default function Customize() {
                           }`}
                           onClick={() => {
                             setNumberCount(2);
-                            setSize("8inch+8inch");
+                            setSize("8x8");
                           }}
                         >
                           <CardContent className="p-6 text-center">
                             <div className="text-2xl font-semibold mb-2">2 Numbers</div>
                             <div className="text-sm text-muted-foreground mb-1">8" + 8" / 20.3 cm</div>
-                            <div className="text-lg font-semibold text-primary">$158</div>
+                            <div className="text-lg font-semibold text-primary">
+                              {formatPrice(getCustomOrderPrice(theme, "numbers", "8x8", 2) || 0)}
+                            </div>
                           </CardContent>
                         </Card>
                       </div>
