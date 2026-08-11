@@ -1,66 +1,181 @@
-import { useState, useEffect, useRef } from "react";
-import { useCart } from "@/contexts/CartContext";
+import { useState, useEffect } from "react";
+import { useCart, type CartItem, type CustomCartItem } from "@/contexts/CartContext";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
-import { Minus, Plus, Trash2, ShoppingBag, CalendarIcon } from "lucide-react";
+import { Minus, Plus, Trash2, ShoppingBag, MapPin, Truck, Store } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { format } from "date-fns";
 import { formatPrice } from "@/lib/utils";
+import { toast } from "sonner";
+
+const PICKUP_TIME_SLOTS = [
+  "11:00 AM - 1:00 PM",
+  "1:00 PM - 3:00 PM",
+  "3:00 PM - 5:00 PM",
+  "5:00 PM - 7:00 PM",
+];
+
+const DELIVERY_TIME_SLOTS = [
+  "10:00 AM - 1:00 PM",
+  "2:00 PM - 5:00 PM",
+  "5:00 PM - 7:00 PM",
+];
+
+const FORMAT_LABELS: Record<CustomCartItem["format"], string> = {
+  cake: "Cake",
+  jellyPlatter: "Jelly Platter",
+  miniGiftBox: "Mini Gift Box",
+};
+
+const PLATTER_SHAPE_LABELS: Record<string, string> = {
+  heart: "Heart",
+  square: "Square",
+  circle: "Round",
+  clover: "Clover",
+};
+
+const PICKUP_ADDRESS = "2 Jalan Lokam, #01-27 Kensington Square, Singapore 537846";
+const PICKUP_MAPS_URL = "https://maps.google.com/?q=" + encodeURIComponent(PICKUP_ADDRESS);
+
+const inputClass = "h-[52px] rounded-2xl border-[#e5e5e5]";
+
+// Bordered box with an always-visible label + inline placeholder text,
+// matching the Figma "input-field-wrapper" pattern (also used for Additional
+// Notes on the Customize page).
+function LabeledInput({
+  label,
+  labelWidth,
+  ...props
+}: { label: string; labelWidth?: string } & React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <div className="border border-[#e5e5e5] rounded-2xl h-[52px] flex items-center gap-4 px-4 w-full">
+      <label className={`shrink-0 text-sm text-foreground ${labelWidth || ""}`}>{label}</label>
+      <input
+        {...props}
+        className="flex-1 min-w-0 text-sm bg-transparent outline-none placeholder:text-[#808582]"
+      />
+    </div>
+  );
+}
+
+// Strips a parenthetical instruction suffix (e.g. "6cm (Choose up to 3 shapes: ...)")
+// down to just the dimension, for compact display in the order summary.
+function shortSizeLabel(sizeLabel: string): string {
+  return sizeLabel.replace(/\s*\(.*\)$/, "");
+}
+
+function itemShapeDisplay(item: CustomCartItem): string {
+  if (item.platterShapes && item.platterShapes.length > 0) {
+    return item.platterShapes.map((s) => PLATTER_SHAPE_LABELS[s] || s).join(", ");
+  }
+  return item.shapeLabel;
+}
+
+// Orders store a single fulfillment timestamp (no separate time-range column),
+// so the slot's start time gets merged onto the picked date before submitting.
+function applySlotStartTime(date: Date, slot: string): Date {
+  const match = slot.match(/(\d+):(\d+)\s*(AM|PM)/i);
+  const combined = new Date(date);
+  if (!match) return combined;
+
+  let hours = parseInt(match[1], 10);
+  const minutes = parseInt(match[2], 10);
+  const period = match[3].toUpperCase();
+  if (period === "PM" && hours !== 12) hours += 12;
+  if (period === "AM" && hours === 12) hours = 0;
+
+  combined.setHours(hours, minutes, 0, 0);
+  return combined;
+}
+
+// Converts a unified cart item into the shape the backend's discriminated
+// items union expects for either collection.
+function toOrderItemPayload(item: CartItem) {
+  if (item.collection === "custom") {
+    return {
+      collection: "custom" as const,
+      id: item.id,
+      format: item.format,
+      theme: item.theme,
+      selectedFlowers: item.selectedFlowers,
+      selectedColors: item.selectedColors,
+      cartoonCharacter: item.cartoonCharacter,
+      themeCustomText: item.themeCustomText,
+      fashionBrand: item.fashionBrand,
+      shape: item.shape,
+      size: item.size,
+      numbers: item.numbers,
+      platterShapes: item.platterShapes,
+      flavours: item.flavours,
+      cakeText: item.cakeText,
+      cakeTextLanguage: item.cakeTextLanguage,
+      dietaryRequirements: item.dietaryRequirements,
+      referenceLinks: item.referenceLinks,
+      specialInstructions: item.specialInstructions,
+      price: item.price,
+      quantity: item.quantity,
+    };
+  }
+  return {
+    collection: "cny" as const,
+    id: item.id,
+    name: item.name,
+    edition: item.edition,
+    size: item.size,
+    flavor: item.flavors && item.flavors.length > 0 ? item.flavors.join(", ") : item.flavor || "",
+    price: item.price,
+    quantity: item.quantity,
+    image: item.image,
+    dietaryRequirements: item.dietaryRequirements,
+  };
+}
 
 export default function Cart() {
-  const { items, updateQuantity, removeItem, clearCart, totalPrice } = useCart();
-  const [, setLocation] = useLocation();
-  
-  const topRef = useRef<HTMLDivElement>(null);
-  
-  // Scroll to top on component mount using ref
-  useEffect(() => {
-    if (topRef.current) {
-      topRef.current.scrollIntoView({ behavior: 'auto', block: 'start' });
-    }
-  }, []);
-  
-  // Form state
+  const { items, updateQuantity, removeItem, totalPrice: subtotal } = useCart();
+  const [, navigate] = useLocation();
+
+  const [customerName, setCustomerName] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
   const [deliveryMethod, setDeliveryMethod] = useState<"pickup" | "delivery">("pickup");
-  const [name, setName] = useState("");
-  const [contactNumber, setContactNumber] = useState("");
-  const [email, setEmail] = useState("");
-  const [addressLine1, setAddressLine1] = useState("");
-  const [addressLine2, setAddressLine2] = useState("");
-  const [unitNumber, setUnitNumber] = useState("");
+  const [addressLine, setAddressLine] = useState("");
+  const [aptUnit, setAptUnit] = useState("");
   const [postalCode, setPostalCode] = useState("");
-  const [deliveryDate, setDeliveryDate] = useState<Date | undefined>();
-  const [timeRange, setTimeRange] = useState("");
-  const [specialInstructions, setSpecialInstructions] = useState("");
+  const [recipientWhatsapp, setRecipientWhatsapp] = useState("");
+  const [fulfillmentDate, setFulfillmentDate] = useState<Date>();
+  const [fulfillmentTime, setFulfillmentTime] = useState("");
+  const [notes, setNotes] = useState("");
   const [deliveryFee, setDeliveryFee] = useState(0);
   const [deliveryDistance, setDeliveryDistance] = useState<number | null>(null);
   const [deliveryError, setDeliveryError] = useState<string | null>(null);
 
-  // Calculate minimum date (4 days from now)
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const getMinDate = () => {
     const minDate = new Date();
-    minDate.setDate(minDate.getDate() + 4);
+    minDate.setDate(minDate.getDate() + 3);
     minDate.setHours(0, 0, 0, 0);
     return minDate;
   };
 
-  // Calculate delivery fee when address changes
+  // Address string used only for geocoding the delivery fee — kept separate
+  // from composedDeliveryAddress() below, which also appends the recipient's
+  // WhatsApp number and would break the Google Maps lookup.
+  const feeQueryAddress = `${addressLine}${aptUnit ? ', Unit ' + aptUnit : ''}, Singapore ${postalCode}`;
+
   const { data: deliveryFeeData, error: deliveryFeeError } = trpc.delivery.calculateFee.useQuery(
-    { address: `${addressLine1}${addressLine2 ? ', ' + addressLine2 : ''}, Singapore ${postalCode}` },
-    {
-      enabled: deliveryMethod === "delivery" && !!addressLine1 && !!postalCode,
-    }
+    { address: feeQueryAddress },
+    { enabled: deliveryMethod === "delivery" && !!addressLine && !!postalCode }
   );
 
-  // Update delivery fee state when data changes
   useEffect(() => {
     if (deliveryFeeData) {
       setDeliveryFee(deliveryFeeData.fee);
@@ -73,7 +188,6 @@ export default function Cart() {
     }
   }, [deliveryFeeData, deliveryFeeError]);
 
-  // Reset delivery fee when switching to pickup
   useEffect(() => {
     if (deliveryMethod === "pickup") {
       setDeliveryFee(0);
@@ -82,461 +196,428 @@ export default function Cart() {
     }
   }, [deliveryMethod]);
 
-  const createOrder = trpc.cnyOrders.create.useMutation({
+  const totalPrice = subtotal + deliveryFee;
+
+  const composedDeliveryAddress = () => {
+    const parts = [addressLine, aptUnit ? `Unit ${aptUnit}` : null, postalCode ? `Singapore ${postalCode}` : null]
+      .filter(Boolean)
+      .join(", ");
+    return recipientWhatsapp ? `${parts} · WhatsApp: ${recipientWhatsapp}` : parts;
+  };
+
+  const createOrder = trpc.orders.create.useMutation({
     onSuccess: (data) => {
-      // After order is created, initiate payment
-      const totalAmount = (totalPrice + deliveryFee).toFixed(2);
-      
       createPaymentRequest.mutate({
         orderId: data.id,
-        orderType: "cny",
-        amount: totalAmount,
-        customerName: name,
-        customerEmail: email,
-        customerPhone: contactNumber,
+        amount: totalPrice.toFixed(2),
+        customerName,
+        customerEmail,
+        customerPhone,
       });
     },
     onError: (error) => {
-      alert(`Failed to create order: ${error.message}`);
+      toast.error(error.message || "Failed to create order");
     },
   });
 
   const createPaymentRequest = trpc.payment.createRequest.useMutation({
     onSuccess: (paymentData) => {
-      // Store order data in sessionStorage for later retrieval
-      const orderData = {
-        customerName: name,
-        customerEmail: email,
-        customerPhone: contactNumber,
-        deliveryMethod,
-        deliveryAddress: deliveryMethod === "delivery" ? `${addressLine1}${addressLine2 ? ', ' + addressLine2 : ''}${unitNumber ? ', ' + unitNumber : ''}, Singapore ${postalCode}` : undefined,
-        fulfillmentDate: deliveryDate?.toISOString() || new Date().toISOString(),
-        items: items,
-        subtotal: totalPrice,
-        deliveryFee: deliveryFee,
-        total: totalPrice + deliveryFee,
-        timeRange: timeRange,
-        notes: specialInstructions,
-      };
-      sessionStorage.setItem("pendingOrder", JSON.stringify(orderData));
-      
-      // Extract order number from HitPay URL and store it in localStorage as backup
-      const orderNumberMatch = paymentData.url.match(/order=([A-Z]+\\d+)/);
+      const orderNumberMatch = paymentData.url.match(/order=([A-Z]+\d+)/);
       if (orderNumberMatch) {
         localStorage.setItem("lastOrderNumber", orderNumberMatch[1]);
       }
-      
-      // Redirect to HitPay payment page (cart will be cleared after payment confirmation)
+
+      sessionStorage.setItem(
+        "pendingOrder",
+        JSON.stringify({
+          customerName,
+          customerEmail,
+          customerPhone,
+          deliveryMethod,
+          deliveryAddress: deliveryMethod === "delivery" ? composedDeliveryAddress() : undefined,
+          fulfillmentDate: fulfillmentDate?.toISOString() || new Date().toISOString(),
+          // Keep the richer display-ready cart items (labels, image) here rather
+          // than the backend-stripped payload, since OrderConfirmation.tsx renders
+          // straight from this when it's available (no need to match the zod schema).
+          items,
+          subtotal,
+          deliveryFee,
+          total: totalPrice,
+          timeRange: fulfillmentTime,
+          notes,
+        })
+      );
+
       window.location.href = paymentData.url;
     },
     onError: (error) => {
-      alert(`Failed to create payment request: ${error.message}`);
+      toast.error(error.message || "Failed to create payment request");
     },
   });
 
   const handleCheckout = () => {
-    if (!name || !contactNumber || !email || !deliveryDate || !timeRange) {
-      alert("Please fill in all required fields");
+    if (!customerName || !customerEmail || !customerPhone || !fulfillmentDate || !fulfillmentTime) {
+      toast.error("Please fill in all required fields");
       return;
     }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      alert("Please enter a valid email address (e.g., example@domain.com)");
+    if (fulfillmentDate < getMinDate()) {
+      toast.error("Minimum 3 days advance notice required");
       return;
     }
 
-    // Validate date + time is at least 24 hours from now
-    const minDate = getMinDate();
-    if (deliveryDate < minDate) {
-      alert("Please select a date at least 24 hours from now");
+    if (deliveryMethod === "delivery" && (!addressLine || !postalCode || !recipientWhatsapp)) {
+      toast.error("Please provide a delivery address, postal code, and recipient WhatsApp number");
       return;
     }
 
-    // Parse the time range start time
-    const [startTime] = timeRange.split('-');
-    const [hours, minutes] = startTime.split(':').map(Number);
-    const selectedDateTime = new Date(deliveryDate);
-    selectedDateTime.setHours(hours, minutes, 0, 0);
-
-    // Check if selected date+time is at least 24 hours from now
-    const now = new Date();
-    const twentyFourHoursFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-    
-    if (selectedDateTime < twentyFourHoursFromNow) {
-      alert("Please select a date and time at least 24 hours from now. The earliest available time for this date may be later in the day.");
-      return;
-    }
-
-    if (deliveryMethod === "delivery" && (!addressLine1 || !postalCode)) {
-      alert("Please provide Address Line 1 and Postal Code");
+    if (deliveryMethod === "delivery" && deliveryFeeData === undefined && !deliveryFeeError) {
+      toast.error("Please wait for the delivery fee to finish calculating");
       return;
     }
 
     if (items.length === 0) {
-      alert("Your cart is empty");
+      toast.error("Your cart is empty");
       return;
     }
 
-    // Prepare order data
-    const fulfillmentDateTime = new Date(deliveryDate);
-    fulfillmentDateTime.setHours(9, 0, 0, 0);
-
     createOrder.mutate({
-      customerName: name,
-      customerPhone: contactNumber,
-      customerEmail: email,
+      customerName,
+      customerEmail,
+      customerPhone,
       deliveryMethod,
-      deliveryAddress: deliveryMethod === "delivery" ? `${addressLine1}${addressLine2 ? ', ' + addressLine2 : ''}${unitNumber ? ', ' + unitNumber : ''}, Singapore ${postalCode}` : undefined,
-      fulfillmentDate: fulfillmentDateTime,
-      items: items.map(item => ({
-        id: item.id,
-        name: item.name,
-        edition: item.edition,
-        size: item.size,
-        flavor: item.flavors ? item.flavors.join(', ') : (item.flavor || ''),
-        price: typeof item.price === 'string' ? parseFloat(item.price.replace('$', '')) : item.price,
-        quantity: item.quantity,
-        image: item.image,
-        dietaryRequirements: item.dietaryRequirements,
-      })),
-      subtotal: totalPrice,
-      deliveryFee: deliveryFee,
-      total: totalPrice + deliveryFee,
-      timeRange: timeRange,
-      notes: specialInstructions,
+      deliveryAddress: deliveryMethod === "delivery" ? composedDeliveryAddress() : undefined,
+      fulfillmentDate: applySlotStartTime(fulfillmentDate, fulfillmentTime),
+      timeRange: fulfillmentTime,
+      items: items.map(toOrderItemPayload),
+      subtotal,
+      deliveryFee,
+      total: totalPrice,
+      notes: notes || undefined,
     });
   };
 
   if (items.length === 0) {
     return (
-      <div ref={topRef} className="min-h-screen bg-background py-12">
-        <div className="container max-w-4xl">
-          <div className="text-center py-16">
-            <ShoppingBag className="h-24 w-24 text-muted-foreground mx-auto mb-4" />
-            <h1 className="text-3xl font-bold mb-4">Your Cart is Empty</h1>
-            <p className="text-muted-foreground mb-8">
-              Add some beautiful CNY designs to your cart to get started!
-            </p>
-            <Link href="/cny-2026">
-              <Button size="lg">Browse CNY Collection</Button>
-            </Link>
-          </div>
+      <div className="min-h-screen bg-background py-16">
+        <div className="container max-w-2xl text-center">
+          <ShoppingBag className="h-20 w-20 text-muted-foreground mx-auto mb-6" />
+          <h1 className="mb-4">Your Cart is Empty</h1>
+          <p className="text-muted-foreground mb-8">
+            Build a custom jelly cake to get started!
+          </p>
+          <Link href="/customize">
+            <Button size="lg" className="rounded-full">Start Customizing</Button>
+          </Link>
         </div>
       </div>
     );
   }
 
   return (
-    <div ref={topRef} className="min-h-screen bg-background py-12">
-      <div className="container max-w-6xl">
-        <h1 className="text-4xl font-bold mb-8">Shopping Cart</h1>
+    <div className="min-h-screen bg-background">
+      <div className="container py-12">
+        <div className="flex flex-col lg:flex-row gap-10 items-stretch">
+          {/* Left: checkout form */}
+          <div className="flex-1 min-w-0 flex flex-col gap-8">
+            <div className="flex flex-col gap-1">
+              <h1>Secure Checkout</h1>
+              <p className="text-muted-foreground text-base">Review your order details.</p>
+            </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-          {/* Left Column: Contact + Delivery Details */}
-          <div className="lg:col-span-3 space-y-6">
-            {/* Contact Details */}
-            <Card className="border-0 shadow-sm">
-              <CardHeader>
-                <CardTitle>Contact Details</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Name*</Label>
-                  <Input
-                    id="name"
-                    placeholder="Your name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
+            <div className="h-px w-full bg-[#e5e5e5]" />
 
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="contact">Phone Number (WhatsApp)*</Label>
-                  <Input
-                    id="contact"
-                    type="tel"
-                    placeholder="+65 1234 5678"
-                    value={contactNumber}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      // Only allow digits, spaces, and + symbol
-                      if (value === '' || /^[0-9+\s]*$/.test(value)) {
-                        setContactNumber(value);
-                      }
-                    }}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address*</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="your@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+            {/* Customer Details */}
+            <div className="flex flex-col gap-4">
+              <h2 className="text-base font-medium">Customer Details</h2>
+              <LabeledInput
+                label="Name"
+                labelWidth="w-[68px]"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                placeholder="Enter your name"
+              />
+              <LabeledInput
+                label="Email Address"
+                labelWidth="w-[109px]"
+                type="email"
+                value={customerEmail}
+                onChange={(e) => setCustomerEmail(e.target.value)}
+                placeholder="e.g. doreenleexy@gmail.com"
+              />
+              <LabeledInput
+                label="Phone"
+                labelWidth="w-[68px]"
+                type="tel"
+                value={customerPhone}
+                onChange={(e) => setCustomerPhone(e.target.value)}
+                placeholder="e.g. +65 8123 4567"
+              />
+            </div>
 
-                  />
-                </div>
-              </CardContent>
-            </Card>
+            <div className="h-px w-full bg-[#e5e5e5]" />
 
-            {/* Delivery Details */}
-            <Card className="border-0 shadow-sm">
-              <CardHeader>
-                <CardTitle>Delivery Details</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <RadioGroup value={deliveryMethod} onValueChange={(v) => setDeliveryMethod(v as "delivery" | "pickup")}>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <Label
-                      htmlFor="delivery"
-                      className={`flex items-center space-x-3 border-2 rounded-lg p-4 cursor-pointer transition-all ${
-                        deliveryMethod === "delivery" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
-                      }`}
-                    >
-                      <RadioGroupItem value="delivery" id="delivery" />
-                      <span className="font-medium">Delivery</span>
-                    </Label>
-                    <Label
-                      htmlFor="pickup"
-                      className={`flex items-center space-x-3 border-2 rounded-lg p-4 cursor-pointer transition-all ${
-                        deliveryMethod === "pickup" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
-                      }`}
-                    >
-                      <RadioGroupItem value="pickup" id="pickup" />
-                      <span className="font-medium">Pick Up</span>
-                    </Label>
-                  </div>
-                </RadioGroup>
-
-                {deliveryMethod === "delivery" && (
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="addressLine1">Address Line 1*</Label>
-                      <Input
-                        id="addressLine1"
-                        placeholder="Street address, building name"
-                        value={addressLine1}
-                        onChange={(e) => setAddressLine1(e.target.value)}
+            {/* Fulfillment Date and Time */}
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1">
+                <h2 className="text-base font-medium">Fulfillment Date and Time</h2>
+                <p className="text-muted-foreground text-sm">
+                  Minimum 3 days advance notice required. For example, if you place an order today, the earliest fulfillment date you can select will be 3 days from today.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-2">
+                  <Label className="text-[13px] font-medium">Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className={`border border-[#e5e5e5] rounded-2xl h-[52px] flex items-center gap-2 px-4 w-full text-left text-sm ${fulfillmentDate ? "text-foreground" : "text-[#808582]"}`}
+                      >
+                        <MapPin className="h-4 w-4 shrink-0 text-[#603b17]" />
+                        {fulfillmentDate ? format(fulfillmentDate, "PPP") : "Pick a date"}
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={fulfillmentDate}
+                        onSelect={setFulfillmentDate}
+                        disabled={(date) => date < getMinDate()}
+                        initialFocus
                       />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="addressLine2">Address Line 2</Label>
-                      <Input
-                        id="addressLine2"
-                        placeholder="Apartment, suite, floor (optional)"
-                        value={addressLine2}
-                        onChange={(e) => setAddressLine2(e.target.value)}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="postalCode">Postal Code*</Label>
-                      <Input
-                        id="postalCode"
-                        placeholder="6-digit postal code"
-                        value={postalCode}
-                        onChange={(e) => setPostalCode(e.target.value)}
-                        maxLength={6}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {deliveryMethod === "pickup" && (
-                  <div className="space-y-2 p-4 bg-muted rounded-lg">
-                    <p className="font-medium">Pick-up Location:</p>
-                    <p className="text-sm">2 Jln Lokam, #01-27 KENSINGTON SQUARE, Singapore 537846</p>
-                    <a
-                      href="https://maps.app.goo.gl/QxsyoNaTnYSz4fqu5"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-brown hover:underline text-sm inline-block mt-2"
-                    >
-                      View on Google Maps →
-                    </a>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Date*</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={`w-full justify-start text-left font-normal ${
-                            !deliveryDate && "text-muted-foreground"
-                          }`}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {deliveryDate ? (
-                            format(deliveryDate, "PPP")
-                          ) : (
-                            <span>Select date</span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start" side="top">
-                        <Calendar
-                          mode="single"
-                          selected={deliveryDate}
-                          onSelect={setDeliveryDate}
-                          disabled={(date) => date < getMinDate()}
-                          defaultMonth={getMinDate()}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="timeRange">Time Range*</Label>
-                    <Select value={timeRange} onValueChange={setTimeRange}>
-                      <SelectTrigger id="timeRange">
-                        <SelectValue placeholder="Select time range" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {deliveryMethod === "pickup" ? (
-                          // Pickup time slots: 11-1pm, 1-3pm, 3-5pm, 5-7pm
-                          <>
-                            <SelectItem value="11:00-13:00">11:00 AM - 1:00 PM</SelectItem>
-                            <SelectItem value="13:00-15:00">1:00 PM - 3:00 PM</SelectItem>
-                            <SelectItem value="15:00-17:00">3:00 PM - 5:00 PM</SelectItem>
-                            <SelectItem value="17:00-19:00">5:00 PM - 7:00 PM</SelectItem>
-                          </>
-                        ) : (
-                          // Delivery time slots: 10-1pm, 2-5pm, 5-7pm
-                          <>
-                            <SelectItem value="10:00-13:00">10:00 AM - 1:00 PM</SelectItem>
-                            <SelectItem value="14:00-17:00">2:00 PM - 5:00 PM</SelectItem>
-                            <SelectItem value="17:00-19:00">5:00 PM - 7:00 PM</SelectItem>
-                          </>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                    </PopoverContent>
+                  </Popover>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Right Column: Order Summary + Additional Notes */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Cart Items with Order Summary */}
-            <div>
-              <h2 className="text-2xl font-semibold mb-4">Order Summary</h2>
-              <div className="space-y-4">
-                {/* Cart Items */}
-                <div className="space-y-4">
-                  {items.map((item) => (
-                    <div key={item.id} className="flex gap-4 pb-4 border-b last:border-b-0">
-                      {/* Image */}
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-24 h-24 object-cover rounded-lg"
-                      />
-
-                      {/* Details */}
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-lg">{item.name}</h3>
-                        <p className="text-sm text-muted-foreground">{item.edition}</p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Size: {item.size} | Flavor: {item.flavors ? item.flavors.join(', ') : item.flavor}
-                        </p>
-                        {item.dietaryRequirements && item.dietaryRequirements.length > 0 && (
-                          <p className="text-sm text-muted-foreground mt-1">
-                            Dietary: {item.dietaryRequirements.join(', ')}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Price and Quantity Controls */}
-                      <div className="flex flex-col items-end justify-between">
-                        <p className="text-lg font-bold text-brown">{item.price}</p>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeItem(item.id)}
-                          className="text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                            disabled={item.quantity <= 1}
-                          >
-                            <Minus className="h-4 w-4" />
-                          </Button>
-                          <span className="w-8 text-center font-semibold">{item.quantity}</span>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Summary Totals */}
-                <div className="pt-4 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Subtotal ({items.reduce((sum, item) => sum + item.quantity, 0)} items)</span>
-                    <span>{formatPrice(totalPrice)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>
-                      {deliveryMethod === 'pickup' ? 'Pick-up' : 'Delivery'}
-                    </span>
-                    <span>
-                      {deliveryMethod === 'pickup' ? 'Free' :
-                        deliveryFee > 0 ? formatPrice(deliveryFee) :
-                        deliveryFeeData === undefined && !deliveryFeeError ? 'Calculating...' : formatPrice(0)
-                      }
-                    </span>
-                  </div>
-                  {deliveryError && deliveryMethod === 'delivery' && (
-                    <p className="text-xs text-destructive mt-1">{deliveryError}</p>
-                  )}
-                  <div className="flex justify-between font-bold text-lg pt-2 border-t">
-                    <span>Total</span>
-                    <span className="text-primary">{formatPrice(totalPrice + deliveryFee)}</span>
-                  </div>
+                <div className="flex flex-col gap-2">
+                  <Label className="text-[13px] font-medium">Time</Label>
+                  <Select value={fulfillmentTime} onValueChange={setFulfillmentTime}>
+                    <SelectTrigger className={`${inputClass} w-full gap-2 [&>span]:flex [&>span]:items-center [&>span]:gap-2`}>
+                      <MapPin className="h-4 w-4 shrink-0 text-[#603b17]" />
+                      <SelectValue placeholder="Select time slot" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(deliveryMethod === "pickup" ? PICKUP_TIME_SLOTS : DELIVERY_TIME_SLOTS).map((slot) => (
+                        <SelectItem key={slot} value={slot}>{slot}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </div>
 
-            {/* Additional Notes */}
-            <div>
-              <h2 className="text-2xl font-semibold mb-4">Additional Notes</h2>
-              <div>
-                <Textarea
-                  placeholder="E.g., Please include candles, specific packaging requests, etc."
-                  value={specialInstructions}
-                  onChange={(e) => setSpecialInstructions(e.target.value)}
-                  rows={4}
-                />
+            <div className="h-px w-full bg-[#e5e5e5]" />
+
+            {/* Delivery Method */}
+            <div className="flex flex-col gap-4">
+              <h2 className="text-base font-medium">Delivery Method</h2>
+              <div className="bg-[#faf7f3] flex gap-1 h-[50px] items-center p-1 rounded-full w-full">
+                <button
+                  type="button"
+                  onClick={() => setDeliveryMethod("delivery")}
+                  className={`flex flex-1 h-full items-center justify-center gap-2 rounded-full text-sm transition-colors ${
+                    deliveryMethod === "delivery"
+                      ? "bg-white text-foreground font-semibold shadow-sm"
+                      : "text-muted-foreground font-medium"
+                  }`}
+                >
+                  <Truck className="h-4 w-4" />
+                  Delivery
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDeliveryMethod("pickup")}
+                  className={`flex flex-1 h-full items-center justify-center gap-2 rounded-full text-sm transition-colors ${
+                    deliveryMethod === "pickup"
+                      ? "bg-white text-foreground font-semibold shadow-sm"
+                      : "text-muted-foreground font-medium"
+                  }`}
+                >
+                  <Store className="h-4 w-4" />
+                  Pick Up
+                </button>
               </div>
+
+              {deliveryMethod === "delivery" ? (
+                <div className="flex flex-col gap-2">
+                  <Input
+                    value={addressLine}
+                    onChange={(e) => setAddressLine(e.target.value)}
+                    placeholder="Address"
+                    className={inputClass}
+                  />
+                  <Input
+                    value={aptUnit}
+                    onChange={(e) => setAptUnit(e.target.value)}
+                    placeholder="Apartment/Unit No (optional)"
+                    className={inputClass}
+                  />
+                  <Input
+                    value={postalCode}
+                    onChange={(e) => setPostalCode(e.target.value)}
+                    placeholder="Postal Code"
+                    className={inputClass}
+                  />
+                  <LabeledInput
+                    label="Recipient WhatsApp Number"
+                    labelWidth="w-[190px]"
+                    type="tel"
+                    value={recipientWhatsapp}
+                    onChange={(e) => setRecipientWhatsapp(e.target.value)}
+                    placeholder="e.g. +65 8123 4567"
+                  />
+                  {deliveryDistance !== null && (
+                    <p className="text-xs text-muted-foreground px-1">
+                      Approx. {deliveryDistance}km from our shop
+                    </p>
+                  )}
+                  {deliveryError && (
+                    <p className="text-xs text-destructive px-1">{deliveryError}</p>
+                  )}
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <Label className="text-[13px] font-medium">Pick Up Address</Label>
+                  <div className="border border-[#e5e5e5] rounded-xl flex gap-4 items-start px-4 py-3 w-full">
+                    <MapPin className="h-4 w-4 shrink-0 mt-0.5 text-[#603b17]" />
+                    <div className="flex flex-col gap-2 text-sm">
+                      <div>
+                        <p className="font-semibold">Joyous JellyArt</p>
+                        <p>{PICKUP_ADDRESS}</p>
+                        <p>Usually ready in 2-4 days</p>
+                      </div>
+                      <a
+                        href={PICKUP_MAPS_URL}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="font-medium text-[#603b17]"
+                      >
+                        View on Google Maps &nbsp;→
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="h-px w-full bg-[#e5e5e5]" />
+
+            {/* Additional Instructions */}
+            <div className="flex flex-col gap-4">
+              <h2 className="text-base font-medium">Additional Instructions</h2>
+              <Textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Let us know if you have any special requests."
+                className="min-h-[90px] rounded-2xl border-[#e5e5e5]"
+              />
             </div>
 
             <Button
-              className="w-full"
+              type="button"
               size="lg"
               onClick={handleCheckout}
               disabled={createOrder.isPending || createPaymentRequest.isPending}
+              className="w-full h-[52px] rounded-full text-base bg-primary hover:opacity-90 text-primary-foreground"
             >
-              {createOrder.isPending || createPaymentRequest.isPending ? "Processing..." : "Proceed to Payment"}
+              {createOrder.isPending || createPaymentRequest.isPending
+                ? "Processing..."
+                : `Confirm and Pay  •  ${formatPrice(totalPrice)}`}
             </Button>
+          </div>
+
+          {/* Right: order summary */}
+          <div className="w-full lg:w-[380px] shrink-0">
+            <div className="bg-[#faf7f3] h-full p-10 flex flex-col gap-6">
+              <h2 className="text-2xl">My Order</h2>
+
+              <div className="flex flex-col gap-4">
+                {items.map((item) => (
+                  <div key={item.id} className="flex items-start justify-between gap-4 pb-4 border-b border-[#e4e6e8] last:border-b-0">
+                    <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+                      {item.collection === "custom" ? (
+                        <>
+                          <p className="font-medium text-[15px]">Custom Cake</p>
+                          <p className="text-xs text-muted-foreground">Format: {FORMAT_LABELS[item.format]}</p>
+                          <p className="text-xs text-muted-foreground">Shape: {itemShapeDisplay(item)}</p>
+                          <p className="text-xs text-muted-foreground">Size: {shortSizeLabel(item.sizeLabel)}</p>
+                          <p className="text-xs text-muted-foreground">Design: {item.themeLabel}</p>
+                          <p className="text-xs text-muted-foreground">Base Flavour: {item.flavours.join(", ")}</p>
+                          {item.selectedColors && item.selectedColors.length > 0 && (
+                            <p className="text-xs text-muted-foreground">Colors: {item.selectedColors.join(", ")}</p>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <p className="font-medium text-[15px]">{item.name}</p>
+                          <p className="text-xs text-muted-foreground">Edition: {item.edition}</p>
+                          <p className="text-xs text-muted-foreground">Size: {item.size}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Flavour: {item.flavors && item.flavors.length > 0 ? item.flavors.join(", ") : item.flavor}
+                          </p>
+                          {item.dietaryRequirements && item.dietaryRequirements.length > 0 && (
+                            <p className="text-xs text-muted-foreground">Dietary: {item.dietaryRequirements.join(", ")}</p>
+                          )}
+                        </>
+                      )}
+                      <div className="flex items-center gap-3 mt-1.5">
+                        {item.collection === "custom" && item.format === "miniGiftBox" ? (
+                          <div className="flex items-center gap-2">
+                            <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.id, item.quantity - 1)} disabled={item.quantity <= 1}>
+                              <Minus className="h-3 w-3" />
+                            </Button>
+                            <span className="text-sm font-medium w-4 text-center">{item.quantity}</span>
+                            <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.id, item.quantity + 1)}>
+                              <Plus className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ) : item.collection === "cny" ? (
+                          <div className="flex items-center gap-2">
+                            <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.id, item.quantity - 1)} disabled={item.quantity <= 1}>
+                              <Minus className="h-3 w-3" />
+                            </Button>
+                            <span className="text-sm font-medium w-4 text-center">{item.quantity}</span>
+                            <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.id, item.quantity + 1)}>
+                              <Plus className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ) : null}
+                        <button type="button" onClick={() => removeItem(item.id)} className="text-destructive text-xs flex items-center gap-1">
+                          <Trash2 className="h-3 w-3" /> Remove
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4 shrink-0">
+                      <span className="bg-[#eef3f0] text-[#426b57] text-xs font-semibold px-2 py-1 rounded-md">{item.quantity}x</span>
+                      <p className="font-semibold">{formatPrice(item.price * item.quantity)}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-col gap-2 pt-2 border-t border-[#e4e6e8]">
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>Subtotal</span>
+                  <span>{formatPrice(subtotal)}</span>
+                </div>
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>{deliveryMethod === "pickup" ? "Pick Up" : "Delivery"}</span>
+                  <span>
+                    {deliveryMethod === "pickup"
+                      ? "FREE"
+                      : deliveryFee > 0
+                        ? formatPrice(deliveryFee)
+                        : deliveryFeeData === undefined && !deliveryFeeError
+                          ? "Calculating..."
+                          : formatPrice(0)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-baseline pt-2 border-t border-[#e4e6e8]">
+                  <span className="font-medium">Total (incl. tax)</span>
+                  <span className="text-xl font-semibold text-primary">{formatPrice(totalPrice)}</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

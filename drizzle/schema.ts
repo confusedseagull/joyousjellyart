@@ -42,8 +42,55 @@ export type AdminUser = typeof adminUsers.$inferSelect;
 export type InsertAdminUser = typeof adminUsers.$inferInsert;
 
 /**
- * Orders table storing a cart of custom jelly cake configurations plus customer/delivery details.
- * Mirrors the cnyOrders table's "items array + order-level fields" shape.
+ * A single custom jelly cake configuration within an order's items array.
+ */
+export type CustomOrderItem = {
+  collection: "custom";
+  id: string;
+  format: "cake" | "jellyPlatter" | "miniGiftBox";
+  theme: string;
+  selectedFlowers?: string[];
+  selectedColors?: string[];
+  cartoonCharacter?: string;
+  themeCustomText?: string;
+  fashionBrand?: string;
+  shape: string;
+  size: string;
+  numbers?: string;
+  platterShapes?: string[];
+  flavours: string[];
+  cakeText?: string;
+  cakeTextLanguage?: "english" | "chinese";
+  dietaryRequirements?: string;
+  referenceLinks?: string;
+  specialInstructions?: string;
+  price: number;
+  quantity: number;
+};
+
+/**
+ * A single CNY collection design within an order's items array.
+ */
+export type CnyOrderItem = {
+  collection: "cny";
+  id: string;
+  name: string;
+  edition: string;
+  size: string;
+  flavor: string;
+  price: number;
+  quantity: number;
+  image: string;
+  dietaryRequirements?: string[];
+};
+
+export type OrderItem = CustomOrderItem | CnyOrderItem;
+
+/**
+ * Orders table storing a cart of items from any collection (custom jelly cakes,
+ * CNY collection designs, and future collections) plus customer/delivery details.
+ * Each item is tagged with `collection` so a single order can mix collections
+ * and be paid for in one HitPay payment.
  */
 export const orders = mysqlTable("orders", {
   id: int("id").autoincrement().primaryKey(),
@@ -62,29 +109,8 @@ export const orders = mysqlTable("orders", {
   fulfillmentDate: timestamp("fulfillmentDate").notNull(),
   timeRange: varchar("timeRange", { length: 50 }), // e.g., "11:00 AM - 1:00 PM"
 
-  // Cart items: one entry per custom cake configuration
-  items: json("items").$type<Array<{
-    id: string;
-    format: "cake" | "jellyPlatter" | "miniGiftBox";
-    theme: string;
-    selectedFlowers?: string[];
-    selectedColors?: string[];
-    cartoonCharacter?: string;
-    themeCustomText?: string;
-    fashionBrand?: string;
-    shape: string;
-    size: string;
-    numbers?: string;
-    platterShapes?: string[];
-    flavours: string[];
-    cakeText?: string;
-    cakeTextLanguage?: "english" | "chinese";
-    dietaryRequirements?: string;
-    referenceLinks?: string;
-    specialInstructions?: string;
-    price: number;
-    quantity: number;
-  }>>().notNull(),
+  // Cart items: one entry per item, from any collection
+  items: json("items").$type<OrderItem[]>().notNull(),
 
   // Order totals
   subtotal: int("subtotal").notNull(),
@@ -110,62 +136,3 @@ export const orders = mysqlTable("orders", {
 
 export type Order = typeof orders.$inferSelect;
 export type InsertOrder = typeof orders.$inferInsert;
-export type OrderItem = Order["items"][number];
-
-/**
- * CNY Collection cart orders table
- */
-export const cnyOrders = mysqlTable("cnyOrders", {
-  id: int("id").autoincrement().primaryKey(),
-  orderNumber: varchar("orderNumber", { length: 20 }).unique(),
-  
-  // Customer details
-  customerName: varchar("customerName", { length: 255 }).notNull(),
-  customerPhone: varchar("customerPhone", { length: 50 }).notNull(),
-  customerEmail: varchar("customerEmail", { length: 320 }),
-  
-  // Delivery details
-  deliveryMethod: mysqlEnum("deliveryMethod", ["delivery", "pickup"]).notNull(),
-  deliveryAddress: text("deliveryAddress"),
-  
-  // Order timing
-  fulfillmentDate: timestamp("fulfillmentDate").notNull(),
-  timeRange: varchar("timeRange", { length: 50 }), // e.g., "15:00-17:00"
-  
-  // Cart items stored as JSON
-  items: json("items").$type<Array<{
-    id: string;
-    name: string;
-    edition: string;
-    size: string;
-    flavor: string;
-    price: number;
-    quantity: number;
-    image: string;
-    dietaryRequirements?: string[];
-  }>>().notNull(),
-  
-  // Order totals
-  subtotal: int("subtotal").notNull(),
-  deliveryFee: int("deliveryFee").notNull(),
-  total: int("total").notNull(),
-  
-  // Additional notes
-  notes: text("notes"),
-  
-  // Payment tracking
-  paymentStatus: mysqlEnum("paymentStatus", ["pending", "paid", "failed", "refunded"]).default("pending"),
-  paymentId: varchar("paymentId", { length: 255 }),
-
-  // Fulfillment status
-  status: mysqlEnum("status", ["pending", "pending_confirmation", "in_progress", "completed", "delivered"])
-    .default("pending_confirmation")
-    .notNull(),
-
-  // Timestamps
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-export type CnyOrder = typeof cnyOrders.$inferSelect;
-export type InsertCnyOrder = typeof cnyOrders.$inferInsert;

@@ -42,7 +42,7 @@ describe('HitPay Webhook Handler', () => {
     mockRequest = {
       body: {
         payment_id: 'test_payment_123',
-        reference_number: 'CNY-1',
+        reference_number: 'ORD-1',
         status: 'completed',
         amount: '100.00',
         currency: 'SGD',
@@ -58,11 +58,11 @@ describe('HitPay Webhook Handler', () => {
     expect(mockResponse.json).toHaveBeenCalledWith({ error: 'Invalid signature' });
   });
 
-  it('should process completed CNY order payment', async () => {
+  it('should process completed order payment', async () => {
     mockRequest = {
       body: {
         payment_id: 'test_payment_123',
-        reference_number: 'CNY-1',
+        reference_number: 'ORD-1',
         status: 'completed',
         amount: '100.00',
         currency: 'SGD',
@@ -83,36 +83,11 @@ describe('HitPay Webhook Handler', () => {
     expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Webhook processed successfully' });
   });
 
-  it('should process completed custom order payment', async () => {
-    mockRequest = {
-      body: {
-        payment_id: 'test_payment_456',
-        reference_number: 'CUSTOM-2',
-        status: 'completed',
-        amount: '150.00',
-        currency: 'SGD',
-        hmac: 'valid_signature',
-      },
-    };
-
-    vi.mocked(hitpayModule.verifyWebhookSignature).mockReturnValue(true);
-
-    await handleHitPayWebhook(mockRequest as Request, mockResponse as Response);
-
-    expect(mockDb.update).toHaveBeenCalled();
-    expect(mockDb.set).toHaveBeenCalledWith({
-      paymentStatus: 'paid',
-      paymentId: 'test_payment_456',
-    });
-    expect(mockResponse.status).toHaveBeenCalledWith(200);
-    expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Webhook processed successfully' });
-  });
-
   it('should ignore non-completed payments', async () => {
     mockRequest = {
       body: {
         payment_id: 'test_payment_789',
-        reference_number: 'CNY-3',
+        reference_number: 'ORD-3',
         status: 'pending',
         amount: '75.00',
         currency: 'SGD',
@@ -149,11 +124,31 @@ describe('HitPay Webhook Handler', () => {
     expect(mockResponse.json).toHaveBeenCalledWith({ error: 'Invalid reference number' });
   });
 
+  it('should reject a reference number with an unrecognized prefix', async () => {
+    mockRequest = {
+      body: {
+        payment_id: 'test_payment_998',
+        reference_number: 'CNY-1',
+        status: 'completed',
+        amount: '50.00',
+        currency: 'SGD',
+        hmac: 'valid_signature',
+      },
+    };
+
+    vi.mocked(hitpayModule.verifyWebhookSignature).mockReturnValue(true);
+
+    await handleHitPayWebhook(mockRequest as Request, mockResponse as Response);
+
+    expect(mockResponse.status).toHaveBeenCalledWith(400);
+    expect(mockResponse.json).toHaveBeenCalledWith({ error: 'Invalid reference number' });
+  });
+
   it('should handle database errors gracefully', async () => {
     mockRequest = {
       body: {
         payment_id: 'test_payment_error',
-        reference_number: 'CNY-999',
+        reference_number: 'ORD-999',
         status: 'completed',
         amount: '200.00',
         currency: 'SGD',

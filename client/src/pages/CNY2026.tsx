@@ -283,7 +283,7 @@ export default function CNY2026() {
   const [noDairy, setNoDairy] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
-  const { addItem, totalItems } = useCart();
+  const { addCnyItem, totalItems } = useCart();
   const [addedMessage, setAddedMessage] = useState<string | null>(null);
 
   const handleAddToCart = (design: SelectedDesign) => {
@@ -300,12 +300,12 @@ export default function CNY2026() {
     const sizeOption = selectedDesign.sizes.find(s => s.size === selectedSize);
     if (!sizeOption) return;
 
-    addItem({
+    addCnyItem({
       designId: selectedDesign.id,
       name: selectedDesign.name,
       edition: selectedDesign.edition,
       size: selectedSize,
-      price: sizeOption.price,
+      price: parseFloat(sizeOption.price.replace('$', '')),
       flavors: selectedFlavors,
       image: selectedDesign.image,
       dietaryRequirements: noDairy ? ["No Dairy"] : undefined

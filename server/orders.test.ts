@@ -49,6 +49,7 @@ function makeItem(overrides: Partial<{
   quantity: number;
 }> = {}) {
   return {
+    collection: "custom" as const,
     id: "item-1",
     format: "cake" as const,
     theme: "space",
@@ -57,6 +58,30 @@ function makeItem(overrides: Partial<{
     flavours: ["lychee"],
     price: 118,
     quantity: 1,
+    ...overrides,
+  };
+}
+
+function makeCnyItem(overrides: Partial<{
+  id: string;
+  name: string;
+  edition: string;
+  size: string;
+  flavor: string;
+  price: number;
+  quantity: number;
+  image: string;
+}> = {}) {
+  return {
+    collection: "cny" as const,
+    id: "golden-gallop-8-longan",
+    name: "Golden Gallop",
+    edition: "2026 CNY Collection",
+    size: "8 inch",
+    flavor: "Longan",
+    price: 128,
+    quantity: 1,
+    image: "/images/golden-gallop.jpg",
     ...overrides,
   };
 }
@@ -171,6 +196,55 @@ describe("orders.create", () => {
 
     expect(result.items).toHaveLength(2);
     expect(result.items[1].quantity).toBe(3);
+  });
+
+  it("allows a cny-collection item", async () => {
+    const ctx = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+
+    const orderData = {
+      customerName: "Cny Customer",
+      customerEmail: "cny.customer@example.com",
+      customerPhone: "+65 4444 4444",
+      deliveryMethod: "pickup" as const,
+      fulfillmentDate: new Date("2025-06-01T10:00:00"),
+      items: [makeCnyItem()],
+      subtotal: 128,
+      deliveryFee: 0,
+      total: 128,
+    };
+
+    const result = await caller.orders.create(orderData);
+
+    expect(result).toBeDefined();
+    expect(result.items[0].collection).toBe("cny");
+    expect((result.items[0] as any).name).toBe("Golden Gallop");
+  });
+
+  it("supports a mixed order with both a custom item and a cny item", async () => {
+    const ctx = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+
+    const orderData = {
+      customerName: "Mixed Cart Customer",
+      customerEmail: "mixed.cart@example.com",
+      customerPhone: "+65 5555 5555",
+      deliveryMethod: "pickup" as const,
+      fulfillmentDate: new Date("2025-06-15T10:00:00"),
+      items: [
+        makeItem({ id: "item-custom", theme: "space", shape: "round", size: "8inch", price: 118 }),
+        makeCnyItem({ id: "item-cny", price: 128 }),
+      ],
+      subtotal: 246,
+      deliveryFee: 0,
+      total: 246,
+    };
+
+    const result = await caller.orders.create(orderData);
+
+    expect(result.items).toHaveLength(2);
+    expect(result.items[0].collection).toBe("custom");
+    expect(result.items[1].collection).toBe("cny");
   });
 });
 

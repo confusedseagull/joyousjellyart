@@ -4,47 +4,33 @@ import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, ArrowLeft, Truck, Package, Calendar, Clock, User, Phone, Mail, MapPin, FileText } from "lucide-react";
+import { Loader2, ArrowLeft, Truck, Package, Calendar, User, FileText } from "lucide-react";
 import { format } from "date-fns";
-import { toast } from "sonner";
 import { formatPrice } from "@/lib/utils";
 
 export default function AdminOrderDetail() {
   const { admin, loading: authLoading } = useAdminAuth({ redirectOnUnauthenticated: true });
   const [, navigate] = useLocation();
-  const [, params] = useRoute("/admin/orders/:type/:id");
-  const orderType = params?.type as 'custom' | 'cny' | undefined;
+  const [, params] = useRoute("/admin/orders/:id");
   const orderId = params?.id ? parseInt(params.id) : undefined;
 
-  // Query custom orders
-  const { data: customOrder, isLoading: customLoading, refetch: refetchCustom } = trpc.orders.getById.useQuery(
+  const { data: order, isLoading } = trpc.orders.getById.useQuery(
     { id: orderId! },
-    { enabled: !!orderId && orderType === 'custom' && !!admin }
+    { enabled: !!orderId && !!admin }
   );
-
-  // Query CNY orders
-  const { data: cnyOrder, isLoading: cnyLoading, refetch: refetchCny } = trpc.cnyOrders.getById.useQuery(
-    { id: orderId! },
-    { enabled: !!orderId && orderType === 'cny' && !!admin }
-  );
-
-  const order = orderType === 'custom' ? customOrder : cnyOrder;
-  const isLoading = orderType === 'custom' ? customLoading : cnyLoading;
-  const refetch = orderType === 'custom' ? refetchCustom : refetchCny;
 
   // Early return after all hooks
   if (!authLoading && !admin) {
     return null;
   }
 
-  if (!orderId || !orderType) {
+  if (!orderId) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <h2 className="text-2xl font-bold mb-4">Invalid Order</h2>
-          <p className="text-muted-foreground mb-4">The order ID or type is missing or invalid.</p>
+          <p className="text-muted-foreground mb-4">The order ID is missing or invalid.</p>
           <Button onClick={() => navigate("/admin/dashboard")}>
             Return to Dashboard
           </Button>
@@ -75,10 +61,6 @@ export default function AdminOrderDetail() {
     );
   }
 
-
-
-  const isCnyOrder = orderType === 'cny';
-
   return (
     <div className="min-h-screen bg-background">
       <div className="container py-8 max-w-5xl">
@@ -92,13 +74,13 @@ export default function AdminOrderDetail() {
           <div className="flex justify-between items-start">
             <div>
               <h1 className="text-3xl font-bold mb-2">
-                {order.orderNumber || (isCnyOrder ? `CNY${order.id.toString().padStart(4, '0')}` : `CST${order.id.toString().padStart(4, '0')}`)}
+                {order.orderNumber || `JJA${order.id.toString().padStart(4, '0')}`}
               </h1>
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Calendar className="h-4 w-4" />
                 <span className="text-lg">
                   Delivery: {format(new Date(order.fulfillmentDate), 'EEEE, dd MMMM yyyy')}
-                  {isCnyOrder && cnyOrder?.timeRange && ` (${cnyOrder.timeRange})`}
+                  {order.timeRange && ` (${order.timeRange})`}
                 </span>
               </div>
             </div>
@@ -134,10 +116,10 @@ export default function AdminOrderDetail() {
                 <p className="text-sm text-muted-foreground mb-1">Phone</p>
                 <p className="font-medium">{order.customerPhone}</p>
               </div>
-              {isCnyOrder && cnyOrder?.customerEmail && (
+              {order.customerEmail && (
                 <div className="col-span-2">
                   <p className="text-sm text-muted-foreground mb-1">Email</p>
-                  <p className="font-medium">{cnyOrder.customerEmail}</p>
+                  <p className="font-medium">{order.customerEmail}</p>
                 </div>
               )}
             </div>
@@ -173,10 +155,10 @@ export default function AdminOrderDetail() {
                   <p className="font-medium">{format(new Date(order.fulfillmentDate), 'dd MMM yyyy')}</p>
                 </div>
 
-                {isCnyOrder && cnyOrder?.timeRange && (
+                {order.timeRange && (
                   <div>
                     <p className="text-sm text-muted-foreground mb-1">Time Range</p>
-                    <p className="font-medium">{cnyOrder.timeRange}</p>
+                    <p className="font-medium">{order.timeRange}</p>
                   </div>
                 )}
 
@@ -185,7 +167,6 @@ export default function AdminOrderDetail() {
                   <p className="font-medium">{format(new Date(order.fulfillmentDate), 'EEEE')}</p>
                 </div>
               </div>
-
             </div>
           </CardContent>
         </Card>
@@ -199,18 +180,17 @@ export default function AdminOrderDetail() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {isCnyOrder && cnyOrder ? (
-              <div className="space-y-6">
-                {cnyOrder.items.map((item: any, idx: number) => (
-                  <div key={idx} className="space-y-4">
-                    {idx > 0 && <Separator />}
-                    
-                    {/* Image and Details Side-by-Side */}
+            <div className="space-y-6">
+              {order.items.map((item: any, idx: number) => (
+                <div key={item.id ?? idx} className="space-y-4">
+                  {idx > 0 && <Separator />}
+
+                  {item.collection === 'cny' ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {/* Large Product Image */}
                       <div className="flex items-start">
-                        <img 
-                          src={item.image} 
+                        <img
+                          src={item.image}
                           alt={item.name}
                           className="w-full h-auto object-cover rounded-lg shadow-md"
                         />
@@ -218,33 +198,21 @@ export default function AdminOrderDetail() {
 
                       {/* Product Details */}
                       <div className="space-y-4">
-                        {/* Product Name and Edition */}
                         <div>
                           <h3 className="text-xl font-semibold">{item.name}</h3>
                           <p className="text-muted-foreground">{item.edition}</p>
                         </div>
 
-                        {/* Size Subsection */}
                         <div>
                           <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">Size</h4>
                           <p className="text-lg">{item.size}</p>
                         </div>
 
-                        {/* Flavours Subsection */}
                         <div>
                           <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">Flavours</h4>
                           <p className="text-lg">{item.flavor}</p>
                         </div>
 
-                        {/* Additional Notes */}
-                        {cnyOrder.notes && idx === 0 && (
-                          <div>
-                            <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">Additional Notes</h4>
-                            <p className="text-lg">{cnyOrder.notes}</p>
-                          </div>
-                        )}
-
-                        {/* Dietary Requirements */}
                         {item.dietaryRequirements && item.dietaryRequirements.length > 0 && (
                           <div>
                             <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">Dietary Requirements</h4>
@@ -252,7 +220,6 @@ export default function AdminOrderDetail() {
                           </div>
                         )}
 
-                        {/* Quantity and Price */}
                         <div className="flex justify-between items-center pt-2 border-t">
                           <div>
                             <p className="text-sm text-muted-foreground">Quantity</p>
@@ -265,135 +232,109 @@ export default function AdminOrderDetail() {
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ) : (
+                    <>
+                      <div>
+                        <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">Format</h4>
+                        <p className="text-lg capitalize">{item.format?.replace(/([A-Z])/g, ' $1')}</p>
+                      </div>
 
-                {/* Order Totals */}
-                <Separator className="my-6" />
-                <div className="space-y-3">
-                  <div className="flex justify-between text-lg">
-                    <span className="text-muted-foreground">Subtotal</span>
-                    <span className="font-medium">{formatPrice(cnyOrder.subtotal)}</span>
-                  </div>
-                  <div className="flex justify-between text-lg">
-                    <span className="text-muted-foreground">Delivery Fee</span>
-                    <span className="font-medium">{formatPrice(cnyOrder.deliveryFee)}</span>
-                  </div>
-                  <Separator />
-                  <div className="flex justify-between text-xl">
-                    <span className="font-bold">Total</span>
-                    <span className="font-bold">{formatPrice(cnyOrder.total)}</span>
-                  </div>
+                      <div>
+                        <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">Shape</h4>
+                        <p className="text-lg capitalize">{item.shape?.replace(/_/g, ' ')}</p>
+                      </div>
+
+                      <div>
+                        <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">Size</h4>
+                        <p className="text-lg">{item.size}</p>
+                      </div>
+
+                      <div>
+                        <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">Theme</h4>
+                        <p className="text-lg capitalize">{item.theme?.replace(/_/g, ' ')}</p>
+                      </div>
+
+                      {item.flavours && item.flavours.length > 0 && (
+                        <div>
+                          <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">Flavours</h4>
+                          <p className="text-lg">{item.flavours.join(', ')}</p>
+                        </div>
+                      )}
+
+                      {item.selectedColors && item.selectedColors.length > 0 && (
+                        <div>
+                          <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">Colors</h4>
+                          <p className="text-lg">{item.selectedColors.join(', ')}</p>
+                        </div>
+                      )}
+
+                      {item.cakeText && (
+                        <div>
+                          <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">Cake Message</h4>
+                          <p className="text-lg whitespace-pre-wrap">{item.cakeText}</p>
+                        </div>
+                      )}
+
+                      {item.dietaryRequirements && (
+                        <div>
+                          <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">Dietary Requirements</h4>
+                          <p className="text-lg">{item.dietaryRequirements}</p>
+                        </div>
+                      )}
+
+                      {item.referenceLinks && (
+                        <div>
+                          <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">Reference Links</h4>
+                          <p className="text-lg">{item.referenceLinks}</p>
+                        </div>
+                      )}
+
+                      {item.specialInstructions && (
+                        <div>
+                          <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">Special Instructions</h4>
+                          <p className="text-lg whitespace-pre-wrap">{item.specialInstructions}</p>
+                        </div>
+                      )}
+
+                      <div className="flex justify-between items-center pt-2 border-t">
+                        <div>
+                          <p className="text-sm text-muted-foreground">Quantity</p>
+                          <p className="text-lg font-medium">{item.quantity}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm text-muted-foreground">Price</p>
+                          <p className="text-lg font-semibold">{formatPrice(item.price)} each</p>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
+              ))}
 
+              {order.notes && (
+                <div>
+                  <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">Additional Notes</h4>
+                  <p className="text-lg">{order.notes}</p>
+                </div>
+              )}
 
-              </div>
-            ) : customOrder ? (
-              <div className="space-y-6">
-                {customOrder.items.map((item: any, idx: number) => (
-                  <div key={item.id ?? idx} className="space-y-4">
-                    {idx > 0 && <Separator />}
-
-                    <div>
-                      <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">Format</h4>
-                      <p className="text-lg capitalize">{item.format?.replace(/([A-Z])/g, ' $1')}</p>
-                    </div>
-
-                    <div>
-                      <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">Shape</h4>
-                      <p className="text-lg capitalize">{item.shape?.replace(/_/g, ' ')}</p>
-                    </div>
-
-                    <div>
-                      <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">Size</h4>
-                      <p className="text-lg">{item.size}</p>
-                    </div>
-
-                    <div>
-                      <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">Theme</h4>
-                      <p className="text-lg capitalize">{item.theme?.replace(/_/g, ' ')}</p>
-                    </div>
-
-                    {item.flavours && item.flavours.length > 0 && (
-                      <div>
-                        <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">Flavours</h4>
-                        <p className="text-lg">{item.flavours.join(', ')}</p>
-                      </div>
-                    )}
-
-                    {item.selectedColors && item.selectedColors.length > 0 && (
-                      <div>
-                        <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">Colors</h4>
-                        <p className="text-lg">{item.selectedColors.join(', ')}</p>
-                      </div>
-                    )}
-
-                    {item.cakeText && (
-                      <div>
-                        <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">Cake Message</h4>
-                        <p className="text-lg whitespace-pre-wrap">{item.cakeText}</p>
-                      </div>
-                    )}
-
-                    {item.dietaryRequirements && (
-                      <div>
-                        <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">Dietary Requirements</h4>
-                        <p className="text-lg">{item.dietaryRequirements}</p>
-                      </div>
-                    )}
-
-                    {item.referenceLinks && (
-                      <div>
-                        <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">Reference Links</h4>
-                        <p className="text-lg">{item.referenceLinks}</p>
-                      </div>
-                    )}
-
-                    {item.specialInstructions && (
-                      <div>
-                        <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">Special Instructions</h4>
-                        <p className="text-lg whitespace-pre-wrap">{item.specialInstructions}</p>
-                      </div>
-                    )}
-
-                    <div className="flex justify-between items-center pt-2 border-t">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Quantity</p>
-                        <p className="text-lg font-medium">{item.quantity}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm text-muted-foreground">Price</p>
-                        <p className="text-lg font-semibold">{formatPrice(item.price)} each</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-
-                {customOrder.notes && (
-                  <div>
-                    <h4 className="font-semibold mb-2 text-sm uppercase tracking-wide text-muted-foreground">Additional Notes</h4>
-                    <p className="text-lg">{customOrder.notes}</p>
-                  </div>
-                )}
-
-                <Separator className="my-6" />
-                <div className="space-y-3">
-                  <div className="flex justify-between text-lg">
-                    <span className="text-muted-foreground">Subtotal</span>
-                    <span className="font-medium">{formatPrice(customOrder.subtotal)}</span>
-                  </div>
-                  <div className="flex justify-between text-lg">
-                    <span className="text-muted-foreground">Delivery Fee</span>
-                    <span className="font-medium">{formatPrice(customOrder.deliveryFee)}</span>
-                  </div>
-                  <Separator />
-                  <div className="flex justify-between text-xl">
-                    <span className="font-bold">Total</span>
-                    <span className="font-bold">{formatPrice(customOrder.total)}</span>
-                  </div>
+              <Separator className="my-6" />
+              <div className="space-y-3">
+                <div className="flex justify-between text-lg">
+                  <span className="text-muted-foreground">Subtotal</span>
+                  <span className="font-medium">{formatPrice(order.subtotal)}</span>
+                </div>
+                <div className="flex justify-between text-lg">
+                  <span className="text-muted-foreground">Delivery Fee</span>
+                  <span className="font-medium">{formatPrice(order.deliveryFee)}</span>
+                </div>
+                <Separator />
+                <div className="flex justify-between text-xl">
+                  <span className="font-bold">Total</span>
+                  <span className="font-bold">{formatPrice(order.total)}</span>
                 </div>
               </div>
-            ) : null}
+            </div>
           </CardContent>
         </Card>
       </div>

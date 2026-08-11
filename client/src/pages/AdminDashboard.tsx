@@ -18,11 +18,7 @@ export default function AdminDashboard() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [orderTypeFilter, setOrderTypeFilter] = useState<string>("all"); // 'all', 'collection', 'custom'
 
-  const { data: customOrders, isLoading: customLoading, error: customError } = trpc.orders.list.useQuery(undefined, {
-    enabled: !!admin,
-  });
-
-  const { data: cnyOrders, isLoading: cnyLoading, error: cnyError } = trpc.cnyOrders.list.useQuery(undefined, {
+  const { data: orders, isLoading, error } = trpc.orders.list.useQuery(undefined, {
     enabled: !!admin,
   });
 
@@ -33,14 +29,11 @@ export default function AdminDashboard() {
     },
   });
 
-  // Merge and transform orders
   const allOrders = useMemo(() => {
-    const custom = (customOrders || []).map(o => ({ ...o, type: 'custom' as const }));
-    const cny = (cnyOrders || []).map(o => ({ ...o, type: 'cny' as const }));
-    return [...custom, ...cny].sort((a, b) => 
-      new Date(a.fulfillmentDate).getTime() - new Date(b.fulfillmentDate).getTime()
+    return [...(orders || [])].sort(
+      (a, b) => new Date(a.fulfillmentDate).getTime() - new Date(b.fulfillmentDate).getTime()
     );
-  }, [customOrders, cnyOrders]);
+  }, [orders]);
 
   // Categorize orders by delivery date
   const ordersByDate = useMemo(() => {
@@ -56,9 +49,6 @@ export default function AdminDashboard() {
       upcoming: allOrders.filter(o => isAfter(new Date(o.fulfillmentDate), todayEnd)),
     };
   }, [allOrders]);
-
-  const isLoading = customLoading || cnyLoading;
-  const error = customError || cnyError;
 
   // Filter orders based on search query
   const filteredOrders = useMemo(() => {
@@ -80,22 +70,22 @@ export default function AdminDashboard() {
     });
   }, [ordersByDate, activeTab, searchQuery]);
 
-  // Filter by order type (collection vs custom)
+  // Filter by which collection(s) an order's items belong to
   const displayOrders = useMemo(() => {
     if (orderTypeFilter === "all") return filteredOrders;
     if (orderTypeFilter === "collection") {
-      return filteredOrders.filter(o => o.type === "cny");
+      return filteredOrders.filter(o => o.items?.some((i: any) => i.collection === "cny"));
     }
-    return filteredOrders.filter(o => o.type === "custom");
+    return filteredOrders.filter(o => o.items?.some((i: any) => i.collection === "custom"));
   }, [filteredOrders, orderTypeFilter]);
 
-  // Count orders by type
-  const collectionCount = useMemo(() => 
-    filteredOrders.filter(o => o.type === "cny").length,
+  // Count orders by which collection(s) they contain
+  const collectionCount = useMemo(() =>
+    filteredOrders.filter(o => o.items?.some((i: any) => i.collection === "cny")).length,
     [filteredOrders]
   );
-  const customCount = useMemo(() => 
-    filteredOrders.filter(o => o.type === "custom").length,
+  const customCount = useMemo(() =>
+    filteredOrders.filter(o => o.items?.some((i: any) => i.collection === "custom")).length,
     [filteredOrders]
   );
 
@@ -120,17 +110,17 @@ export default function AdminDashboard() {
   };
 
   const OrderCard = ({ order }: { order: any }) => {
-    const isCnyOrder = order.type === 'cny';
-    
+    const collections: string[] = Array.from(new Set((order.items || []).map((i: any) => i.collection)));
+
     return (
-      <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate(`/admin/orders/${order.type}/${order.id}`)}>
+      <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate(`/admin/orders/${order.id}`)}>
         <CardHeader>
           <div className="flex justify-between items-start">
             <div>
               <CardTitle className="text-lg">
-                {order.orderNumber || (isCnyOrder ? `CNY${order.id.toString().padStart(4, '0')}` : `CST${order.id.toString().padStart(4, '0')}`)}
-                {isCnyOrder && <Badge variant="secondary" className="ml-2 text-xs">CNY Collection</Badge>}
-                {!isCnyOrder && <Badge variant="secondary" className="ml-2 text-xs">Custom</Badge>}
+                {order.orderNumber || `JJA${order.id.toString().padStart(4, '0')}`}
+                {collections.includes("cny") && <Badge variant="secondary" className="ml-2 text-xs">CNY Collection</Badge>}
+                {collections.includes("custom") && <Badge variant="secondary" className="ml-2 text-xs">Custom</Badge>}
               </CardTitle>
               <CardDescription className="mt-1">{order.customerName}</CardDescription>
             </div>
@@ -150,7 +140,7 @@ export default function AdminDashboard() {
             <div className="flex justify-between">
               <span className="text-muted-foreground">Items:</span>
               <span className="font-medium">
-                {order.items?.length || 0} {isCnyOrder ? "item(s)" : "cake(s)"}
+                {order.items?.length || 0} item(s)
               </span>
             </div>
             <div className="flex justify-between">
@@ -314,7 +304,7 @@ export default function AdminDashboard() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {displayOrders.map((order) => (
-                  <OrderCard key={`${order.type}-${order.id}`} order={order} />
+                  <OrderCard key={order.id} order={order} />
                 ))}
               </div>
             )}
@@ -331,7 +321,7 @@ export default function AdminDashboard() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {displayOrders.map((order) => (
-                  <OrderCard key={`${order.type}-${order.id}`} order={order} />
+                  <OrderCard key={order.id} order={order} />
                 ))}
               </div>
             )}
@@ -348,7 +338,7 @@ export default function AdminDashboard() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {displayOrders.map((order) => (
-                  <OrderCard key={`${order.type}-${order.id}`} order={order} />
+                  <OrderCard key={order.id} order={order} />
                 ))}
               </div>
             )}

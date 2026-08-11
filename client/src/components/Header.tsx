@@ -1,9 +1,9 @@
 import { Link } from "wouter";
 import { ShoppingCart } from "lucide-react";
-import { useCustomCart } from "@/contexts/CustomCartContext";
+import { useCart } from "@/contexts/CartContext";
 
 export default function Header() {
-  const { totalItems } = useCustomCart();
+  const { totalItems } = useCart();
 
   return (
     <header className="sticky top-0 z-[100] bg-background">
@@ -32,7 +32,7 @@ export default function Header() {
               About
             </span>
           </Link>
-          <Link href="/customize/cart">
+          <Link href="/cart">
             <span className="relative flex items-center cursor-pointer text-foreground hover:text-primary transition-colors">
               <ShoppingCart className="h-5 w-5" />
               {totalItems > 0 && (

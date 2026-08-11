@@ -6,8 +6,6 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import Customize from "./pages/Customize";
-import CustomizeCart from "./pages/CustomizeCart";
-import Confirmation from "./pages/Confirmation";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import AdminLogin from "./pages/AdminLogin";
 import AdminSignup from "./pages/AdminSignup";
@@ -38,15 +36,13 @@ function Router() {
       <Switch>
         <Route path={"/"} component={Home} />
         <Route path="/customize" component={Customize} />
-        <Route path="/customize/cart" component={CustomizeCart} />
         <Route path="/cny-2026" component={CNY2026} />
         <Route path="/cart" component={Cart} />
         <Route path="/order-confirmation" component={OrderConfirmation} />
-        <Route path="/confirmation/:id" component={Confirmation} />
         <Route path="/admin/login" component={AdminLogin} />
         <Route path="/admin/signup" component={AdminSignup} />
         <Route path="/admin/dashboard" component={AdminDashboard} />
-        <Route path="/admin/orders/:type/:id" component={AdminOrderDetail} />
+        <Route path="/admin/orders/:id" component={AdminOrderDetail} />
         <Route path="/admin" component={AdminDashboard} />
         <Route path={"/404"} component={NotFound} />
         {/* Final fallback route */}

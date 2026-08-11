@@ -10,13 +10,8 @@ interface CartDrawerProps {
 }
 
 export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
-  const { items, removeItem, updateQuantity } = useCart();
+  const { items, removeItem, updateQuantity, totalPrice } = useCart();
   const [, navigate] = useLocation();
-
-  const totalPrice = items.reduce((sum, item) => {
-    const price = typeof item.price === 'string' ? parseFloat(item.price.replace('$', '')) : item.price;
-    return sum + price * item.quantity;
-  }, 0);
 
   const handleCheckout = () => {
     onOpenChange(false);
@@ -42,22 +37,28 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
           ) : (
             <div className="space-y-4">
               {items.map((item) => {
-                const price = typeof item.price === 'string' ? parseFloat(item.price.replace('$', '')) : item.price;
+                const title = item.collection === "cny" ? item.name : item.themeLabel;
+                const subtitle =
+                  item.collection === "cny"
+                    ? `${item.edition} • ${item.size} • ${item.flavors ? item.flavors.join(', ') : item.flavor}`
+                    : `${item.shapeLabel} • ${item.sizeLabel} • ${item.flavours.join(', ')}`;
+                const dietary =
+                  item.collection === "cny" ? item.dietaryRequirements?.join(', ') : item.dietaryRequirements;
                 return (
                   <div key={item.id} className="flex gap-4 border-b pb-6 mb-4">
                     <img
                       src={item.image}
-                      alt={item.name}
+                      alt={title}
                       className="w-20 h-20 object-cover rounded-md"
                     />
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-sm truncate">{item.name}</h3>
+                      <h3 className="font-medium text-sm truncate">{title}</h3>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {item.edition} • {item.size} • {item.flavors ? item.flavors.join(', ') : item.flavor}
+                        {subtitle}
                       </p>
-                      {item.dietaryRequirements && item.dietaryRequirements.length > 0 && (
+                      {dietary && (
                         <p className="text-xs text-muted-foreground mt-1">
-                          Dietary: {item.dietaryRequirements.join(', ')}
+                          Dietary: {dietary}
                         </p>
                       )}
                       <div className="flex items-center gap-2 mt-2">
@@ -95,7 +96,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                       >
                         <X className="h-4 w-4" />
                       </Button>
-                      <p className="font-semibold text-sm">${(price * item.quantity).toFixed(2)}</p>
+                      <p className="font-semibold text-sm">${(item.price * item.quantity).toFixed(2)}</p>
                     </div>
                   </div>
                 );

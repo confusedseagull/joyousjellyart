@@ -10,7 +10,7 @@ import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { getCustomOrderPrice } from "../../../shared/customOrderPricing";
 import { formatPrice } from "@/lib/utils";
-import { useCustomCart, type CakeFormat } from "@/contexts/CustomCartContext";
+import { useCart, type CakeFormat } from "@/contexts/CartContext";
 
 // Theme options
 const THEMES = [
@@ -423,7 +423,7 @@ function SizeOption({
 
 export default function Customize() {
   const [, navigate] = useLocation();
-  const { addItem } = useCustomCart();
+  const { addCustomItem } = useCart();
 
   // Format, shape & size state
   const [format, setFormat] = useState<CakeFormat | "">("");
@@ -634,7 +634,7 @@ export default function Customize() {
       toast.error("Please complete all required fields");
       return;
     }
-    addItem(item);
+    addCustomItem(item);
     toast.success("Added to cart");
     resetBuilder();
   };
@@ -645,8 +645,8 @@ export default function Customize() {
       toast.error("Please complete all required fields");
       return;
     }
-    addItem(item);
-    navigate("/customize/cart");
+    addCustomItem(item);
+    navigate("/cart");
   };
 
   return (

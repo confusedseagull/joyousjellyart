@@ -1,6 +1,6 @@
 import { eq, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { orders, InsertOrder, Order, cnyOrders, InsertCnyOrder, CnyOrder } from "../drizzle/schema";
+import { orders, InsertOrder, Order } from "../drizzle/schema";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -28,7 +28,7 @@ export async function createOrder(order: InsertOrder): Promise<Order> {
   const insertedId = Number(result[0].insertId);
   
   // Generate order number based on ID
-  const orderNumber = `CST${String(insertedId).padStart(4, '0')}`;
+  const orderNumber = `JJA${String(insertedId).padStart(4, '0')}`;
   
   // Update the order with the generated order number
   await db.update(orders).set({ orderNumber }).where(eq(orders.id, insertedId));
@@ -72,59 +72,4 @@ export async function updateOrder(id: number, updates: Partial<InsertOrder>): Pr
   return await getOrderById(id);
 }
 
-
-// CNY Order management functions
-export async function createCnyOrder(order: InsertCnyOrder): Promise<CnyOrder> {
-  const db = await getDb();
-  if (!db) {
-    throw new Error("Database not available");
-  }
-
-  const result = await db.insert(cnyOrders).values(order);
-  const insertedId = Number(result[0].insertId);
-  
-  // Generate order number based on ID
-  const orderNumber = `CNY${String(insertedId).padStart(4, '0')}`;
-  
-  // Update the order with the generated order number
-  await db.update(cnyOrders).set({ orderNumber }).where(eq(cnyOrders.id, insertedId));
-  
-  const newOrder = await db.select().from(cnyOrders).where(eq(cnyOrders.id, insertedId)).limit(1);
-  
-  if (newOrder.length === 0) {
-    throw new Error("Failed to retrieve created CNY order");
-  }
-  
-  return newOrder[0];
-}
-
-export async function getAllCnyOrders(): Promise<CnyOrder[]> {
-  const db = await getDb();
-  if (!db) {
-    throw new Error("Database not available");
-  }
-
-  return await db.select().from(cnyOrders).orderBy(desc(cnyOrders.createdAt));
-}
-
-export async function getCnyOrderById(id: number): Promise<CnyOrder | undefined> {
-  const db = await getDb();
-  if (!db) {
-    throw new Error("Database not available");
-  }
-
-  const result = await db.select().from(cnyOrders).where(eq(cnyOrders.id, id)).limit(1);
-  return result.length > 0 ? result[0] : undefined;
-}
-
-export async function updateCnyOrder(id: number, updates: Partial<InsertCnyOrder>): Promise<CnyOrder | undefined> {
-  const db = await getDb();
-  if (!db) {
-    throw new Error("Database not available");
-  }
-
-  await db.update(cnyOrders).set(updates).where(eq(cnyOrders.id, id));
-  
-  return await getCnyOrderById(id);
-}
 

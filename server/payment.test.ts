@@ -12,14 +12,14 @@ describe('Payment Request Creation', () => {
     vi.clearAllMocks();
   });
 
-  it('should create payment request for CNY order', async () => {
+  it('should create payment request for an order', async () => {
     const mockPaymentRequest = {
       id: 'payment_req_123',
       url: 'https://sandbox.hit-pay.com/payment/payment_req_123',
       status: 'pending',
       amount: '125.00',
       currency: 'SGD',
-      reference_number: 'CNY-1',
+      reference_number: 'ORD-1',
       created_at: new Date().toISOString(),
     };
 
@@ -33,12 +33,11 @@ describe('Payment Request Creation', () => {
         secure: false,
       } as any,
       res: {} as any,
-      user: null,
+      admin: null,
     });
 
     const result = await caller.payment.createRequest({
       orderId: 1,
-      orderType: 'cny',
       amount: '125.00',
       customerName: 'Test Customer',
       customerEmail: 'test@example.com',
@@ -50,10 +49,10 @@ describe('Payment Request Creation', () => {
     expect(hitpayModule.createPaymentRequest).toHaveBeenCalledWith({
       amount: '125.00',
       currency: 'SGD',
-      purpose: 'Order CNY0001 - Joyous Jelly Art',
-      reference_number: 'CNY-1',
+      purpose: 'Order JJA0001 - Joyous Jelly Art',
+      reference_number: 'ORD-1',
       webhook: `${baseUrl}/api/webhooks/hitpay`,
-      redirect_url: `${baseUrl}/order-confirmation?order=CNY0001`,
+      redirect_url: `${baseUrl}/order-confirmation?order=JJA0001`,
       name: 'Test Customer',
       email: 'test@example.com',
       phone: '+6512345678',
@@ -61,14 +60,14 @@ describe('Payment Request Creation', () => {
     });
   });
 
-  it('should create payment request for custom order', async () => {
+  it('should create payment request for an order with a different id', async () => {
     const mockPaymentRequest = {
       id: 'payment_req_456',
       url: 'https://sandbox.hit-pay.com/payment/payment_req_456',
       status: 'pending',
       amount: '200.00',
       currency: 'SGD',
-      reference_number: 'CUSTOM-2',
+      reference_number: 'ORD-2',
       created_at: new Date().toISOString(),
     };
 
@@ -82,12 +81,11 @@ describe('Payment Request Creation', () => {
         secure: false,
       } as any,
       res: {} as any,
-      user: null,
+      admin: null,
     });
 
     const result = await caller.payment.createRequest({
       orderId: 2,
-      orderType: 'custom',
       amount: '200.00',
       customerName: 'Jane Doe',
       customerEmail: 'jane@example.com',
@@ -99,10 +97,10 @@ describe('Payment Request Creation', () => {
     expect(hitpayModule.createPaymentRequest).toHaveBeenCalledWith({
       amount: '200.00',
       currency: 'SGD',
-      purpose: 'Order CST0002 - Joyous Jelly Art',
-      reference_number: 'CUSTOM-2',
+      purpose: 'Order JJA0002 - Joyous Jelly Art',
+      reference_number: 'ORD-2',
       webhook: `${baseUrl}/api/webhooks/hitpay`,
-      redirect_url: `${baseUrl}/order-confirmation?order=CST0002`,
+      redirect_url: `${baseUrl}/order-confirmation?order=JJA0002`,
       name: 'Jane Doe',
       email: 'jane@example.com',
       phone: '+6587654321',
@@ -117,7 +115,7 @@ describe('Payment Request Creation', () => {
       status: 'pending',
       amount: '150.00',
       currency: 'SGD',
-      reference_number: 'CNY-5',
+      reference_number: 'ORD-5',
       created_at: new Date().toISOString(),
     };
 
@@ -132,12 +130,11 @@ describe('Payment Request Creation', () => {
         secure: true,
       } as any,
       res: {} as any,
-      user: null,
+      admin: null,
     });
 
     await caller.payment.createRequest({
       orderId: 5,
-      orderType: 'cny',
       amount: '150.00',
       customerName: 'Test User',
       customerEmail: 'user@test.com',
@@ -148,7 +145,7 @@ describe('Payment Request Creation', () => {
     expect(hitpayModule.createPaymentRequest).toHaveBeenCalledWith(
       expect.objectContaining({
         webhook: `${baseUrl}/api/webhooks/hitpay`,
-        redirect_url: `${baseUrl}/order-confirmation?order=CNY0005`,
+        redirect_url: `${baseUrl}/order-confirmation?order=JJA0005`,
         payment_methods: ['paynow_online', 'card'],
       })
     );
@@ -161,7 +158,7 @@ describe('Payment Request Creation', () => {
       status: 'pending',
       amount: '100.00',
       currency: 'SGD',
-      reference_number: 'CNY-9999',
+      reference_number: 'ORD-9999',
       created_at: new Date().toISOString(),
     };
 
@@ -175,12 +172,11 @@ describe('Payment Request Creation', () => {
         secure: false,
       } as any,
       res: {} as any,
-      user: null,
+      admin: null,
     });
 
     await caller.payment.createRequest({
       orderId: 9999,
-      orderType: 'cny',
       amount: '100.00',
       customerName: 'Test',
       customerEmail: 'test@test.com',
@@ -190,9 +186,9 @@ describe('Payment Request Creation', () => {
     const baseUrl = process.env.PUBLIC_URL || 'http://localhost:3000';
     expect(hitpayModule.createPaymentRequest).toHaveBeenCalledWith(
       expect.objectContaining({
-        purpose: 'Order CNY9999 - Joyous Jelly Art',
-        reference_number: 'CNY-9999',
-        redirect_url: `${baseUrl}/order-confirmation?order=CNY9999`,
+        purpose: 'Order JJA9999 - Joyous Jelly Art',
+        reference_number: 'ORD-9999',
+        redirect_url: `${baseUrl}/order-confirmation?order=JJA9999`,
         payment_methods: ['paynow_online', 'card'],
       })
     );

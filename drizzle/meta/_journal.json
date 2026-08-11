@@ -15,6 +15,13 @@
       "when": 1785944172379,
       "tag": "0001_orders_cart_restructure",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1786450879906,
+      "tag": "0002_stale_garia",
+      "breakpoints": true
     }
   ]
 }
