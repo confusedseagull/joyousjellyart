@@ -196,6 +196,13 @@ export default function Cart() {
     }
   }, [deliveryMethod]);
 
+  // react-query silently clears `error` between retry attempts, so reading
+  // deliveryFeeData/deliveryFeeError directly can flash "Calculating..." even
+  // after deliveryError has already been set below. Derive a single stable
+  // "still waiting on a first result" flag from our own persisted state instead.
+  const isCalculatingDeliveryFee =
+    deliveryMethod === "delivery" && !!addressLine && !!postalCode && deliveryFee === 0 && !deliveryError;
+
   const totalPrice = subtotal + deliveryFee;
 
   const composedDeliveryAddress = () => {
@@ -271,7 +278,7 @@ export default function Cart() {
       return;
     }
 
-    if (deliveryMethod === "delivery" && deliveryFeeData === undefined && !deliveryFeeError) {
+    if (isCalculatingDeliveryFee) {
       toast.error("Please wait for the delivery fee to finish calculating");
       return;
     }
@@ -607,7 +614,7 @@ export default function Cart() {
                       ? "FREE"
                       : deliveryFee > 0
                         ? formatPrice(deliveryFee)
-                        : deliveryFeeData === undefined && !deliveryFeeError
+                        : isCalculatingDeliveryFee
                           ? "Calculating..."
                           : formatPrice(0)}
                   </span>
