@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useCustomCart } from "@/contexts/CustomCartContext";
+import { useCustomCart, type CustomCartItem } from "@/contexts/CustomCartContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,12 +7,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
-import { Minus, Plus, Trash2, ShoppingBag, CalendarIcon } from "lucide-react";
+import { Minus, Plus, Trash2, ShoppingBag, MapPin, Truck, Store } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { format } from "date-fns";
 import { formatPrice } from "@/lib/utils";
-import { SelectablePill } from "@/components/SelectablePill";
 import { toast } from "sonner";
 
 const PICKUP_TIME_SLOTS = [
@@ -28,7 +27,55 @@ const DELIVERY_TIME_SLOTS = [
   "5:00 PM - 7:00 PM",
 ];
 
+const FORMAT_LABELS: Record<CustomCartItem["format"], string> = {
+  cake: "Cake",
+  jellyPlatter: "Jelly Platter",
+  miniGiftBox: "Mini Gift Box",
+};
+
+const PLATTER_SHAPE_LABELS: Record<string, string> = {
+  heart: "Heart",
+  square: "Square",
+  circle: "Round",
+  clover: "Clover",
+};
+
+const PICKUP_ADDRESS = "2 Jalan Lokam, #01-27 Kensington Square, Singapore 537846";
+const PICKUP_MAPS_URL = "https://maps.google.com/?q=" + encodeURIComponent(PICKUP_ADDRESS);
+
 const inputClass = "h-[52px] rounded-2xl border-[#e5e5e5]";
+
+// Bordered box with an always-visible label + inline placeholder text,
+// matching the Figma "input-field-wrapper" pattern (also used for Additional
+// Notes on the Customize page).
+function LabeledInput({
+  label,
+  labelWidth,
+  ...props
+}: { label: string; labelWidth?: string } & React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <div className="border border-[#e5e5e5] rounded-2xl h-[52px] flex items-center gap-4 px-4 w-full">
+      <label className={`shrink-0 text-sm text-foreground ${labelWidth || ""}`}>{label}</label>
+      <input
+        {...props}
+        className="flex-1 min-w-0 text-sm bg-transparent outline-none placeholder:text-[#808582]"
+      />
+    </div>
+  );
+}
+
+// Strips a parenthetical instruction suffix (e.g. "6cm (Choose up to 3 shapes: ...)")
+// down to just the dimension, for compact display in the order summary.
+function shortSizeLabel(sizeLabel: string): string {
+  return sizeLabel.replace(/\s*\(.*\)$/, "");
+}
+
+function itemShapeDisplay(item: CustomCartItem): string {
+  if (item.platterShapes && item.platterShapes.length > 0) {
+    return item.platterShapes.map((s) => PLATTER_SHAPE_LABELS[s] || s).join(", ");
+  }
+  return item.shapeLabel;
+}
 
 // Orders store a single fulfillment timestamp (no separate time-range column),
 // so the slot's start time gets merged onto the picked date before submitting.
@@ -55,7 +102,10 @@ export default function CustomizeCart() {
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [deliveryMethod, setDeliveryMethod] = useState<"pickup" | "delivery">("pickup");
-  const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [addressLine, setAddressLine] = useState("");
+  const [aptUnit, setAptUnit] = useState("");
+  const [postalCode, setPostalCode] = useState("");
+  const [recipientWhatsapp, setRecipientWhatsapp] = useState("");
   const [fulfillmentDate, setFulfillmentDate] = useState<Date>();
   const [fulfillmentTime, setFulfillmentTime] = useState("");
   const [notes, setNotes] = useState("");
@@ -69,6 +119,13 @@ export default function CustomizeCart() {
     minDate.setDate(minDate.getDate() + 3);
     minDate.setHours(0, 0, 0, 0);
     return minDate;
+  };
+
+  const composedDeliveryAddress = () => {
+    const parts = [addressLine, aptUnit ? `Unit ${aptUnit}` : null, postalCode ? `Singapore ${postalCode}` : null]
+      .filter(Boolean)
+      .join(", ");
+    return recipientWhatsapp ? `${parts} · WhatsApp: ${recipientWhatsapp}` : parts;
   };
 
   const createOrder = trpc.orders.create.useMutation({
@@ -101,7 +158,7 @@ export default function CustomizeCart() {
           customerEmail,
           customerPhone,
           deliveryMethod,
-          deliveryAddress: deliveryMethod === "delivery" ? deliveryAddress : undefined,
+          deliveryAddress: deliveryMethod === "delivery" ? composedDeliveryAddress() : undefined,
           fulfillmentDate: fulfillmentDate?.toISOString() || new Date().toISOString(),
           items,
           subtotal: totalPrice,
@@ -130,8 +187,8 @@ export default function CustomizeCart() {
       return;
     }
 
-    if (deliveryMethod === "delivery" && !deliveryAddress) {
-      toast.error("Please provide a delivery address");
+    if (deliveryMethod === "delivery" && (!addressLine || !postalCode || !recipientWhatsapp)) {
+      toast.error("Please provide a delivery address, postal code, and recipient WhatsApp number");
       return;
     }
 
@@ -145,7 +202,7 @@ export default function CustomizeCart() {
       customerEmail,
       customerPhone,
       deliveryMethod,
-      deliveryAddress: deliveryMethod === "delivery" ? deliveryAddress : undefined,
+      deliveryAddress: deliveryMethod === "delivery" ? composedDeliveryAddress() : undefined,
       fulfillmentDate: applySlotStartTime(fulfillmentDate, fulfillmentTime),
       timeRange: fulfillmentTime,
       items: items.map((item) => ({
@@ -195,57 +252,68 @@ export default function CustomizeCart() {
   }
 
   return (
-    <div className="min-h-screen bg-background py-12">
-      <div className="container">
-        <h1 className="mb-10">Secure Checkout</h1>
-
-        <div className="flex flex-col lg:flex-row gap-10 items-start">
+    <div className="min-h-screen bg-background">
+      <div className="container py-12">
+        <div className="flex flex-col lg:flex-row gap-10 items-stretch">
           {/* Left: checkout form */}
-          <div className="flex-1 min-w-0 flex flex-col gap-8 max-w-2xl">
+          <div className="flex-1 min-w-0 flex flex-col gap-8">
+            <div className="flex flex-col gap-1">
+              <h1>Secure Checkout</h1>
+              <p className="text-muted-foreground text-base">Review your order details.</p>
+            </div>
+
+            <div className="h-px w-full bg-[#e5e5e5]" />
+
+            {/* Customer Details */}
             <div className="flex flex-col gap-4">
-              <h2 className="text-xl font-medium">Customer Details</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  placeholder="Name *"
-                  className={inputClass}
-                />
-                <Input
-                  type="email"
-                  value={customerEmail}
-                  onChange={(e) => setCustomerEmail(e.target.value)}
-                  placeholder="Email Address *"
-                  className={inputClass}
-                />
-              </div>
-              <Input
+              <h2 className="text-base font-medium">Customer Details</h2>
+              <LabeledInput
+                label="Name"
+                labelWidth="w-[68px]"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                placeholder="Enter your name"
+              />
+              <LabeledInput
+                label="Email Address"
+                labelWidth="w-[109px]"
+                type="email"
+                value={customerEmail}
+                onChange={(e) => setCustomerEmail(e.target.value)}
+                placeholder="e.g. doreenleexy@gmail.com"
+              />
+              <LabeledInput
+                label="Phone"
+                labelWidth="w-[68px]"
                 type="tel"
                 value={customerPhone}
                 onChange={(e) => setCustomerPhone(e.target.value)}
-                placeholder="Phone *"
-                className={inputClass}
+                placeholder="e.g. +65 8123 4567"
               />
             </div>
 
             <div className="h-px w-full bg-[#e5e5e5]" />
 
+            {/* Fulfillment Date and Time */}
             <div className="flex flex-col gap-4">
-              <div>
-                <h2 className="text-xl font-medium">Fulfillment Date and Time</h2>
-                <p className="text-muted-foreground text-sm mt-1">
-                  Minimum 3 days advance notice required.
+              <div className="flex flex-col gap-1">
+                <h2 className="text-base font-medium">Fulfillment Date and Time</h2>
+                <p className="text-muted-foreground text-sm">
+                  Minimum 3 days advance notice required. For example, if you place an order today, the earliest fulfillment date you can select will be 3 days from today.
                 </p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label className="mb-2 block">Date *</Label>
+                <div className="flex flex-col gap-2">
+                  <Label className="text-[13px] font-medium">Date</Label>
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button type="button" variant="outline" className={`w-full justify-start text-left font-normal ${inputClass}`}>
-                        <CalendarIcon className="mr-2 h-4 w-4" />
+                      <button
+                        type="button"
+                        className={`border border-[#e5e5e5] rounded-2xl h-[52px] flex items-center gap-2 px-4 w-full text-left text-sm ${fulfillmentDate ? "text-foreground" : "text-[#808582]"}`}
+                      >
+                        <MapPin className="h-4 w-4 shrink-0 text-[#603b17]" />
                         {fulfillmentDate ? format(fulfillmentDate, "PPP") : "Pick a date"}
-                      </Button>
+                      </button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0">
                       <Calendar
@@ -258,10 +326,11 @@ export default function CustomizeCart() {
                     </PopoverContent>
                   </Popover>
                 </div>
-                <div>
-                  <Label className="mb-2 block">Time *</Label>
+                <div className="flex flex-col gap-2">
+                  <Label className="text-[13px] font-medium">Time</Label>
                   <Select value={fulfillmentTime} onValueChange={setFulfillmentTime}>
-                    <SelectTrigger className={inputClass}>
+                    <SelectTrigger className={`${inputClass} w-full gap-2 [&>span]:flex [&>span]:items-center [&>span]:gap-2`}>
+                      <MapPin className="h-4 w-4 shrink-0 text-[#603b17]" />
                       <SelectValue placeholder="Select time slot" />
                     </SelectTrigger>
                     <SelectContent>
@@ -276,45 +345,95 @@ export default function CustomizeCart() {
 
             <div className="h-px w-full bg-[#e5e5e5]" />
 
+            {/* Delivery Method */}
             <div className="flex flex-col gap-4">
-              <h2 className="text-xl font-medium">Delivery Method</h2>
-              <div className="flex gap-4">
-                <SelectablePill
-                  selected={deliveryMethod === "pickup"}
-                  onClick={() => setDeliveryMethod("pickup")}
-                  className="flex-1 flex items-center justify-center px-4 py-3"
-                >
-                  Pick Up
-                </SelectablePill>
-                <SelectablePill
-                  selected={deliveryMethod === "delivery"}
+              <h2 className="text-base font-medium">Delivery Method</h2>
+              <div className="bg-[#faf7f3] flex gap-1 h-[50px] items-center p-1 rounded-full w-full">
+                <button
+                  type="button"
                   onClick={() => setDeliveryMethod("delivery")}
-                  className="flex-1 flex items-center justify-center px-4 py-3"
+                  className={`flex flex-1 h-full items-center justify-center gap-2 rounded-full text-sm transition-colors ${
+                    deliveryMethod === "delivery"
+                      ? "bg-white text-foreground font-semibold shadow-sm"
+                      : "text-muted-foreground font-medium"
+                  }`}
                 >
+                  <Truck className="h-4 w-4" />
                   Delivery
-                </SelectablePill>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDeliveryMethod("pickup")}
+                  className={`flex flex-1 h-full items-center justify-center gap-2 rounded-full text-sm transition-colors ${
+                    deliveryMethod === "pickup"
+                      ? "bg-white text-foreground font-semibold shadow-sm"
+                      : "text-muted-foreground font-medium"
+                  }`}
+                >
+                  <Store className="h-4 w-4" />
+                  Pick Up
+                </button>
               </div>
-              {deliveryMethod === "delivery" && (
-                <Textarea
-                  required
-                  value={deliveryAddress}
-                  onChange={(e) => setDeliveryAddress(e.target.value)}
-                  placeholder="Delivery address *"
-                  className="min-h-[80px] rounded-2xl border-[#e5e5e5]"
-                />
-              )}
-              {deliveryMethod === "pickup" && (
-                <div className="p-4 bg-[#faf7f3] rounded-2xl text-sm">
-                  <p className="font-medium mb-1">Pick-up Location:</p>
-                  <p>2 Jln Lokam #01-27, Singapore 548182</p>
+
+              {deliveryMethod === "delivery" ? (
+                <div className="flex flex-col gap-2">
+                  <Input
+                    value={addressLine}
+                    onChange={(e) => setAddressLine(e.target.value)}
+                    placeholder="Address"
+                    className={inputClass}
+                  />
+                  <Input
+                    value={aptUnit}
+                    onChange={(e) => setAptUnit(e.target.value)}
+                    placeholder="Apartment/Unit No (optional)"
+                    className={inputClass}
+                  />
+                  <Input
+                    value={postalCode}
+                    onChange={(e) => setPostalCode(e.target.value)}
+                    placeholder="Postal Code"
+                    className={inputClass}
+                  />
+                  <LabeledInput
+                    label="Recipient WhatsApp Number"
+                    labelWidth="w-[190px]"
+                    type="tel"
+                    value={recipientWhatsapp}
+                    onChange={(e) => setRecipientWhatsapp(e.target.value)}
+                    placeholder="e.g. +65 8123 4567"
+                  />
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <Label className="text-[13px] font-medium">Pick Up Address</Label>
+                  <div className="border border-[#e5e5e5] rounded-xl flex gap-4 items-start px-4 py-3 w-full">
+                    <MapPin className="h-4 w-4 shrink-0 mt-0.5 text-[#603b17]" />
+                    <div className="flex flex-col gap-2 text-sm">
+                      <div>
+                        <p className="font-semibold">Joyous JellyArt</p>
+                        <p>{PICKUP_ADDRESS}</p>
+                        <p>Usually ready in 2-4 days</p>
+                      </div>
+                      <a
+                        href={PICKUP_MAPS_URL}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="font-medium text-[#603b17]"
+                      >
+                        View on Google Maps &nbsp;→
+                      </a>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
 
             <div className="h-px w-full bg-[#e5e5e5]" />
 
+            {/* Additional Instructions */}
             <div className="flex flex-col gap-4">
-              <h2 className="text-xl font-medium">Additional Instructions</h2>
+              <h2 className="text-base font-medium">Additional Instructions</h2>
               <Textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
@@ -322,22 +441,39 @@ export default function CustomizeCart() {
                 className="min-h-[90px] rounded-2xl border-[#e5e5e5]"
               />
             </div>
+
+            <Button
+              type="button"
+              size="lg"
+              onClick={handleCheckout}
+              disabled={createOrder.isPending || createPaymentRequest.isPending}
+              className="w-full h-[52px] rounded-full text-base bg-primary hover:opacity-90 text-primary-foreground"
+            >
+              {createOrder.isPending || createPaymentRequest.isPending
+                ? "Processing..."
+                : `Confirm and Pay  •  ${formatPrice(totalPrice)}`}
+            </Button>
           </div>
 
-          {/* Right: sticky order summary */}
-          <div className="w-full lg:w-[420px] shrink-0 lg:sticky lg:top-24">
-            <div className="bg-[#faf7f3] rounded-2xl p-8 flex flex-col gap-6">
+          {/* Right: order summary */}
+          <div className="w-full lg:w-[380px] shrink-0">
+            <div className="bg-[#faf7f3] h-full p-10 flex flex-col gap-6">
               <h2 className="text-2xl">My Order</h2>
 
               <div className="flex flex-col gap-4">
                 {items.map((item) => (
                   <div key={item.id} className="flex items-start justify-between gap-4 pb-4 border-b border-[#e4e6e8] last:border-b-0">
-                    <div className="flex-1 min-w-0 flex flex-col gap-1">
-                      <p className="font-medium">{item.themeLabel}</p>
-                      <p className="text-xs text-muted-foreground">Shape: {item.shapeLabel}</p>
-                      <p className="text-xs text-muted-foreground">Size: {item.sizeLabel}</p>
-                      <p className="text-xs text-muted-foreground">Flavour: {item.flavours.join(", ")}</p>
-                      <div className="flex items-center gap-3 mt-2">
+                    <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+                      <p className="font-medium text-[15px]">Custom Cake</p>
+                      <p className="text-xs text-muted-foreground">Format: {FORMAT_LABELS[item.format]}</p>
+                      <p className="text-xs text-muted-foreground">Shape: {itemShapeDisplay(item)}</p>
+                      <p className="text-xs text-muted-foreground">Size: {shortSizeLabel(item.sizeLabel)}</p>
+                      <p className="text-xs text-muted-foreground">Design: {item.themeLabel}</p>
+                      <p className="text-xs text-muted-foreground">Base Flavour: {item.flavours.join(", ")}</p>
+                      {item.selectedColors && item.selectedColors.length > 0 && (
+                        <p className="text-xs text-muted-foreground">Colors: {item.selectedColors.join(", ")}</p>
+                      )}
+                      <div className="flex items-center gap-3 mt-1.5">
                         {item.format === "miniGiftBox" ? (
                           <div className="flex items-center gap-2">
                             <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.id, item.quantity - 1)} disabled={item.quantity <= 1}>
@@ -354,7 +490,10 @@ export default function CustomizeCart() {
                         </button>
                       </div>
                     </div>
-                    <p className="font-semibold shrink-0">{formatPrice(item.price * item.quantity)}</p>
+                    <div className="flex items-center gap-4 shrink-0">
+                      <span className="bg-[#eef3f0] text-[#426b57] text-xs font-semibold px-2 py-1 rounded-md">{item.quantity}x</span>
+                      <p className="font-semibold">{formatPrice(item.price * item.quantity)}</p>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -369,22 +508,10 @@ export default function CustomizeCart() {
                   <span>FREE</span>
                 </div>
                 <div className="flex justify-between items-baseline pt-2 border-t border-[#e4e6e8]">
-                  <span className="font-medium">Total</span>
+                  <span className="font-medium">Total (incl. tax)</span>
                   <span className="text-xl font-semibold text-primary">{formatPrice(totalPrice)}</span>
                 </div>
               </div>
-
-              <Button
-                type="button"
-                size="lg"
-                onClick={handleCheckout}
-                disabled={createOrder.isPending || createPaymentRequest.isPending}
-                className="w-full h-[52px] rounded-full text-base bg-primary hover:opacity-90 text-primary-foreground"
-              >
-                {createOrder.isPending || createPaymentRequest.isPending
-                  ? "Processing..."
-                  : `Confirm and Pay  •  ${formatPrice(totalPrice)}`}
-              </Button>
             </div>
           </div>
         </div>

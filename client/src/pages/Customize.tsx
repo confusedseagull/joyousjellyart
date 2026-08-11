@@ -186,7 +186,7 @@ const SHAPE_SIZES: { [key: string]: { value: string; label: string }[] } = {
     { value: "6cm", label: '6cm (Choose up to 3 shapes: Heart, Square, Round, Clover)' },
   ],
   platter4: [
-    { value: "6cm", label: '6cm (Choose 2 shapes: Square, Heart, Clover, Round)' },
+    { value: "6cm", label: '6cm (Choose up to 2 shapes: Square, Heart, Clover, Round)' },
     { value: "10cm", label: '10cm (Square only)' },
   ],
   numbers: [
@@ -464,7 +464,7 @@ export default function Customize() {
     format === "cake" ? CAKE_SHAPES : format === "jellyPlatter" ? PLATTER_FORMAT_SHAPES : GIFT_BOX_FORMAT_SHAPES;
 
   const getRequiredFlavorCount = () => {
-    if (shape === "platter9") return 2;
+    if (shape === "platter9") return 3;
     if (shape === "platter4") return 2;
     return 1;
   };
@@ -992,7 +992,11 @@ export default function Customize() {
                 <StepHeader
                   number={4}
                   title="Choose a base flavour"
-                  description={`Choose ${getRequiredFlavorCount()} flavour${getRequiredFlavorCount() > 1 ? "s" : ""} for your jelly cake`}
+                  description={
+                    getRequiredFlavorCount() > 1
+                      ? `Choose up to ${getRequiredFlavorCount()} flavours for your jelly cake`
+                      : "Choose 1 flavour for your jelly cake"
+                  }
                 />
                 <div className="flex flex-wrap gap-6">
                   {BASE_FLAVORS.map((flavor) => {
