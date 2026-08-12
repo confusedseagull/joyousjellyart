@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { appRouter } from './routers';
 import * as hitpayModule from './hitpay';
+import { resetRateLimits } from './_core/rateLimit';
 
 // Mock the HitPay module
 vi.mock('./hitpay', () => ({
@@ -10,6 +11,9 @@ vi.mock('./hitpay', () => ({
 describe('Payment Request Creation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // payment.createRequest is rate-limited per IP; the test context has no
+    // real IP, so every call in this file shares one bucket.
+    resetRateLimits();
   });
 
   it('should create payment request for an order', async () => {

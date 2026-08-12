@@ -6,7 +6,7 @@ import { z } from "zod";
 import { adminUsers } from "../drizzle/schema";
 import { createAdminSessionToken } from "./_core/adminSession";
 import { getSessionCookieOptions } from "./_core/cookies";
-import { adminProcedure, publicProcedure, router } from "./_core/trpc";
+import { adminProcedure, publicProcedure, rateLimited, router } from "./_core/trpc";
 import { getDb } from "./db";
 
 export const adminAuthRouter = router({
@@ -51,8 +51,9 @@ export const adminAuthRouter = router({
       };
     }),
 
-  // Login
+  // Login — rate-limited to blunt brute-force password guessing.
   login: publicProcedure
+    .use(rateLimited({ windowMs: 15 * 60_000, max: 5 }))
     .input(
       z.object({
         email: z.string().email(),

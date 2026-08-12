@@ -1,6 +1,14 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, beforeEach } from "vitest";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
+import { resetRateLimits } from "./_core/rateLimit";
+
+// orders.create is rate-limited per IP; the test context has no real IP, so
+// every call in this file shares one bucket. Reset it before each test so
+// the suite's pass/fail doesn't depend on how many calls preceded it.
+beforeEach(() => {
+  resetRateLimits();
+});
 
 type Admin = NonNullable<TrpcContext["admin"]>;
 

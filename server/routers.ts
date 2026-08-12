@@ -1,4 +1,4 @@
-import { adminProcedure, publicProcedure, router } from "./_core/trpc";
+import { adminProcedure, publicProcedure, rateLimited, router } from "./_core/trpc";
 import { z } from "zod";
 import { createOrder, getAllOrders, getOrderById, updateOrder } from "./db";
 import { createPaymentRequest } from "./hitpay";
@@ -52,9 +52,11 @@ export const appRouter = router({
   system: systemRouter,
   adminAuth: adminAuthRouter,
 
-  // Delivery fee calculation
+  // Delivery fee calculation — rate-limited since every call hits the
+  // (billed) Google Maps Distance Matrix API, not just abuse protection.
   delivery: router({
     calculateFee: publicProcedure
+      .use(rateLimited({ windowMs: 15 * 60_000, max: 20 }))
       .input(z.object({
         address: z.string().min(1, 'Address is required'),
       }))
@@ -66,6 +68,7 @@ export const appRouter = router({
   // Payment processing
   payment: router({
     createRequest: publicProcedure
+      .use(rateLimited({ windowMs: 15 * 60_000, max: 10 }))
       .input(z.object({
         orderId: z.number(),
         amount: z.string(),
@@ -103,6 +106,7 @@ export const appRouter = router({
   orders: router({
     // Public procedure for customers to create orders
     create: publicProcedure
+      .use(rateLimited({ windowMs: 15 * 60_000, max: 10 }))
       .input(z.object({
         customerName: z.string().min(1),
         customerEmail: z.string().email(),

@@ -1,10 +1,18 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, beforeEach, afterAll } from "vitest";
 import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
 import { appRouter } from "./routers";
 import { getDb } from "./db";
 import { adminUsers, type AdminUser } from "../drizzle/schema";
 import type { TrpcContext } from "./_core/context";
+import { resetRateLimits } from "./_core/rateLimit";
+
+// adminAuth.login is rate-limited per IP (max 5/15min); the test context has
+// no real IP, so every call in this file shares one bucket. Reset it before
+// each test so the suite's pass/fail doesn't depend on execution order/count.
+beforeEach(() => {
+  resetRateLimits();
+});
 
 type CookieCall = { name: string; value: string; options: Record<string, unknown> };
 
