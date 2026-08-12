@@ -399,7 +399,7 @@ export default function Cart() {
                 <div className="flex flex-col gap-2">
                   <Label className="text-[13px] font-medium">Time</Label>
                   <Select value={fulfillmentTime} onValueChange={setFulfillmentTime}>
-                    <SelectTrigger className={`${inputClass} w-full gap-2 [&>span]:flex [&>span]:items-center [&>span]:gap-2`}>
+                    <SelectTrigger className={`${inputClass} !h-[52px] w-full gap-2 [&>span]:flex [&>span]:items-center [&>span]:gap-2`}>
                       <MapPin className="h-4 w-4 shrink-0 text-[#603b17]" />
                       <SelectValue placeholder="Select time slot" />
                     </SelectTrigger>
