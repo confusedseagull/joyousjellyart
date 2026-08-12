@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import { handleHitPayWebhook } from './hitpay';
 import * as hitpayModule from '../hitpay';
 import * as dbModule from '../db';
+import * as emailModule from '../email';
 
 // Mock the dependencies
 vi.mock('../hitpay', () => ({
@@ -11,6 +12,11 @@ vi.mock('../hitpay', () => ({
 
 vi.mock('../db', () => ({
   getDb: vi.fn(),
+  getOrderById: vi.fn(),
+}));
+
+vi.mock('../email', () => ({
+  sendOrderConfirmationEmail: vi.fn(),
 }));
 
 describe('HitPay Webhook Handler', () => {
@@ -36,6 +42,8 @@ describe('HitPay Webhook Handler', () => {
     };
 
     vi.mocked(dbModule.getDb).mockResolvedValue(mockDb);
+    vi.mocked(dbModule.getOrderById).mockResolvedValue({ id: 1, orderNumber: 'JJA0001' } as any);
+    vi.mocked(emailModule.sendOrderConfirmationEmail).mockResolvedValue(undefined);
   });
 
   it('should reject webhook with invalid signature', async () => {
@@ -75,6 +83,33 @@ describe('HitPay Webhook Handler', () => {
     await handleHitPayWebhook(mockRequest as Request, mockResponse as Response);
 
     expect(mockDb.update).toHaveBeenCalled();
+    expect(mockDb.set).toHaveBeenCalledWith({
+      paymentStatus: 'paid',
+      paymentId: 'test_payment_123',
+    });
+    expect(dbModule.getOrderById).toHaveBeenCalledWith(1);
+    expect(emailModule.sendOrderConfirmationEmail).toHaveBeenCalledWith({ id: 1, orderNumber: 'JJA0001' });
+    expect(mockResponse.status).toHaveBeenCalledWith(200);
+    expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Webhook processed successfully' });
+  });
+
+  it('should still mark the order paid and return 200 even if the confirmation email fails', async () => {
+    mockRequest = {
+      body: {
+        payment_id: 'test_payment_123',
+        reference_number: 'ORD-1',
+        status: 'completed',
+        amount: '100.00',
+        currency: 'SGD',
+        hmac: 'valid_signature',
+      },
+    };
+
+    vi.mocked(hitpayModule.verifyWebhookSignature).mockReturnValue(true);
+    vi.mocked(emailModule.sendOrderConfirmationEmail).mockRejectedValue(new Error('Resend API error: 401'));
+
+    await handleHitPayWebhook(mockRequest as Request, mockResponse as Response);
+
     expect(mockDb.set).toHaveBeenCalledWith({
       paymentStatus: 'paid',
       paymentId: 'test_payment_123',

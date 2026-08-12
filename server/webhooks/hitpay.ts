@@ -1,8 +1,9 @@
 import { Request, Response } from 'express';
 import { verifyWebhookSignature } from '../hitpay';
-import { getDb } from '../db';
+import { getDb, getOrderById } from '../db';
 import { orders } from '../../drizzle/schema';
 import { eq } from 'drizzle-orm';
+import { sendOrderConfirmationEmail } from '../email';
 
 /**
  * Handle HitPay webhook for payment confirmation
@@ -58,6 +59,17 @@ export async function handleHitPayWebhook(req: Request, res: Response) {
       .where(eq(orders.id, orderId));
 
     console.log(`Order ${orderId} marked as paid`);
+
+    // Best-effort confirmation email — payment-status update above is the
+    // source of truth, so a broken email send must never fail the webhook.
+    try {
+      const order = await getOrderById(orderId);
+      if (order) {
+        await sendOrderConfirmationEmail(order);
+      }
+    } catch (emailError) {
+      console.error('Failed to send order confirmation email:', emailError);
+    }
 
     // Respond to HitPay that webhook was received successfully
     return res.status(200).json({ message: 'Webhook processed successfully' });
