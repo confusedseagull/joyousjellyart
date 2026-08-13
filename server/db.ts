@@ -122,6 +122,92 @@ export async function listOrdersByBucket(options: ListOrdersByBucketOptions): Pr
   return { items: rows.slice(0, limit), hasMore };
 }
 
+export interface DashboardStats {
+  newOrdersToday: number;
+  upcomingToday: number;
+  upcomingTomorrow: number;
+}
+
+export async function getDashboardStats(): Promise<DashboardStats> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const tomorrowStart = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
+  const dayAfterStart = new Date(todayStart.getTime() + 48 * 60 * 60 * 1000);
+
+  const [[newOrdersToday], [upcomingToday], [upcomingTomorrow]] = await Promise.all([
+    db.select({ count: sql<number>`count(*)` }).from(orders)
+      .where(and(gte(orders.createdAt, todayStart), lt(orders.createdAt, tomorrowStart))),
+    db.select({ count: sql<number>`count(*)` }).from(orders)
+      .where(and(gte(orders.fulfillmentDate, todayStart), lt(orders.fulfillmentDate, tomorrowStart))),
+    db.select({ count: sql<number>`count(*)` }).from(orders)
+      .where(and(gte(orders.fulfillmentDate, tomorrowStart), lt(orders.fulfillmentDate, dayAfterStart))),
+  ]);
+
+  return {
+    newOrdersToday: Number(newOrdersToday.count),
+    upcomingToday: Number(upcomingToday.count),
+    upcomingTomorrow: Number(upcomingTomorrow.count),
+  };
+}
+
+// Reused for both the dashboard's upcoming-orders quick-view and its
+// pickup/delivery schedule frame, so both reflect the same Today/Tomorrow toggle.
+export async function getOrdersForDay(day: "today" | "tomorrow"): Promise<Order[]> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const dayStart = day === "today" ? todayStart : new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
+  const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+
+  return await db
+    .select()
+    .from(orders)
+    .where(and(gte(orders.fulfillmentDate, dayStart), lt(orders.fulfillmentDate, dayEnd)))
+    .orderBy(asc(orders.fulfillmentDate));
+}
+
+export interface RevenueTrendPoint {
+  date: string; // YYYY-MM-DD
+  revenue: number;
+}
+
+// Revenue tracks when sales happened (createdAt), not future fulfillment dates.
+export async function getRevenueTrend(days: number): Promise<RevenueTrendPoint[]> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  const now = new Date();
+  const rangeStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (days - 1));
+  const dateExpr = sql<string>`DATE_FORMAT(${orders.createdAt}, '%Y-%m-%d')`;
+
+  const rows = await db
+    .select({ date: dateExpr, revenue: sql<number>`COALESCE(SUM(${orders.total}), 0)` })
+    .from(orders)
+    .where(and(eq(orders.paymentStatus, "paid"), gte(orders.createdAt, rangeStart)))
+    .groupBy(dateExpr);
+
+  const byDate = new Map(rows.map((r) => [r.date, Number(r.revenue)]));
+
+  const trend: RevenueTrendPoint[] = [];
+  for (let i = 0; i < days; i++) {
+    const d = new Date(rangeStart.getTime() + i * 24 * 60 * 60 * 1000);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    trend.push({ date: key, revenue: byDate.get(key) ?? 0 });
+  }
+  return trend;
+}
+
 export async function getOrderById(id: number): Promise<Order | undefined> {
   const db = await getDb();
   if (!db) {

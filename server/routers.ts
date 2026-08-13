@@ -1,6 +1,15 @@
 import { adminProcedure, publicProcedure, rateLimited, router } from "./_core/trpc";
 import { z } from "zod";
-import { createOrder, getAllOrders, getOrderById, updateOrder, listOrdersByBucket } from "./db";
+import {
+  createOrder,
+  getAllOrders,
+  getOrderById,
+  updateOrder,
+  listOrdersByBucket,
+  getDashboardStats,
+  getOrdersForDay,
+  getRevenueTrend,
+} from "./db";
 import { createPaymentRequest } from "./hitpay";
 import { TRPCError } from "@trpc/server";
 import { adminAuthRouter } from "./adminAuth";
@@ -218,6 +227,23 @@ export const appRouter = router({
           });
         }
         return order;
+      }),
+
+    getDashboardStats: adminProcedure
+      .query(async () => {
+        return await getDashboardStats();
+      }),
+
+    getOrdersForDay: adminProcedure
+      .input(z.object({ day: z.enum(["today", "tomorrow"]) }))
+      .query(async ({ input }) => {
+        return await getOrdersForDay(input.day);
+      }),
+
+    getRevenueTrend: adminProcedure
+      .input(z.object({ days: z.number().optional() }))
+      .query(async ({ input }) => {
+        return await getRevenueTrend(input.days ?? 30);
       }),
 
   }),
