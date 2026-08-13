@@ -349,3 +349,195 @@ describe("orders.update", () => {
     expect(updated?.customerPhone).toBe("+65 3333 3333");
   });
 });
+
+describe("orders.listByBucket", () => {
+  it("requires admin authentication", async () => {
+    const ctx = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(caller.orders.listByBucket({ bucket: "today" })).rejects.toThrow("Please login");
+  });
+
+  it("buckets orders by fulfillment date", async () => {
+    const publicCaller = appRouter.createCaller(createPublicContext());
+    const adminCaller = appRouter.createCaller(createAdminContext());
+
+    const now = new Date();
+    const todayNoon = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0);
+    const tomorrowNoon = new Date(todayNoon.getTime() + 24 * 60 * 60 * 1000);
+    const yesterdayNoon = new Date(todayNoon.getTime() - 24 * 60 * 60 * 1000);
+
+    const todayOrder = await publicCaller.orders.create({
+      customerName: "Bucket Today", customerEmail: "bucket.today@example.com", customerPhone: "+65 1000 0001",
+      deliveryMethod: "pickup", fulfillmentDate: todayNoon,
+      items: [makeItem({ id: "bucket-today-item" })], subtotal: 118, deliveryFee: 0, total: 118,
+    });
+    const tomorrowOrder = await publicCaller.orders.create({
+      customerName: "Bucket Tomorrow", customerEmail: "bucket.tomorrow@example.com", customerPhone: "+65 1000 0002",
+      deliveryMethod: "pickup", fulfillmentDate: tomorrowNoon,
+      items: [makeItem({ id: "bucket-tomorrow-item" })], subtotal: 118, deliveryFee: 0, total: 118,
+    });
+    const pastOrder = await publicCaller.orders.create({
+      customerName: "Bucket Past", customerEmail: "bucket.past@example.com", customerPhone: "+65 1000 0003",
+      deliveryMethod: "pickup", fulfillmentDate: yesterdayNoon,
+      items: [makeItem({ id: "bucket-past-item" })], subtotal: 118, deliveryFee: 0, total: 118,
+    });
+
+    const todayResult = await adminCaller.orders.listByBucket({ bucket: "today" });
+    expect(todayResult.items.some((o) => o.id === todayOrder.id)).toBe(true);
+    expect(todayResult.items.some((o) => o.id === tomorrowOrder.id)).toBe(false);
+    expect(todayResult.items.some((o) => o.id === pastOrder.id)).toBe(false);
+
+    const upcomingResult = await adminCaller.orders.listByBucket({ bucket: "upcoming" });
+    expect(upcomingResult.items.some((o) => o.id === tomorrowOrder.id)).toBe(true);
+    expect(upcomingResult.items.some((o) => o.id === todayOrder.id)).toBe(false);
+
+    const pastResult = await adminCaller.orders.listByBucket({ bucket: "past" });
+    expect(pastResult.items.some((o) => o.id === pastOrder.id)).toBe(true);
+    expect(pastResult.items.some((o) => o.id === todayOrder.id)).toBe(false);
+  });
+
+  it("filters by search term", async () => {
+    const publicCaller = appRouter.createCaller(createPublicContext());
+    const adminCaller = appRouter.createCaller(createAdminContext());
+
+    const uniqueName = `SearchTarget${Date.now()}`;
+    const order = await publicCaller.orders.create({
+      customerName: uniqueName, customerEmail: "search.target@example.com", customerPhone: "+65 1000 0004",
+      deliveryMethod: "pickup", fulfillmentDate: new Date(),
+      items: [makeItem({ id: "search-item" })], subtotal: 118, deliveryFee: 0, total: 118,
+    });
+
+    const result = await adminCaller.orders.listByBucket({ bucket: "today", search: uniqueName });
+    expect(result.items.some((o) => o.id === order.id)).toBe(true);
+
+    const noMatch = await adminCaller.orders.listByBucket({ bucket: "today", search: "NoSuchCustomerXYZ" });
+    expect(noMatch.items.some((o) => o.id === order.id)).toBe(false);
+  });
+
+  it("filters by collection", async () => {
+    const publicCaller = appRouter.createCaller(createPublicContext());
+    const adminCaller = appRouter.createCaller(createAdminContext());
+
+    const order = await publicCaller.orders.create({
+      customerName: "Collection Filter Test", customerEmail: "collection.filter@example.com", customerPhone: "+65 1000 0005",
+      deliveryMethod: "pickup", fulfillmentDate: new Date(),
+      items: [makeCnyItem({ id: "collection-filter-item" })], subtotal: 128, deliveryFee: 0, total: 128,
+    });
+
+    const cnyResult = await adminCaller.orders.listByBucket({ bucket: "today", collection: "cny" });
+    expect(cnyResult.items.some((o) => o.id === order.id)).toBe(true);
+
+    const customResult = await adminCaller.orders.listByBucket({ bucket: "today", collection: "custom" });
+    expect(customResult.items.some((o) => o.id === order.id)).toBe(false);
+  });
+
+  it("paginates the past bucket", async () => {
+    const publicCaller = appRouter.createCaller(createPublicContext());
+    const adminCaller = appRouter.createCaller(createAdminContext());
+
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    await publicCaller.orders.create({
+      customerName: "Pagination A", customerEmail: "pagination.a@example.com", customerPhone: "+65 1000 0006",
+      deliveryMethod: "pickup", fulfillmentDate: yesterday,
+      items: [makeItem({ id: "pagination-a-item" })], subtotal: 118, deliveryFee: 0, total: 118,
+    });
+    await publicCaller.orders.create({
+      customerName: "Pagination B", customerEmail: "pagination.b@example.com", customerPhone: "+65 1000 0007",
+      deliveryMethod: "pickup", fulfillmentDate: yesterday,
+      items: [makeItem({ id: "pagination-b-item" })], subtotal: 118, deliveryFee: 0, total: 118,
+    });
+
+    const page = await adminCaller.orders.listByBucket({ bucket: "past", limit: 1, offset: 0 });
+    expect(page.items).toHaveLength(1);
+    expect(page.hasMore).toBe(true);
+  });
+});
+
+describe("orders.getDashboardStats", () => {
+  it("requires admin authentication", async () => {
+    const ctx = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(caller.orders.getDashboardStats()).rejects.toThrow("Please login");
+  });
+
+  it("counts new orders created today and upcoming orders due today", async () => {
+    const publicCaller = appRouter.createCaller(createPublicContext());
+    const adminCaller = appRouter.createCaller(createAdminContext());
+
+    const before = await adminCaller.orders.getDashboardStats();
+
+    const now = new Date();
+    const todayNoon = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0);
+    await publicCaller.orders.create({
+      customerName: "Stats Today", customerEmail: "stats.today@example.com", customerPhone: "+65 1000 0008",
+      deliveryMethod: "pickup", fulfillmentDate: todayNoon,
+      items: [makeItem({ id: "stats-today-item" })], subtotal: 118, deliveryFee: 0, total: 118,
+    });
+
+    const after = await adminCaller.orders.getDashboardStats();
+
+    expect(after.newOrdersToday).toBe(before.newOrdersToday + 1);
+    expect(after.upcomingToday).toBe(before.upcomingToday + 1);
+  });
+});
+
+describe("orders.getOrdersForDay", () => {
+  it("requires admin authentication", async () => {
+    const ctx = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(caller.orders.getOrdersForDay({ day: "today" })).rejects.toThrow("Please login");
+  });
+
+  it("returns orders scheduled for tomorrow, not today", async () => {
+    const publicCaller = appRouter.createCaller(createPublicContext());
+    const adminCaller = appRouter.createCaller(createAdminContext());
+
+    const tomorrowNoon = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    tomorrowNoon.setHours(12, 0, 0, 0);
+
+    const order = await publicCaller.orders.create({
+      customerName: "Day Query Tomorrow", customerEmail: "day.tomorrow@example.com", customerPhone: "+65 1000 0009",
+      deliveryMethod: "delivery", deliveryAddress: "1 Test Street, Singapore 000001",
+      fulfillmentDate: tomorrowNoon, timeRange: "1:00 PM - 3:00 PM",
+      items: [makeItem({ id: "day-query-item" })], subtotal: 118, deliveryFee: 10, total: 128,
+    });
+
+    const tomorrowResult = await adminCaller.orders.getOrdersForDay({ day: "tomorrow" });
+    expect(tomorrowResult.some((o) => o.id === order.id)).toBe(true);
+
+    const todayResult = await adminCaller.orders.getOrdersForDay({ day: "today" });
+    expect(todayResult.some((o) => o.id === order.id)).toBe(false);
+  });
+});
+
+describe("orders.getRevenueTrend", () => {
+  it("requires admin authentication", async () => {
+    const ctx = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(caller.orders.getRevenueTrend({})).rejects.toThrow("Please login");
+  });
+
+  it("includes revenue from a newly-paid order in the trend total", async () => {
+    const publicCaller = appRouter.createCaller(createPublicContext());
+    const adminCaller = appRouter.createCaller(createAdminContext());
+
+    const before = await adminCaller.orders.getRevenueTrend({ days: 7 });
+    const totalBefore = before.reduce((sum, p) => sum + p.revenue, 0);
+
+    const order = await publicCaller.orders.create({
+      customerName: "Revenue Trend Test", customerEmail: "revenue.trend@example.com", customerPhone: "+65 1000 0010",
+      deliveryMethod: "pickup", fulfillmentDate: new Date(),
+      items: [makeItem({ id: "revenue-item", price: 118 })], subtotal: 118, deliveryFee: 0, total: 118,
+    });
+    await adminCaller.orders.update({ id: order.id, paymentStatus: "paid" });
+
+    const after = await adminCaller.orders.getRevenueTrend({ days: 7 });
+    const totalAfter = after.reduce((sum, p) => sum + p.revenue, 0);
+
+    expect(totalAfter).toBeGreaterThanOrEqual(totalBefore + 118);
+  });
+});

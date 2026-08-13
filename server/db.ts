@@ -1,4 +1,4 @@
-import { eq, desc, asc, and, or, gte, lt, like, sql, type SQL } from "drizzle-orm";
+import { eq, desc, asc, and, or, like, sql, type SQL } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { orders, InsertOrder, Order } from "../drizzle/schema";
 
@@ -72,18 +72,19 @@ export async function listOrdersByBucket(options: ListOrdersByBucketOptions): Pr
     throw new Error("Database not available");
   }
 
-  const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
-
+  // Bucket boundaries are computed by MySQL itself (CURDATE(), relative to the
+  // DB session's own timezone) rather than passed in as JS Date objects — a
+  // JS `Date` gets serialized to a UTC-based literal by the driver, which
+  // then gets re-interpreted under the DB session's local timezone, silently
+  // shifting the boundary by the server's UTC offset (breaks "today"
+  // filtering for several hours around each day's edges).
   const conditions: SQL[] = [];
   if (options.bucket === "past") {
-    conditions.push(lt(orders.fulfillmentDate, todayStart));
+    conditions.push(sql`${orders.fulfillmentDate} < CURDATE()`);
   } else if (options.bucket === "today") {
-    conditions.push(gte(orders.fulfillmentDate, todayStart));
-    conditions.push(lt(orders.fulfillmentDate, todayEnd));
+    conditions.push(sql`${orders.fulfillmentDate} >= CURDATE() AND ${orders.fulfillmentDate} < DATE_ADD(CURDATE(), INTERVAL 1 DAY)`);
   } else {
-    conditions.push(gte(orders.fulfillmentDate, todayEnd));
+    conditions.push(sql`${orders.fulfillmentDate} >= DATE_ADD(CURDATE(), INTERVAL 1 DAY)`);
   }
 
   if (options.search?.trim()) {
@@ -98,7 +99,11 @@ export async function listOrdersByBucket(options: ListOrdersByBucketOptions): Pr
   }
 
   if (options.collection && options.collection !== "all") {
-    conditions.push(sql`JSON_CONTAINS(${orders.items}, ${JSON.stringify(options.collection)}, '$[*].collection')`);
+    // JSON_CONTAINS forbids wildcards in its own path argument, so the
+    // per-item collection values are extracted into a plain JSON array
+    // first (which JSON_EXTRACT's path wildcard supports), then checked for
+    // membership with the path-less two-argument form of JSON_CONTAINS.
+    conditions.push(sql`JSON_CONTAINS(JSON_EXTRACT(${orders.items}, '$[*].collection'), ${JSON.stringify(options.collection)})`);
   }
 
   const sortColumn =
@@ -134,18 +139,15 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     throw new Error("Database not available");
   }
 
-  const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const tomorrowStart = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
-  const dayAfterStart = new Date(todayStart.getTime() + 48 * 60 * 60 * 1000);
-
+  // See listOrdersByBucket for why these boundaries are computed in SQL
+  // (CURDATE()) rather than passed in as JS Date objects.
   const [[newOrdersToday], [upcomingToday], [upcomingTomorrow]] = await Promise.all([
     db.select({ count: sql<number>`count(*)` }).from(orders)
-      .where(and(gte(orders.createdAt, todayStart), lt(orders.createdAt, tomorrowStart))),
+      .where(sql`${orders.createdAt} >= CURDATE() AND ${orders.createdAt} < DATE_ADD(CURDATE(), INTERVAL 1 DAY)`),
     db.select({ count: sql<number>`count(*)` }).from(orders)
-      .where(and(gte(orders.fulfillmentDate, todayStart), lt(orders.fulfillmentDate, tomorrowStart))),
+      .where(sql`${orders.fulfillmentDate} >= CURDATE() AND ${orders.fulfillmentDate} < DATE_ADD(CURDATE(), INTERVAL 1 DAY)`),
     db.select({ count: sql<number>`count(*)` }).from(orders)
-      .where(and(gte(orders.fulfillmentDate, tomorrowStart), lt(orders.fulfillmentDate, dayAfterStart))),
+      .where(sql`${orders.fulfillmentDate} >= DATE_ADD(CURDATE(), INTERVAL 1 DAY) AND ${orders.fulfillmentDate} < DATE_ADD(CURDATE(), INTERVAL 2 DAY)`),
   ]);
 
   return {
@@ -163,15 +165,14 @@ export async function getOrdersForDay(day: "today" | "tomorrow"): Promise<Order[
     throw new Error("Database not available");
   }
 
-  const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const dayStart = day === "today" ? todayStart : new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
-  const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+  const dayOffset = day === "today" ? 0 : 1;
 
   return await db
     .select()
     .from(orders)
-    .where(and(gte(orders.fulfillmentDate, dayStart), lt(orders.fulfillmentDate, dayEnd)))
+    .where(
+      sql`${orders.fulfillmentDate} >= DATE_ADD(CURDATE(), INTERVAL ${dayOffset} DAY) AND ${orders.fulfillmentDate} < DATE_ADD(CURDATE(), INTERVAL ${dayOffset + 1} DAY)`
+    )
     .orderBy(asc(orders.fulfillmentDate));
 }
 
@@ -180,29 +181,41 @@ export interface RevenueTrendPoint {
   revenue: number;
 }
 
-// Revenue tracks when sales happened (createdAt), not future fulfillment dates.
+// Shifts a "YYYY-MM-DD" calendar date string by N days using pure UTC-anchored
+// date-part arithmetic (never a wall-clock instant), so this is safe to call
+// regardless of what timezone the Node process itself runs in.
+function shiftDateString(dateStr: string, days: number): string {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
+}
+
+// Revenue tracks when sales happened (createdAt), not future fulfillment
+// dates. "Today" is read back from the DB itself (CURDATE()) rather than
+// computed via a JS Date — see listOrdersByBucket for why a JS Date boundary
+// would silently drift from what the DB considers "today".
 export async function getRevenueTrend(days: number): Promise<RevenueTrendPoint[]> {
   const db = await getDb();
   if (!db) {
     throw new Error("Database not available");
   }
 
-  const now = new Date();
-  const rangeStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (days - 1));
+  const [todayRows] = await db.execute(sql`SELECT DATE_FORMAT(CURDATE(), '%Y-%m-%d') as today`);
+  const todayStr = (todayRows as unknown as { today: string }[])[0].today;
+  const rangeStartStr = shiftDateString(todayStr, -(days - 1));
+
   const dateExpr = sql<string>`DATE_FORMAT(${orders.createdAt}, '%Y-%m-%d')`;
 
   const rows = await db
     .select({ date: dateExpr, revenue: sql<number>`COALESCE(SUM(${orders.total}), 0)` })
     .from(orders)
-    .where(and(eq(orders.paymentStatus, "paid"), gte(orders.createdAt, rangeStart)))
+    .where(and(eq(orders.paymentStatus, "paid"), sql`${dateExpr} >= ${rangeStartStr}`))
     .groupBy(dateExpr);
 
   const byDate = new Map(rows.map((r) => [r.date, Number(r.revenue)]));
 
   const trend: RevenueTrendPoint[] = [];
   for (let i = 0; i < days; i++) {
-    const d = new Date(rangeStart.getTime() + i * 24 * 60 * 60 * 1000);
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const key = shiftDateString(rangeStartStr, i);
     trend.push({ date: key, revenue: byDate.get(key) ?? 0 });
   }
   return trend;

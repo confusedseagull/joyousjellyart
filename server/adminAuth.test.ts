@@ -167,3 +167,86 @@ describe("Admin Authentication", () => {
     expect(clearedCookies[0]?.name).toBe("app_session_id");
   });
 });
+
+describe("adminAuth.updateProfile", () => {
+  let admin: AdminUser;
+
+  beforeAll(async () => {
+    admin = await createTestAdmin(`profile-${Date.now()}@example.com`, "profilepassword123", "Original Name");
+  });
+
+  afterAll(async () => {
+    const db = await getDb();
+    if (db) await db.delete(adminUsers).where(eq(adminUsers.id, admin.id));
+  });
+
+  it("requires admin authentication", async () => {
+    const { ctx } = createMockContext(null);
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(caller.adminAuth.updateProfile({ name: "New Name" })).rejects.toThrow("Please login");
+  });
+
+  it("updates name for the logged-in admin", async () => {
+    const { ctx } = createMockContext(admin);
+    const caller = appRouter.createCaller(ctx);
+
+    const updated = await caller.adminAuth.updateProfile({ name: "Updated Name" });
+
+    expect(updated.name).toBe("Updated Name");
+  });
+
+  it("rejects an email already used by another admin", async () => {
+    const other = await createTestAdmin(`profile-other-${Date.now()}@example.com`, "otherpassword123", "Other Admin");
+    const { ctx } = createMockContext(admin);
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(caller.adminAuth.updateProfile({ email: other.email })).rejects.toThrow();
+
+    const db = await getDb();
+    if (db) await db.delete(adminUsers).where(eq(adminUsers.id, other.id));
+  });
+});
+
+describe("adminAuth.changePassword", () => {
+  let admin: AdminUser;
+  const originalPassword = "originalpassword123";
+
+  beforeAll(async () => {
+    admin = await createTestAdmin(`password-${Date.now()}@example.com`, originalPassword, "Password Test Admin");
+  });
+
+  afterAll(async () => {
+    const db = await getDb();
+    if (db) await db.delete(adminUsers).where(eq(adminUsers.id, admin.id));
+  });
+
+  it("requires admin authentication", async () => {
+    const { ctx } = createMockContext(null);
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(
+      caller.adminAuth.changePassword({ currentPassword: originalPassword, newPassword: "newpassword123" })
+    ).rejects.toThrow("Please login");
+  });
+
+  it("rejects an incorrect current password", async () => {
+    const { ctx } = createMockContext(admin);
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(
+      caller.adminAuth.changePassword({ currentPassword: "wrongpassword", newPassword: "newpassword123" })
+    ).rejects.toThrow("Current password is incorrect");
+  });
+
+  it("changes the password and allows logging in with the new one", async () => {
+    const { ctx } = createMockContext(admin);
+    const caller = appRouter.createCaller(ctx);
+
+    await caller.adminAuth.changePassword({ currentPassword: originalPassword, newPassword: "newpassword456" });
+
+    const loginCaller = appRouter.createCaller(createMockContext(null).ctx);
+    const result = await loginCaller.adminAuth.login({ email: admin.email, password: "newpassword456" });
+    expect(result.email).toBe(admin.email);
+  });
+});
