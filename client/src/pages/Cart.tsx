@@ -206,10 +206,9 @@ export default function Cart() {
   const totalPrice = subtotal + deliveryFee;
 
   const composedDeliveryAddress = () => {
-    const parts = [addressLine, aptUnit ? `Unit ${aptUnit}` : null, postalCode ? `Singapore ${postalCode}` : null]
+    return [addressLine, aptUnit ? `Unit ${aptUnit}` : null, postalCode ? `Singapore ${postalCode}` : null]
       .filter(Boolean)
       .join(", ");
-    return recipientWhatsapp ? `${parts} · WhatsApp: ${recipientWhatsapp}` : parts;
   };
 
   const createOrder = trpc.orders.create.useMutation({
@@ -242,6 +241,7 @@ export default function Cart() {
           customerPhone,
           deliveryMethod,
           deliveryAddress: deliveryMethod === "delivery" ? composedDeliveryAddress() : undefined,
+          recipientPhone: deliveryMethod === "delivery" ? recipientWhatsapp : undefined,
           fulfillmentDate: fulfillmentDate?.toISOString() || new Date().toISOString(),
           // Keep the richer display-ready cart items (labels, image) here rather
           // than the backend-stripped payload, since OrderConfirmation.tsx renders
@@ -294,6 +294,7 @@ export default function Cart() {
       customerPhone,
       deliveryMethod,
       deliveryAddress: deliveryMethod === "delivery" ? composedDeliveryAddress() : undefined,
+      recipientPhone: deliveryMethod === "delivery" ? recipientWhatsapp : undefined,
       fulfillmentDate: applySlotStartTime(fulfillmentDate, fulfillmentTime),
       timeRange: fulfillmentTime,
       items: items.map(toOrderItemPayload),

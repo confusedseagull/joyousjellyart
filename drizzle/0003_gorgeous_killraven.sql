@@ -1,0 +1,1 @@
+ALTER TABLE `orders` ADD `recipientPhone` varchar(50);

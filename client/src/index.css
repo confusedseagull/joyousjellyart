@@ -73,12 +73,15 @@
   --border: oklch(0.92 0.005 0);
   --input: oklch(0.88 0.01 70);
   --ring: oklch(0.45 0.08 55);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.45 0.08 55);
-  --sidebar-accent: oklch(0.95 0.005 70);
-  --sidebar-accent-foreground: oklch(0.45 0.08 55);
-  --sidebar-border: oklch(0.88 0.01 70);
-  --sidebar-ring: oklch(0.45 0.08 55);
+  /* Admin sidebar: brand cream/brown, matching the Customize/Cart panel tone */
+  --sidebar: #faf7f3;
+  --sidebar-foreground: #1a1e1b;
+  --sidebar-primary: #6fa4a6;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e9e2d9;
+  --sidebar-accent-foreground: #1a1e1b;
+  --sidebar-border: #e5e5e5;
+  --sidebar-ring: #6fa4a6;
 }
 
 @layer base {

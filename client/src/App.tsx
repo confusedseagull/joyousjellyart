@@ -9,8 +9,10 @@ import Customize from "./pages/Customize";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import AdminLogin from "./pages/AdminLogin";
 import AdminSignup from "./pages/AdminSignup";
-import AdminDashboard from "./pages/AdminDashboard";
 import AdminOrderDetail from "./pages/AdminOrderDetail";
+import AdminDashboardOverview from "./pages/admin/DashboardOverview";
+import AdminOrdersList from "./pages/admin/OrdersList";
+import AdminSettings from "./pages/admin/Settings";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import CNY2026 from "./pages/CNY2026";
@@ -41,9 +43,11 @@ function Router() {
         <Route path="/order-confirmation" component={OrderConfirmation} />
         <Route path="/admin/login" component={AdminLogin} />
         <Route path="/admin/signup" component={AdminSignup} />
-        <Route path="/admin/dashboard" component={AdminDashboard} />
+        <Route path="/admin/dashboard" component={AdminDashboardOverview} />
         <Route path="/admin/orders/:id" component={AdminOrderDetail} />
-        <Route path="/admin" component={AdminDashboard} />
+        <Route path="/admin/orders" component={AdminOrdersList} />
+        <Route path="/admin/settings" component={AdminSettings} />
+        <Route path="/admin" component={AdminDashboardOverview} />
         <Route path={"/404"} component={NotFound} />
         {/* Final fallback route */}
         <Route component={NotFound} />

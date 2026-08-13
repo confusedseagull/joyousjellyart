@@ -1,6 +1,6 @@
 import { adminProcedure, publicProcedure, rateLimited, router } from "./_core/trpc";
 import { z } from "zod";
-import { createOrder, getAllOrders, getOrderById, updateOrder } from "./db";
+import { createOrder, getAllOrders, getOrderById, updateOrder, listOrdersByBucket } from "./db";
 import { createPaymentRequest } from "./hitpay";
 import { TRPCError } from "@trpc/server";
 import { adminAuthRouter } from "./adminAuth";
@@ -113,6 +113,7 @@ export const appRouter = router({
         customerPhone: z.string().min(1),
         deliveryMethod: z.enum(["delivery", "pickup"]),
         deliveryAddress: z.string().optional(),
+        recipientPhone: z.string().optional(),
         fulfillmentDate: z.date(),
         timeRange: z.string().optional(),
         items: z.array(orderItemSchema),
@@ -145,6 +146,20 @@ export const appRouter = router({
         return await getAllOrders();
       }),
 
+    listByBucket: adminProcedure
+      .input(z.object({
+        bucket: z.enum(["upcoming", "today", "past"]),
+        search: z.string().optional(),
+        collection: z.enum(["all", "cny", "custom"]).optional(),
+        sortBy: z.enum(["fulfillmentDate", "total", "customerName"]).optional(),
+        sortDir: z.enum(["asc", "desc"]).optional(),
+        offset: z.number().optional(),
+        limit: z.number().optional(),
+      }))
+      .query(async ({ input }) => {
+        return await listOrdersByBucket(input);
+      }),
+
     getById: adminProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
@@ -166,6 +181,7 @@ export const appRouter = router({
         customerPhone: z.string().optional(),
         deliveryMethod: z.enum(["delivery", "pickup"]).optional(),
         deliveryAddress: z.string().optional(),
+        recipientPhone: z.string().optional(),
         fulfillmentDate: z.date().optional(),
         timeRange: z.string().optional(),
         items: z.array(orderItemSchema).optional(),
