@@ -190,6 +190,7 @@ export const appRouter = router({
         total: z.number().optional(),
         notes: z.string().optional(),
         paymentStatus: z.enum(["pending", "paid", "failed", "refunded"]).optional(),
+        status: z.enum(["pending", "pending_confirmation", "in_progress", "completed", "delivered"]).optional(),
       }))
       .mutation(async ({ input }) => {
         const { id, ...updates } = input;
