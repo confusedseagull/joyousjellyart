@@ -137,3 +137,24 @@ export const orders = mysqlTable("orders", {
 
 export type Order = typeof orders.$inferSelect;
 export type InsertOrder = typeof orders.$inferInsert;
+
+export type DeliveryTier = { maxKm: number; fee: number };
+
+/**
+ * Single-row table of business settings editable by an admin — pickup
+ * details and delivery fee tiers, previously hardcoded in Cart.tsx and
+ * deliveryCalculator.ts.
+ */
+export const businessSettings = mysqlTable("businessSettings", {
+  id: int("id").autoincrement().primaryKey(),
+  pickupAddress: varchar("pickupAddress", { length: 500 }).notNull(),
+  pickupInstructions: varchar("pickupInstructions", { length: 500 }),
+  // Distance Matrix origin — the shop's address as Google Maps should read it.
+  shopAddressForDistance: varchar("shopAddressForDistance", { length: 500 }).notNull(),
+  deliveryTiers: json("deliveryTiers").$type<DeliveryTier[]>().notNull(),
+  beyondTierFee: int("beyondTierFee").notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type BusinessSettings = typeof businessSettings.$inferSelect;
+export type InsertBusinessSettings = typeof businessSettings.$inferInsert;

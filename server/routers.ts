@@ -15,6 +15,7 @@ import { TRPCError } from "@trpc/server";
 import { adminAuthRouter } from "./adminAuth";
 import { calculateDeliveryFee } from "./deliveryCalculator";
 import { systemRouter } from "./_core/systemRouter";
+import { settingsRouter } from "./settings";
 
 // A single custom jelly cake configuration within an order's items array.
 const customOrderItemSchema = z.object({
@@ -60,6 +61,7 @@ const orderItemSchema = z.discriminatedUnion("collection", [customOrderItemSchem
 export const appRouter = router({
   system: systemRouter,
   adminAuth: adminAuthRouter,
+  settings: settingsRouter,
 
   // Delivery fee calculation — rate-limited since every call hits the
   // (billed) Google Maps Distance Matrix API, not just abuse protection.

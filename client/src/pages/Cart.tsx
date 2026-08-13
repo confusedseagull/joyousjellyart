@@ -40,9 +40,6 @@ const PLATTER_SHAPE_LABELS: Record<string, string> = {
   clover: "Clover",
 };
 
-const PICKUP_ADDRESS = "2 Jalan Lokam, #01-27 Kensington Square, Singapore 537846";
-const PICKUP_MAPS_URL = "https://maps.google.com/?q=" + encodeURIComponent(PICKUP_ADDRESS);
-
 const inputClass = "h-[52px] rounded-2xl border-[#e5e5e5]";
 
 // Bordered box with an always-visible label + inline placeholder text,
@@ -154,6 +151,9 @@ export default function Cart() {
   const [deliveryFee, setDeliveryFee] = useState(0);
   const [deliveryDistance, setDeliveryDistance] = useState<number | null>(null);
   const [deliveryError, setDeliveryError] = useState<string | null>(null);
+
+  const { data: settings } = trpc.settings.get.useQuery();
+  const pickupMapsUrl = settings ? "https://maps.google.com/?q=" + encodeURIComponent(settings.pickupAddress) : "#";
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -491,11 +491,11 @@ export default function Cart() {
                     <div className="flex flex-col gap-2 text-sm">
                       <div>
                         <p className="font-semibold">Joyous JellyArt</p>
-                        <p>{PICKUP_ADDRESS}</p>
-                        <p>Usually ready in 2-4 days</p>
+                        <p>{settings?.pickupAddress}</p>
+                        {settings?.pickupInstructions && <p>{settings.pickupInstructions}</p>}
                       </div>
                       <a
-                        href={PICKUP_MAPS_URL}
+                        href={pickupMapsUrl}
                         target="_blank"
                         rel="noreferrer"
                         className="font-medium text-[#603b17]"

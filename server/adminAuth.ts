@@ -118,4 +118,57 @@ export const adminAuthRouter = router({
     ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
     return { success: true };
   }),
+
+  updateProfile: adminProcedure
+    .input(
+      z.object({
+        name: z.string().optional(),
+        email: z.string().email().optional(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      if (input.email) {
+        const existing = await db
+          .select()
+          .from(adminUsers)
+          .where(eq(adminUsers.email, input.email))
+          .limit(1);
+        if (existing.length > 0 && existing[0].id !== ctx.admin.id) {
+          throw new TRPCError({ code: "CONFLICT", message: "Another admin already uses this email" });
+        }
+      }
+
+      await db.update(adminUsers).set(input).where(eq(adminUsers.id, ctx.admin.id));
+
+      const [updated] = await db.select().from(adminUsers).where(eq(adminUsers.id, ctx.admin.id)).limit(1);
+      return { id: updated.id, email: updated.email, name: updated.name };
+    }),
+
+  changePassword: adminProcedure
+    .input(
+      z.object({
+        currentPassword: z.string(),
+        newPassword: z.string().min(8),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      const [admin] = await db.select().from(adminUsers).where(eq(adminUsers.id, ctx.admin.id)).limit(1);
+      if (!admin) throw new TRPCError({ code: "NOT_FOUND", message: "Admin not found" });
+
+      const validPassword = await bcrypt.compare(input.currentPassword, admin.passwordHash);
+      if (!validPassword) {
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "Current password is incorrect" });
+      }
+
+      const passwordHash = await bcrypt.hash(input.newPassword, 10);
+      await db.update(adminUsers).set({ passwordHash }).where(eq(adminUsers.id, ctx.admin.id));
+
+      return { success: true };
+    }),
 });
