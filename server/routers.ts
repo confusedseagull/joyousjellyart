@@ -9,6 +9,8 @@ import {
   getDashboardStats,
   getOrdersForDay,
   getRevenueTrend,
+  getOrderCountsForRange,
+  getOrdersByDate,
 } from "./db";
 import { createPaymentRequest } from "./hitpay";
 import { TRPCError } from "@trpc/server";
@@ -246,6 +248,23 @@ export const appRouter = router({
       .input(z.object({ days: z.number().optional() }))
       .query(async ({ input }) => {
         return await getRevenueTrend(input.days ?? 30);
+      }),
+
+    getOrderCountsForRange: adminProcedure
+      .input(z.object({
+        start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Expected YYYY-MM-DD"),
+        end: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Expected YYYY-MM-DD"),
+      }))
+      .query(async ({ input }) => {
+        return await getOrderCountsForRange(input.start, input.end);
+      }),
+
+    getOrdersByDate: adminProcedure
+      .input(z.object({
+        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Expected YYYY-MM-DD"),
+      }))
+      .query(async ({ input }) => {
+        return await getOrdersByDate(input.date);
       }),
 
   }),

@@ -11,15 +11,35 @@ import { Minus, Plus, Trash2, ShoppingBag, MapPin, Truck, Store } from "lucide-r
 import { Link, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { format } from "date-fns";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, shortSizeLabel } from "@/lib/utils";
 import { toast } from "sonner";
 
-const PICKUP_TIME_SLOTS = [
-  "11:00 AM - 1:00 PM",
-  "1:00 PM - 3:00 PM",
-  "3:00 PM - 5:00 PM",
-  "5:00 PM - 7:00 PM",
-];
+// Formats minutes-since-midnight as "H:MM AM/PM", matching the label style
+// already used throughout the app (e.g. "11:00 AM - 1:00 PM").
+function formatClockTime(totalMinutes: number): string {
+  const period = totalMinutes >= 12 * 60 ? "PM" : "AM";
+  let hour = Math.floor(totalMinutes / 60) % 12;
+  if (hour === 0) hour = 12;
+  const minute = totalMinutes % 60;
+  return `${hour}:${String(minute).padStart(2, "0")} ${period}`;
+}
+
+// Generates "H:MM AM/PM - H:MM AM/PM" slot labels at a fixed interval across
+// an hour range, e.g. generateTimeSlots(11, 19, 30) -> ["11:00 AM - 11:30 AM",
+// "11:30 AM - 12:00 PM", ..., "6:30 PM - 7:00 PM"].
+function generateTimeSlots(startHour: number, endHour: number, intervalMinutes: number): string[] {
+  const slots: string[] = [];
+  for (let start = startHour * 60; start < endHour * 60; start += intervalMinutes) {
+    const end = Math.min(start + intervalMinutes, endHour * 60);
+    slots.push(`${formatClockTime(start)} - ${formatClockTime(end)}`);
+  }
+  return slots;
+}
+
+// Pickup slots are offered in fine-grained 30-minute intervals (rather than
+// broad multi-hour blocks) so customers can pick a specific collection
+// window; the overall 11am-7pm range matches the shop's existing hours.
+const PICKUP_TIME_SLOTS = generateTimeSlots(11, 19, 30);
 
 const DELIVERY_TIME_SLOTS = [
   "10:00 AM - 1:00 PM",
@@ -59,12 +79,6 @@ function LabeledInput({
       />
     </div>
   );
-}
-
-// Strips a parenthetical instruction suffix (e.g. "6cm (Choose up to 3 shapes: ...)")
-// down to just the dimension, for compact display in the order summary.
-function shortSizeLabel(sizeLabel: string): string {
-  return sizeLabel.replace(/\s*\(.*\)$/, "");
 }
 
 function itemShapeDisplay(item: CustomCartItem): string {

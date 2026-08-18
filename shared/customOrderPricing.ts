@@ -13,6 +13,7 @@ export interface PriceEntry {
   scalloped?: { [size: string]: number };
   sakura?: { [size: string]: number };
   platter9?: { [size: string]: number };
+  platter6?: { [size: string]: number };
   platter4?: { [size: string]: number };
   numbers?: { [size: string]: number | { "1number": number; "2numbers": number } };
   miniGiftBox?: { [size: string]: number };
@@ -34,6 +35,7 @@ const floralBouquet: PriceEntry = {
   // Platter of 9 pricing; kept at the low/high ends of that range respectively
   // rather than guessing a single mid-point.
   platter9: { "6cm": 108 },
+  platter6: { "6cm": 78 },
   platter4: { "6cm": 48, "10cm": 68 },
   numbers: { "8x8": { "1number": 108, "2numbers": 158 } },
   miniGiftBox: { "10cm": 18.90 },
@@ -54,6 +56,7 @@ const otherCustomTheme: PriceEntry = {
   scalloped: { "8inch": 118 },
   sakura: { "6inch": 99, "8inch": 118, "2tier_6_8": 138 },
   platter9: { "6cm": 128 },
+  platter6: { "6cm": 78 },
   platter4: { "6cm": 48, "10cm": 68 },
   numbers: { "8x8": { "1number": 118, "2numbers": 158 } },
   miniGiftBox: { "10cm": 18.90 },

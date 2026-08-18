@@ -14,11 +14,12 @@ import {
   SidebarTrigger,
   SidebarInset,
 } from "@/components/ui/sidebar";
-import { LayoutDashboard, ClipboardList, Settings, LogOut, Loader2 } from "lucide-react";
+import { LayoutDashboard, ClipboardList, CalendarDays, Settings, LogOut, Loader2 } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/orders", label: "Orders", icon: ClipboardList },
+  { href: "/admin/calendar", label: "Calendar", icon: CalendarDays },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 

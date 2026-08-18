@@ -377,8 +377,9 @@ describe("orders.listByBucket", () => {
       deliveryMethod: "pickup", fulfillmentDate: tomorrowNoon,
       items: [makeItem({ id: "bucket-tomorrow-item" })], subtotal: 118, deliveryFee: 0, total: 118,
     });
+    const uniquePastName = `Bucket Past ${Date.now()}`;
     const pastOrder = await publicCaller.orders.create({
-      customerName: "Bucket Past", customerEmail: "bucket.past@example.com", customerPhone: "+65 1000 0003",
+      customerName: uniquePastName, customerEmail: "bucket.past@example.com", customerPhone: "+65 1000 0003",
       deliveryMethod: "pickup", fulfillmentDate: yesterdayNoon,
       items: [makeItem({ id: "bucket-past-item" })], subtotal: 118, deliveryFee: 0, total: 118,
     });
@@ -392,7 +393,11 @@ describe("orders.listByBucket", () => {
     expect(upcomingResult.items.some((o) => o.id === tomorrowOrder.id)).toBe(true);
     expect(upcomingResult.items.some((o) => o.id === todayOrder.id)).toBe(false);
 
-    const pastResult = await adminCaller.orders.listByBucket({ bucket: "past" });
+    // Scoped by search: the shared dev database accumulates past-bucket rows
+    // from every previous test run, so relying on the bucket's default
+    // 20-row page (sorted by fulfillmentDate desc) to still contain this
+    // specific row would be flaky — search narrows it to just this order.
+    const pastResult = await adminCaller.orders.listByBucket({ bucket: "past", search: uniquePastName });
     expect(pastResult.items.some((o) => o.id === pastOrder.id)).toBe(true);
     expect(pastResult.items.some((o) => o.id === todayOrder.id)).toBe(false);
   });
@@ -539,5 +544,78 @@ describe("orders.getRevenueTrend", () => {
     const totalAfter = after.reduce((sum, p) => sum + p.revenue, 0);
 
     expect(totalAfter).toBeGreaterThanOrEqual(totalBefore + 118);
+  });
+});
+
+// Days out from "now" far enough that no other test in this file (which all
+// use fixed 2025 dates, or today/tomorrow) shares the same calendar date —
+// keeps these assertions isolated from the shared dev database's other rows.
+function dateStr(daysFromNow: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + daysFromNow);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+describe("orders.getOrderCountsForRange", () => {
+  it("requires admin authentication", async () => {
+    const ctx = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(
+      caller.orders.getOrderCountsForRange({ start: "2026-01-01", end: "2026-01-31" })
+    ).rejects.toThrow("Please login");
+  });
+
+  it("counts orders per fulfillment date within the range", async () => {
+    const publicCaller = appRouter.createCaller(createPublicContext());
+    const adminCaller = appRouter.createCaller(createAdminContext());
+
+    const targetDateStr = dateStr(90);
+    const target = new Date();
+    target.setDate(target.getDate() + 90);
+    target.setHours(14, 0, 0, 0);
+
+    await publicCaller.orders.create({
+      customerName: "Count Range Test", customerEmail: "count.range@example.com", customerPhone: "+65 1000 0011",
+      deliveryMethod: "pickup", fulfillmentDate: target,
+      items: [makeItem({ id: "count-range-item" })], subtotal: 118, deliveryFee: 0, total: 118,
+    });
+
+    const counts = await adminCaller.orders.getOrderCountsForRange({ start: targetDateStr, end: targetDateStr });
+
+    expect(counts).toHaveLength(1);
+    expect(counts[0].date).toBe(targetDateStr);
+    expect(counts[0].count).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe("orders.getOrdersByDate", () => {
+  it("requires admin authentication", async () => {
+    const ctx = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(caller.orders.getOrdersByDate({ date: "2026-01-01" })).rejects.toThrow("Please login");
+  });
+
+  it("returns orders due on the given date and not the day after", async () => {
+    const publicCaller = appRouter.createCaller(createPublicContext());
+    const adminCaller = appRouter.createCaller(createAdminContext());
+
+    const targetDateStr = dateStr(91);
+    const target = new Date();
+    target.setDate(target.getDate() + 91);
+    target.setHours(15, 0, 0, 0);
+
+    const order = await publicCaller.orders.create({
+      customerName: "By Date Test", customerEmail: "by.date@example.com", customerPhone: "+65 1000 0012",
+      deliveryMethod: "pickup", fulfillmentDate: target, timeRange: "3:00 PM - 5:00 PM",
+      items: [makeItem({ id: "by-date-item" })], subtotal: 118, deliveryFee: 0, total: 118,
+    });
+
+    const result = await adminCaller.orders.getOrdersByDate({ date: targetDateStr });
+    expect(result.some((o) => o.id === order.id)).toBe(true);
+
+    const dayAfterResult = await adminCaller.orders.getOrdersByDate({ date: dateStr(92) });
+    expect(dayAfterResult.some((o) => o.id === order.id)).toBe(false);
   });
 });

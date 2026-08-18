@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "wouter";
 import { AdminLayout } from "@/components/AdminLayout";
 import { trpc } from "@/lib/trpc";
 import { formatPrice } from "@/lib/utils";
@@ -49,9 +50,9 @@ function scheduleSortKey(range: string): number {
   return hours * 60 + minutes;
 }
 
-function StatTile({ label, value, icon: Icon, loading }: { label: string; value: number | undefined; icon: typeof Package; loading: boolean }) {
-  return (
-    <div className="border border-[#e5e5e5] bg-[#faf7f3] rounded-2xl p-5 flex items-center gap-4">
+function StatTile({ label, value, icon: Icon, loading, href }: { label: string; value: number | undefined; icon: typeof Package; loading: boolean; href?: string }) {
+  const content = (
+    <div className={`border border-[#e5e5e5] bg-[#faf7f3] rounded-2xl p-5 flex items-center gap-4 ${href ? "hover:border-primary/40 transition-colors" : ""}`}>
       <div className="h-11 w-11 rounded-full bg-white flex items-center justify-center shrink-0">
         <Icon className="h-5 w-5 text-[#603b17]" />
       </div>
@@ -65,6 +66,7 @@ function StatTile({ label, value, icon: Icon, loading }: { label: string; value:
       </div>
     </div>
   );
+  return href ? <Link href={href}>{content}</Link> : content;
 }
 
 const chartConfig: ChartConfig = {
@@ -103,8 +105,8 @@ export default function DashboardOverview() {
         <p className="text-muted-foreground mb-8">A quick view of today's orders and business at a glance.</p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-          <StatTile label="New Orders Today" value={stats?.newOrdersToday} icon={Package} loading={statsLoading} />
-          <StatTile label={`Upcoming Orders (${day === "today" ? "Today" : "Tomorrow"})`} value={upcomingCount} icon={Clock3} loading={statsLoading} />
+          <StatTile label="New Orders Today" value={stats?.newOrdersToday} icon={Package} loading={statsLoading} href="/admin/orders" />
+          <StatTile label={`Upcoming Orders (${day === "today" ? "Today" : "Tomorrow"})`} value={upcomingCount} icon={Clock3} loading={statsLoading} href="/admin/orders" />
         </div>
 
         <div className="bg-[#faf7f3] flex gap-1 h-[46px] items-center p-1 rounded-full w-fit mb-6">
@@ -136,7 +138,11 @@ export default function DashboardOverview() {
             ) : (
               <div className="flex flex-col max-h-[420px] overflow-y-auto pr-1">
                 {dayOrders.map((order) => (
-                  <div key={order.id} className="border border-[#e5e5e5] -mt-px first:mt-0 px-4 py-3">
+                  <Link
+                    key={order.id}
+                    href={`/admin/orders/${order.id}`}
+                    className="border border-[#e5e5e5] -mt-px first:mt-0 px-4 py-3 block hover:bg-[#faf7f3]/60 transition-colors"
+                  >
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-display text-base">{order.orderNumber || `JJA${String(order.id).padStart(4, "0")}`}</span>
                       <span className="text-xs text-muted-foreground">{order.timeRange || "No time"}</span>
@@ -147,7 +153,7 @@ export default function DashboardOverview() {
                         <li key={item.id}>{itemQuickSummary(item)}</li>
                       ))}
                     </ul>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}

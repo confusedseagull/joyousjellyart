@@ -221,6 +221,51 @@ export async function getRevenueTrend(days: number): Promise<RevenueTrendPoint[]
   return trend;
 }
 
+export interface OrderCountByDate {
+  date: string; // YYYY-MM-DD
+  count: number;
+}
+
+// Order counts per fulfillment date across a range, for the calendar's
+// per-day badges. Both boundaries and the grouping key are computed with
+// DATE_FORMAT on a "YYYY-MM-DD" string comparison (never a JS Date object)
+// so this is immune to the JS-Date/session-timezone double-conversion bug
+// documented in listOrdersByBucket.
+export async function getOrderCountsForRange(startDateStr: string, endDateStr: string): Promise<OrderCountByDate[]> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  const dateExpr = sql<string>`DATE_FORMAT(${orders.fulfillmentDate}, '%Y-%m-%d')`;
+
+  const rows = await db
+    .select({ date: dateExpr, count: sql<number>`count(*)` })
+    .from(orders)
+    .where(sql`${dateExpr} >= ${startDateStr} AND ${dateExpr} <= ${endDateStr}`)
+    .groupBy(dateExpr);
+
+  return rows.map((r) => ({ date: r.date, count: Number(r.count) }));
+}
+
+// Full order rows (with items) due on one specific calendar date, for the
+// calendar's day side-panel. Same DATE_FORMAT-string-comparison approach as
+// getOrderCountsForRange, for the same timezone-safety reason.
+export async function getOrdersByDate(dateStr: string): Promise<Order[]> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  const dateExpr = sql<string>`DATE_FORMAT(${orders.fulfillmentDate}, '%Y-%m-%d')`;
+
+  return await db
+    .select()
+    .from(orders)
+    .where(sql`${dateExpr} = ${dateStr}`)
+    .orderBy(asc(orders.fulfillmentDate));
+}
+
 export async function getOrderById(id: number): Promise<Order | undefined> {
   const db = await getDb();
   if (!db) {

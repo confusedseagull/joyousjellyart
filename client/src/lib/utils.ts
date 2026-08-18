@@ -10,6 +10,17 @@ export function formatPrice(amount: number): string {
 }
 
 /**
+ * Strips a parenthetical instruction suffix (e.g. "6cm (Choose up to 3
+ * shapes: Heart, Square, Round, Clover)") down to just the dimension. That
+ * suffix is customer-facing guidance for the Customize builder's own size
+ * picker — redundant (and clutter) anywhere else the size label is reused,
+ * like an order summary or the admin order detail page.
+ */
+export function shortSizeLabel(sizeLabel: string): string {
+  return sizeLabel.replace(/\s*\(.*\)$/, "");
+}
+
+/**
  * Builds a WhatsApp deep-link (wa.me) from a free-text phone number.
  * Strips everything but digits; an 8-digit result (a bare local number
  * typed without a country code) gets Singapore's "65" prepended, matching

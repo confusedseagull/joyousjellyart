@@ -12,6 +12,7 @@ import AdminSignup from "./pages/AdminSignup";
 import AdminOrderDetail from "./pages/AdminOrderDetail";
 import AdminDashboardOverview from "./pages/admin/DashboardOverview";
 import AdminOrdersList from "./pages/admin/OrdersList";
+import AdminCalendar from "./pages/admin/Calendar";
 import AdminSettings from "./pages/admin/Settings";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
@@ -46,6 +47,7 @@ function Router() {
         <Route path="/admin/dashboard" component={AdminDashboardOverview} />
         <Route path="/admin/orders/:id" component={AdminOrderDetail} />
         <Route path="/admin/orders" component={AdminOrdersList} />
+        <Route path="/admin/calendar" component={AdminCalendar} />
         <Route path="/admin/settings" component={AdminSettings} />
         <Route path="/admin" component={AdminDashboardOverview} />
         <Route path={"/404"} component={NotFound} />
