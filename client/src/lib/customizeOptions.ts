@@ -54,34 +54,45 @@ export const THEMES = [
     "/customize/underTheSea-4.png",
     "/customize/underTheSea-5.jpg"
   ] },
-  { value: "animalKingdom", label: "Animal Kingdom", image: "/animal-kingdom.jpg" },
+  { value: "animalKingdom", label: "Animal Kingdom", image: "/customize/animalKingdom.jpg" },
   { value: "unicorn", label: "Unicorn", images: [
     "/customize/unicorn-1.jpg",
     "/customize/unicorn-2.jpg",
     "/customize/unicorn-3.jpg",
     "/customize/unicorn-4.jpg"
   ] },
-  { value: "dinosaurs", label: "Dinosaurs", image: "/dinosaurs.jpg" },
+  { value: "dinosaurs", label: "Dinosaurs", image: "/customize/dinosaurs.png" },
   { value: "space", label: "Space", image: "/customize/space.jpg" },
   { value: "koiPond", label: "Koi Pond", images: [
     "/customize/koiPond-1.jpg",
     "/customize/koiPond-2.jpg"
   ] },
-  { value: "golf", label: "Golf", image: "/customize/golf.jpg" },
+  { value: "golf", label: "Sports", image: "/customize/golf.jpg" },
   { value: "cars", label: "Cars", image: "/customize/cars.jpg" },
   { value: "coutureFashion", label: "Couture/High Fashion", image: "/customize/coutureFashion.jpg" },
-  { value: "cactus", label: "Cactus", image: "/customize/cactus.jpg" },
-  { value: "foliage", label: "Foliage", image: "/foliage.jpg" },
+  { value: "cactus", label: "Cactus/Foliage", image: "/customize/cactus.jpg" },
   { value: "butterflies", label: "Butterflies", image: "/customize/butterflies.jpg" },
-  { value: "sports", label: "Sports", image: "/sports.jpg" },
   { value: "mermaid", label: "Mermaid", image: "/customize/mermaid.jpg" },
-  { value: "teddyBear", label: "Teddy Bear", image: "/teddy-bear.jpg" },
 ];
 
 export const FLOWERS = [
-  "Peony", "Rose", "Sunflowers", "Magnolias", "Sakuras", "Bengal Rose",
-  "Lotus", "Daisy", "Gerbera", "Hydrangeas", "Dahlias", "Orchid",
-  "Tulip", "Carnations", "Marigolds", "Dianthus", "Clematis"
+  { value: "Peony", label: "Peony", image: "/customize/flower-peony.png" },
+  { value: "Magnolias", label: "Magnolias", image: "/customize/flower-magnolia.png" },
+  { value: "Rose", label: "Rose", image: "/customize/flower-rose.png" },
+  { value: "Bengal Rose", label: "Bengal Rose", image: "/customize/flower-bengalRose.png" },
+  { value: "Hydrangeas", label: "Hydrangeas", image: "/customize/flower-hydrangea.png" },
+  { value: "Sakuras", label: "Sakuras", image: "/customize/flower-sakura.png" },
+  { value: "Daisy", label: "Daisy", image: "/customize/flower-daisy.png" },
+  { value: "Gerbera", label: "Gerbera", image: "/customize/flower-gerbera.png" },
+  { value: "Carnations", label: "Carnations", image: "/customize/flower-carnation.png" },
+  { value: "Lotus", label: "Lotus", image: "/customize/flower-lotus.png" },
+  { value: "Sunflowers", label: "Sunflowers", image: "/customize/flower-sunflower.png" },
+  { value: "Dahlias", label: "Dahlias", image: "/customize/flower-dahlia.png" },
+  { value: "Orchid", label: "Orchid", image: "/customize/flower-orchid.png" },
+  { value: "Tulip", label: "Tulip", image: "/customize/flower-tulip.png" },
+  { value: "Marigolds", label: "Marigolds", image: "/customize/flower-marigold.png" },
+  { value: "Dianthus", label: "Dianthus", image: "/customize/flower-dianthus.png" },
+  { value: "Clematis", label: "Clematis", image: "/customize/flower-clematis.png" },
 ];
 
 export const CARTOON_CHARACTERS = [
@@ -218,4 +229,5 @@ export const DIETARY_OPTIONS = [
   { value: "noNuts", label: "No Nuts" },
   { value: "vegetarian", label: "Vegetarian" },
   { value: "vegan", label: "Vegan" },
+  { value: "noCoconutMilk", label: "No Coconut Milk" },
 ];

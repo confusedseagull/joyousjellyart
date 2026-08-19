@@ -3,9 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Check, Minus, Plus } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, ChevronDown, Minus, Plus } from "lucide-react";
 import { SelectablePill } from "@/components/SelectablePill";
-import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { getCustomOrderPrice } from "../../../shared/customOrderPricing";
 import { formatPrice } from "@/lib/utils";
@@ -99,12 +98,12 @@ function CircleOption({
       type="button"
       onClick={disabled ? undefined : onClick}
       disabled={disabled}
-      className={`flex flex-col items-center gap-2 w-[110px] py-2 rounded-lg group transition-colors ${
+      className={`flex flex-col items-center gap-2 w-[calc(50%-12px)] sm:w-[110px] px-2 sm:px-0 py-2 rounded-lg group transition-colors ${
         isSelected ? "bg-[#faf7f3]" : ""
       } ${disabled ? "opacity-40 cursor-not-allowed" : ""}`}
     >
       <div
-        className={`relative size-24 rounded-full overflow-hidden transition-all ${
+        className={`relative w-full aspect-square sm:size-24 rounded-full overflow-hidden transition-all ${
           images.length === 0 ? "bg-muted" : ""
         }`}
         onTouchStart={handleTouchStart}
@@ -118,24 +117,12 @@ function CircleOption({
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
           />
         )}
-        {images.length > 1 && (
-          <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 flex gap-1">
-            {images.map((_, index) => (
-              <div
-                key={index}
-                className={`h-1 rounded-full transition-all ${
-                  index === currentImageIndex ? "w-3 bg-white" : "w-1 bg-white/50"
-                }`}
-              />
-            ))}
-          </div>
-        )}
       </div>
-      <span className="text-xs font-semibold text-center leading-tight line-clamp-2">
+      <span className="text-[16px] sm:text-[14px] font-semibold text-center leading-tight line-clamp-2">
         {option.label}
       </span>
       {caption && (
-        <span className="text-xs text-muted-foreground text-center leading-tight">{caption}</span>
+        <span className="text-[16px] sm:text-[14px] text-muted-foreground text-center leading-tight">{caption}</span>
       )}
     </button>
   );
@@ -204,16 +191,16 @@ function SizeOption({
     <button
       type="button"
       onClick={onClick}
-      className={`flex flex-col items-center gap-2 w-[110px] py-2 rounded-lg transition-colors ${
+      className={`flex flex-col items-center gap-2 w-[calc(50%-12px)] sm:w-[110px] px-2 sm:px-0 py-2 rounded-lg transition-colors ${
         isSelected ? "bg-[#faf7f3]" : ""
       }`}
     >
-      <div className="size-20 rounded-full bg-[#c8e5e4] flex items-center justify-center">
+      <div className="w-full aspect-square sm:size-20 rounded-full bg-[#c8e5e4] flex items-center justify-center">
         <span className="font-display text-black text-2xl md:text-[28px] leading-none">
           {getSizeBadge(option.value)}
         </span>
       </div>
-      <div className="text-center text-xs leading-tight">
+      <div className="text-center text-[16px] sm:text-[14px] leading-tight">
         <p className="font-semibold text-foreground">{option.label}</p>
         {SERVES_INFO[option.value] && (
           <p className="text-muted-foreground">{SERVES_INFO[option.value]}</p>
@@ -247,15 +234,15 @@ function NumberCountOption({
     <button
       type="button"
       onClick={onClick}
-      className={`flex flex-col items-center gap-2 w-[110px] py-2 rounded-lg transition-colors ${
+      className={`flex flex-col items-center gap-2 w-[calc(50%-12px)] sm:w-[110px] px-2 sm:px-0 py-2 rounded-lg transition-colors ${
         isSelected ? "bg-[#faf7f3]" : ""
       }`}
     >
-      <div className="size-20 rounded-full bg-[#c8e5e4] flex flex-col items-center justify-center gap-1">
+      <div className="w-full aspect-square sm:size-20 rounded-full bg-[#c8e5e4] flex flex-col items-center justify-center gap-1">
         <span className="font-display text-black text-2xl leading-none">{count}</span>
-        <span className="text-black text-xs leading-none">{count === 1 ? "Number" : "Numbers"}</span>
+        <span className="text-black text-[16px] sm:text-[14px] leading-none">{count === 1 ? "Number" : "Numbers"}</span>
       </div>
-      <div className="text-center text-xs leading-tight">
+      <div className="text-center text-[16px] sm:text-[14px] leading-tight">
         <p className="font-semibold text-foreground">{dimension}</p>
         <p className="text-muted-foreground">{serves}</p>
       </div>
@@ -265,7 +252,6 @@ function NumberCountOption({
 }
 
 export default function Customize() {
-  const [, navigate] = useLocation();
   const { addCustomItem } = useCart();
 
   // Format, shape & size state
@@ -402,6 +388,68 @@ export default function Customize() {
 
   const readyToAddToCart = !!(format && theme && shapeSizeComplete && selectedFlavors.length > 0 && totalPrice);
 
+  // Wizard step navigation: one section visible at a time, matching the
+  // Figma order-page's Back/Next pattern instead of a continuous scroll.
+  const STEP_COUNT = 7;
+  const [currentStep, setCurrentStep] = useState(1);
+
+  // On mobile, "My Order" collapses into a tap-to-expand bar at the top of
+  // the page instead of a panel stacked below the builder; desktop keeps the
+  // always-visible sticky sidebar regardless of this state.
+  const [mobileOrderOpen, setMobileOrderOpen] = useState(false);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    // On reaching the final (optional) step, auto-expand the mobile order bar
+    // so the customer notices it's where "Add to Cart" lives.
+    setMobileOrderOpen(currentStep === STEP_COUNT);
+  }, [currentStep]);
+
+  const isStepComplete = (step: number): boolean => {
+    switch (step) {
+      case 1: return !!format;
+      case 2: return shapeSizeComplete;
+      case 3: return !!theme;
+      case 4: return selectedFlavors.length >= getRequiredFlavorCount();
+      default: return true; // steps 5-7 are optional
+    }
+  };
+
+  const canGoBack = currentStep > 1;
+  const canGoNext = currentStep < STEP_COUNT && isStepComplete(currentStep);
+
+  const goBack = () => canGoBack && setCurrentStep((s) => s - 1);
+  const goNext = () => canGoNext && setCurrentStep((s) => s + 1);
+
+  // Auto-advance once a step's necessary selections are made — but only for
+  // steps that are fully decided by a single choice (format, shape/size,
+  // flavour). Step 3 (theme) is excluded even though it's required: themes
+  // like Floral Bouquet/Cartoon Characters/Hand Drawn carry their own
+  // optional sub-fields (flowers, character, description, reference notes)
+  // that the user should get a chance to fill in before moving on, so it
+  // stays on manual Next. Steps 5-7 are optional and would otherwise be
+  // skipped instantly. Tracks per-step completion so returning via Back
+  // doesn't re-trigger it.
+  const AUTO_ADVANCE_STEPS = [1, 2, 4];
+  const autoAdvanceState = useRef<{ step: number; wasComplete: boolean }>({ step: 1, wasComplete: false });
+  useEffect(() => {
+    const complete = isStepComplete(currentStep);
+    const state = autoAdvanceState.current;
+    if (state.step !== currentStep) {
+      autoAdvanceState.current = { step: currentStep, wasComplete: complete };
+      return;
+    }
+    if (AUTO_ADVANCE_STEPS.includes(currentStep) && complete && !state.wasComplete) {
+      autoAdvanceState.current = { step: currentStep, wasComplete: true };
+      const timer = setTimeout(() => {
+        setCurrentStep((s) => Math.min(STEP_COUNT, s + 1));
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+    autoAdvanceState.current = { step: currentStep, wasComplete: complete };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStep, format, shape, size, platterShapes, number1, number2, theme, selectedFlavors]);
+
   const resetBuilder = () => {
     setFormat("");
     setShape("");
@@ -485,15 +533,71 @@ export default function Customize() {
     resetBuilder();
   };
 
-  const handleOrderNow = () => {
-    const item = buildCartItem();
-    if (!item) {
-      toast.error("Please complete all required fields");
-      return;
-    }
-    addCustomItem(item);
-    navigate("/cart");
-  };
+  // Shared between the mobile tap-to-expand bar (below the header) and the
+  // always-visible desktop sticky sidebar.
+  const orderSummaryContent = (
+    <>
+      <div className="flex flex-col">
+        {format && (
+          <div className="border border-[#e4e6e8] min-h-[95px] flex flex-col justify-center gap-3 px-4 py-6">
+            <p className="text-sm uppercase tracking-wide text-muted-foreground">Format</p>
+            <p className="font-display text-xl">{FORMATS.find(f => f.value === format)?.label}</p>
+          </div>
+        )}
+        {shape && (
+          <div className="border border-[#e4e6e8] min-h-[95px] flex flex-col justify-center gap-3 px-4 py-6">
+            <p className="text-sm uppercase tracking-wide text-muted-foreground">Shape</p>
+            <p className="font-display text-xl">{SHAPES.find(s => s.value === shape)?.label}</p>
+          </div>
+        )}
+        {shape && size && (
+          <div className="border border-[#e4e6e8] min-h-[95px] flex flex-col justify-center gap-3 px-4 py-6">
+            <p className="text-sm uppercase tracking-wide text-muted-foreground">Size</p>
+            <p className="font-display text-xl">
+              {shape === "numbers"
+                ? `8" ${numberCount === 2 ? '+ 8"' : ""}`
+                : SHAPE_SIZES[shape]?.find(s => s.value === size)?.label}
+            </p>
+          </div>
+        )}
+        {theme && (
+          <div className="border border-[#e4e6e8] min-h-[95px] flex flex-col justify-center gap-3 px-4 py-6">
+            <p className="text-sm uppercase tracking-wide text-muted-foreground">Theme</p>
+            <p className="font-display text-xl">{THEMES.find(t => t.value === theme)?.label}</p>
+          </div>
+        )}
+        {selectedFlavors.length > 0 && (
+          <div className="border border-[#e4e6e8] min-h-[95px] flex flex-col justify-center gap-3 px-4 py-6">
+            <p className="text-sm uppercase tracking-wide text-muted-foreground">Base Flavour</p>
+            <p className="font-display text-xl">{selectedFlavors.join(", ")}</p>
+          </div>
+        )}
+        {totalPrice && (
+          <div className="border border-[#e4e6e8] min-h-[95px] flex items-center justify-between px-4 py-6">
+            <p className="text-sm uppercase tracking-wide text-muted-foreground">Price</p>
+            <p className="font-display text-2xl font-medium">{formatPrice(totalPrice)}</p>
+          </div>
+        )}
+        {!format && (
+          <p className="text-sm text-muted-foreground py-4">
+            Your selections will appear here as you build your cake.
+          </p>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <Button
+          type="button"
+          size="lg"
+          onClick={handleAddToCart}
+          disabled={!readyToAddToCart}
+          className="w-full h-[52px] rounded-full text-base bg-primary hover:opacity-90 text-primary-foreground"
+        >
+          Add to Cart
+        </Button>
+      </div>
+    </>
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -501,18 +605,44 @@ export default function Customize() {
         <div className="flex flex-col lg:flex-row gap-10 items-stretch">
           {/* Main builder column */}
           <div className="flex-1 min-w-0 flex flex-col gap-12">
+            {/* Mobile order summary: fixed full-width bar pinned under the header, so
+                it stays reachable no matter how far the user has scrolled. A spacer
+                reserves its height in the normal flow since the bar itself is fixed. */}
+            <div className="lg:hidden h-16" aria-hidden="true" />
+            <div className="lg:hidden fixed top-20 inset-x-0 z-40 bg-[#faf7f3]">
+              <button
+                type="button"
+                onClick={() => setMobileOrderOpen((v) => !v)}
+                className="w-full h-16 flex items-center justify-between px-6"
+              >
+                <span className="font-display text-lg">My Order</span>
+                <span className="flex items-center gap-2">
+                  {totalPrice && (
+                    <span className="font-display text-lg font-medium">{formatPrice(totalPrice)}</span>
+                  )}
+                  <ChevronDown
+                    className={`h-5 w-5 text-muted-foreground transition-transform ${mobileOrderOpen ? "rotate-180" : ""}`}
+                  />
+                </span>
+              </button>
+              {mobileOrderOpen && (
+                <div className="flex flex-col gap-6 p-6 pt-0 max-h-[calc(100vh-176px)] overflow-y-auto border-t border-[#e5e5e5]">
+                  {orderSummaryContent}
+                </div>
+              )}
+            </div>
+
             {/* Hero */}
             <section className="flex flex-col gap-4">
-              <h1>Customise your jelly cake</h1>
+              <h1 className="font-normal text-[28px] md:text-[52px]">Customise your jelly cake</h1>
               <p className="text-muted-foreground text-base md:text-lg max-w-2xl">
                 Customize every detail of your perfect jelly art cake — from format and shape to flavour and finishing touches.
               </p>
             </section>
 
-            <div className="h-px w-full bg-[#e5e5e5]" />
-
             {/* 01 Format */}
-            <section className="flex flex-col gap-6">
+            {currentStep === 1 && (
+            <section className="flex flex-col gap-6 animate-in fade-in duration-300">
               <StepHeader
                 number={1}
                 title="Choose a format"
@@ -529,12 +659,11 @@ export default function Customize() {
                 ))}
               </div>
             </section>
+            )}
 
             {/* 02 Shape & Size */}
-            {format && (
-              <>
-                <div className="h-px w-full bg-[#e5e5e5]" />
-                <section className="flex flex-col gap-6">
+            {currentStep === 2 && (
+                <section className="flex flex-col gap-6 animate-in fade-in duration-300">
                 <StepHeader
                   number={2}
                   title="Choose a shape and size"
@@ -608,7 +737,7 @@ export default function Customize() {
                       />
                     </div>
                     <div className="flex flex-col sm:flex-row gap-4">
-                      <div className="flex-1 sm:max-w-[380px] border border-[#e5e5e5] rounded-2xl h-[52px] flex items-center gap-7 px-4">
+                      <div className="flex-1 sm:max-w-[380px] border border-[#e5e5e5] rounded-2xl h-[52px] flex items-center gap-7 px-4 focus-within:border-primary/40 transition-colors">
                         <label className="shrink-0 text-sm text-foreground">First Number</label>
                         <input
                           type="number"
@@ -621,7 +750,7 @@ export default function Customize() {
                         />
                       </div>
                       {numberCount === 2 && (
-                        <div className="flex-1 sm:max-w-[380px] border border-[#e5e5e5] rounded-2xl h-[52px] flex items-center gap-7 px-4">
+                        <div className="flex-1 sm:max-w-[380px] border border-[#e5e5e5] rounded-2xl h-[52px] flex items-center gap-7 px-4 focus-within:border-primary/40 transition-colors">
                           <label className="shrink-0 text-sm text-foreground">Second Number</label>
                           <input
                             type="number"
@@ -697,14 +826,11 @@ export default function Customize() {
                   </>
                 )}
               </section>
-              </>
             )}
 
             {/* 03 Theme */}
-            {format && shapeSizeComplete && (
-              <>
-                <div className="h-px w-full bg-[#e5e5e5]" />
-                <section className="flex flex-col gap-6">
+            {currentStep === 3 && (
+                <section className="flex flex-col gap-6 animate-in fade-in duration-300">
                 <StepHeader number={3} title="Choose a theme" description="Choose the design theme for your jelly cake" />
                 <div className="flex flex-wrap gap-6">
                   {THEMES.map((themeOption) => (
@@ -718,27 +844,27 @@ export default function Customize() {
                 </div>
 
                 {theme === "floralBouquet" && (
-                  <div className="max-w-4xl">
-                    <Label className="text-base font-semibold mb-4 block">Select Flowers (up to 3)</Label>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                  <div className="flex flex-col gap-4">
+                    <div className="h-px w-full max-w-2xl bg-[#e5e5e5]" />
+                    <p className="text-sm text-muted-foreground">
+                      Choose up to 3 flower types. Flower colors will be customised based on the color preferences indicated. Images provided are for reference only.
+                    </p>
+                    <div className="flex flex-wrap gap-6">
                       {FLOWERS.map((flower) => {
-                        const isSelected = selectedFlowers.includes(flower);
+                        const isSelected = selectedFlowers.includes(flower.value);
                         const isDisabled = !isSelected && selectedFlowers.length >= 3;
                         return (
-                          <SelectablePill
-                            key={flower}
-                            selected={isSelected}
+                          <CircleOption
+                            key={flower.value}
+                            option={flower}
+                            isSelected={isSelected}
                             disabled={isDisabled}
                             onClick={() => {
                               setSelectedFlowers(prev =>
-                                isSelected ? prev.filter(f => f !== flower) : [...prev, flower]
+                                isSelected ? prev.filter(f => f !== flower.value) : [...prev, flower.value]
                               );
                             }}
-                            className="flex items-center justify-between px-4 py-3"
-                          >
-                            <span>{flower}</span>
-                            {isSelected && <Check className="h-4 w-4 text-primary" />}
-                          </SelectablePill>
+                          />
                         );
                       })}
                     </div>
@@ -781,7 +907,7 @@ export default function Customize() {
 
                 {theme && (
                   <div className="flex flex-col gap-3">
-                    <div className="border border-[#e5e5e5] rounded-2xl h-[52px] flex items-center gap-7 px-4">
+                    <div className="border border-[#e5e5e5] rounded-2xl h-[52px] flex items-center gap-7 px-4 focus-within:border-primary/40 transition-colors">
                       <label className="shrink-0 text-sm text-foreground">Additional Notes</label>
                       <input
                         value={specialInstructions}
@@ -801,7 +927,7 @@ export default function Customize() {
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="border border-[#e5e5e5] rounded-2xl h-[52px] flex items-center justify-center gap-2 px-4 text-sm hover:border-primary/40 transition-colors"
+                      className="border border-[#e5e5e5] rounded-2xl h-[52px] flex items-center justify-center gap-2 px-4 text-sm outline-none hover:border-primary/40 focus-visible:border-primary/40 transition-colors"
                     >
                       <img src="/customize/icon-cloud-upload.svg" alt="" className="size-[18px]" />
                       <span>
@@ -813,14 +939,11 @@ export default function Customize() {
                   </div>
                 )}
               </section>
-              </>
             )}
 
             {/* 04 Base Flavour */}
-            {theme && (
-              <>
-                <div className="h-px w-full bg-[#e5e5e5]" />
-                <section className="flex flex-col gap-6">
+            {currentStep === 4 && (
+                <section className="flex flex-col gap-6 animate-in fade-in duration-300">
                 <StepHeader
                   number={4}
                   title="Choose a base flavour"
@@ -844,14 +967,11 @@ export default function Customize() {
                   })}
                 </div>
               </section>
-              </>
             )}
 
             {/* 05 Color preferences (optional) */}
-            {selectedFlavors.length > 0 && (
-              <>
-                <div className="h-px w-full bg-[#e5e5e5]" />
-                <section className="flex flex-col gap-6">
+            {currentStep === 5 && (
+                <section className="flex flex-col gap-6 animate-in fade-in duration-300">
                 <StepHeader
                   number={5}
                   title="Let us know your color preferences (optional)"
@@ -863,14 +983,11 @@ export default function Customize() {
                   <Input value={color3} onChange={(e) => setColor3(e.target.value)} placeholder="Color 3" className={inputClass} />
                 </div>
               </section>
-              </>
             )}
 
             {/* 06 Personalized text (optional) */}
-            {selectedFlavors.length > 0 && (
-              <>
-                <div className="h-px w-full bg-[#e5e5e5]" />
-                <section className="flex flex-col gap-6">
+            {currentStep === 6 && (
+                <section className="flex flex-col gap-6 animate-in fade-in duration-300">
                 <StepHeader number={6} title="Add personalized text (optional)" description="The number of characters is limited to 25." />
                 <div className="max-w-2xl space-y-4">
                   <Input
@@ -901,14 +1018,11 @@ export default function Customize() {
                   )}
                 </div>
               </section>
-              </>
             )}
 
             {/* 07 Dietary requirements (optional) */}
-            {selectedFlavors.length > 0 && (
-              <>
-                <div className="h-px w-full bg-[#e5e5e5]" />
-                <section className="flex flex-col gap-6">
+            {currentStep === 7 && (
+                <section className="flex flex-col gap-6 animate-in fade-in duration-300">
                 <StepHeader number={7} title="Dietary requirements (optional)" />
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-2xl">
                   {DIETARY_OPTIONS.map((option) => {
@@ -927,83 +1041,38 @@ export default function Customize() {
                   })}
                 </div>
               </section>
-              </>
             )}
+
+            {/* Back / Next navigation */}
+            <div className="flex items-center justify-between w-full">
+              <button
+                type="button"
+                onClick={goBack}
+                disabled={!canGoBack}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-full border border-[#eae6e1] bg-white text-sm font-medium text-[#6e7376] disabled:opacity-40 disabled:cursor-not-allowed hover:border-primary/40 transition-colors"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </button>
+              {currentStep < STEP_COUNT && (
+                <button
+                  type="button"
+                  onClick={goNext}
+                  disabled={!canGoNext}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-full border border-primary bg-primary text-sm font-medium text-white disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
+                >
+                  Next
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              )}
+            </div>
           </div>
 
-          {/* Order summary sidebar */}
-          <div className="w-full lg:w-[380px] shrink-0">
+          {/* Order summary sidebar (desktop only — mobile has its own tap-to-expand bar below the header) */}
+          <div className="hidden lg:block lg:w-[380px] shrink-0 lg:sticky lg:top-6 lg:self-start">
             <div className="bg-[#faf7f3] h-full p-10 flex flex-col gap-6">
               <h2 className="text-2xl">My Order</h2>
-
-              <div className="flex flex-col">
-                {format && (
-                  <div className="border border-[#e4e6e8] min-h-[95px] flex flex-col justify-center gap-3 px-4 py-6">
-                    <p className="text-sm uppercase tracking-wide text-muted-foreground">Format</p>
-                    <p className="font-display text-xl">{FORMATS.find(f => f.value === format)?.label}</p>
-                  </div>
-                )}
-                {shape && (
-                  <div className="border border-[#e4e6e8] min-h-[95px] flex flex-col justify-center gap-3 px-4 py-6">
-                    <p className="text-sm uppercase tracking-wide text-muted-foreground">Shape</p>
-                    <p className="font-display text-xl">{SHAPES.find(s => s.value === shape)?.label}</p>
-                  </div>
-                )}
-                {shape && size && (
-                  <div className="border border-[#e4e6e8] min-h-[95px] flex flex-col justify-center gap-3 px-4 py-6">
-                    <p className="text-sm uppercase tracking-wide text-muted-foreground">Size</p>
-                    <p className="font-display text-xl">
-                      {shape === "numbers"
-                        ? `8" ${numberCount === 2 ? '+ 8"' : ""}`
-                        : SHAPE_SIZES[shape]?.find(s => s.value === size)?.label}
-                    </p>
-                  </div>
-                )}
-                {theme && (
-                  <div className="border border-[#e4e6e8] min-h-[95px] flex flex-col justify-center gap-3 px-4 py-6">
-                    <p className="text-sm uppercase tracking-wide text-muted-foreground">Theme</p>
-                    <p className="font-display text-xl">{THEMES.find(t => t.value === theme)?.label}</p>
-                  </div>
-                )}
-                {selectedFlavors.length > 0 && (
-                  <div className="border border-[#e4e6e8] min-h-[95px] flex flex-col justify-center gap-3 px-4 py-6">
-                    <p className="text-sm uppercase tracking-wide text-muted-foreground">Base Flavour</p>
-                    <p className="font-display text-xl">{selectedFlavors.join(", ")}</p>
-                  </div>
-                )}
-                {totalPrice && (
-                  <div className="border border-[#e4e6e8] min-h-[95px] flex items-center justify-between px-4 py-6">
-                    <p className="text-sm uppercase tracking-wide text-muted-foreground">Price</p>
-                    <p className="font-display text-2xl font-medium">{formatPrice(totalPrice)}</p>
-                  </div>
-                )}
-                {!format && (
-                  <p className="text-sm text-muted-foreground py-4">
-                    Your selections will appear here as you build your cake.
-                  </p>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-3">
-                <Button
-                  type="button"
-                  size="lg"
-                  onClick={handleAddToCart}
-                  disabled={!readyToAddToCart}
-                  className="w-full h-[52px] rounded-full text-base bg-[#91b9bb] hover:opacity-90 text-white"
-                >
-                  Add to Cart
-                </Button>
-                <Button
-                  type="button"
-                  size="lg"
-                  onClick={handleOrderNow}
-                  disabled={!readyToAddToCart}
-                  className="w-full h-[52px] rounded-full text-base bg-primary hover:opacity-90 text-primary-foreground"
-                >
-                  Order Now
-                </Button>
-              </div>
+              {orderSummaryContent}
             </div>
           </div>
         </div>

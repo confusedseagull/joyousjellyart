@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useCart, type CartItem, type CustomCartItem } from "@/contexts/CartContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,7 +71,7 @@ function LabeledInput({
   ...props
 }: { label: string; labelWidth?: string } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
-    <div className="border border-[#e5e5e5] rounded-2xl h-[52px] flex items-center gap-4 px-4 w-full">
+    <div className="border border-[#e5e5e5] rounded-2xl h-[52px] flex items-center gap-4 px-4 w-full focus-within:border-primary/40 transition-colors">
       <label className={`shrink-0 text-sm text-foreground ${labelWidth || ""}`}>{label}</label>
       <input
         {...props}
@@ -225,8 +225,44 @@ export default function Cart() {
       .join(", ");
   };
 
+  // Dev-only: lets `handleSkipPaymentDev` bypass the HitPay call after the
+  // order is created, so the order-creation -> confirmation-page flow can be
+  // exercised locally without a publicly reachable webhook URL. Never true
+  // in a production build since the button that sets it is import.meta.env.DEV-gated.
+  const skipPaymentRef = useRef(false);
+
+  const buildPendingOrderPayload = () => ({
+    customerName,
+    customerEmail,
+    customerPhone,
+    deliveryMethod,
+    deliveryAddress: deliveryMethod === "delivery" ? composedDeliveryAddress() : undefined,
+    recipientPhone: deliveryMethod === "delivery" ? recipientWhatsapp : undefined,
+    fulfillmentDate: fulfillmentDate?.toISOString() || new Date().toISOString(),
+    // Keep the richer display-ready cart items (labels, image) here rather
+    // than the backend-stripped payload, since OrderConfirmation.tsx renders
+    // straight from this when it's available (no need to match the zod schema).
+    items,
+    subtotal,
+    deliveryFee,
+    total: totalPrice,
+    timeRange: fulfillmentTime,
+    notes,
+  });
+
   const createOrder = trpc.orders.create.useMutation({
     onSuccess: (data) => {
+      if (skipPaymentRef.current) {
+        skipPaymentRef.current = false;
+        const orderNumber = `JJA${String(data.id).padStart(4, "0")}`;
+        sessionStorage.setItem(
+          "pendingOrder",
+          JSON.stringify({ ...buildPendingOrderPayload(), paymentStatus: "pending" })
+        );
+        toast.success("Order created (payment skipped — dev mode)");
+        navigate(`/order-confirmation?order=${orderNumber}`);
+        return;
+      }
       createPaymentRequest.mutate({
         orderId: data.id,
         amount: totalPrice.toFixed(2),
@@ -247,27 +283,7 @@ export default function Cart() {
         localStorage.setItem("lastOrderNumber", orderNumberMatch[1]);
       }
 
-      sessionStorage.setItem(
-        "pendingOrder",
-        JSON.stringify({
-          customerName,
-          customerEmail,
-          customerPhone,
-          deliveryMethod,
-          deliveryAddress: deliveryMethod === "delivery" ? composedDeliveryAddress() : undefined,
-          recipientPhone: deliveryMethod === "delivery" ? recipientWhatsapp : undefined,
-          fulfillmentDate: fulfillmentDate?.toISOString() || new Date().toISOString(),
-          // Keep the richer display-ready cart items (labels, image) here rather
-          // than the backend-stripped payload, since OrderConfirmation.tsx renders
-          // straight from this when it's available (no need to match the zod schema).
-          items,
-          subtotal,
-          deliveryFee,
-          total: totalPrice,
-          timeRange: fulfillmentTime,
-          notes,
-        })
-      );
+      sessionStorage.setItem("pendingOrder", JSON.stringify(buildPendingOrderPayload()));
 
       window.location.href = paymentData.url;
     },
@@ -276,47 +292,64 @@ export default function Cart() {
     },
   });
 
-  const handleCheckout = () => {
+  // Shared by the real checkout and the dev-only skip-payment path.
+  const validateCheckoutFields = () => {
     if (!customerName || !customerEmail || !customerPhone || !fulfillmentDate || !fulfillmentTime) {
       toast.error("Please fill in all required fields");
-      return;
+      return false;
     }
 
     if (fulfillmentDate < getMinDate()) {
       toast.error("Minimum 3 days advance notice required");
-      return;
+      return false;
     }
 
     if (deliveryMethod === "delivery" && (!addressLine || !postalCode || !recipientWhatsapp)) {
       toast.error("Please provide a delivery address, postal code, and recipient WhatsApp number");
-      return;
+      return false;
     }
 
     if (isCalculatingDeliveryFee) {
       toast.error("Please wait for the delivery fee to finish calculating");
-      return;
+      return false;
     }
 
     if (items.length === 0) {
       toast.error("Your cart is empty");
-      return;
+      return false;
     }
 
-    createOrder.mutate({
-      customerName,
-      customerEmail,
-      customerPhone,
-      deliveryMethod,
-      deliveryAddress: deliveryMethod === "delivery" ? composedDeliveryAddress() : undefined,
-      recipientPhone: deliveryMethod === "delivery" ? recipientWhatsapp : undefined,
-      fulfillmentDate: applySlotStartTime(fulfillmentDate, fulfillmentTime),
-      timeRange: fulfillmentTime,
-      items: items.map(toOrderItemPayload),
-      subtotal,
-      deliveryFee,
-      total: totalPrice,
-      notes: notes || undefined,
-    });
+    return true;
+  };
+
+  const buildOrderPayload = () => ({
+    customerName,
+    customerEmail,
+    customerPhone,
+    deliveryMethod,
+    deliveryAddress: deliveryMethod === "delivery" ? composedDeliveryAddress() : undefined,
+    recipientPhone: deliveryMethod === "delivery" ? recipientWhatsapp : undefined,
+    fulfillmentDate: applySlotStartTime(fulfillmentDate!, fulfillmentTime),
+    timeRange: fulfillmentTime,
+    items: items.map(toOrderItemPayload),
+    subtotal,
+    deliveryFee,
+    total: totalPrice,
+    notes: notes || undefined,
+  });
+
+  const handleCheckout = () => {
+    if (!validateCheckoutFields()) return;
+    createOrder.mutate(buildOrderPayload());
+  };
+
+  // Dev-only: creates the order but skips the HitPay payment request, going
+  // straight to the confirmation page. Lets the order-creation flow be
+  // tested locally without a publicly reachable webhook URL for HitPay to call.
+  const handleSkipPaymentDev = () => {
+    if (!validateCheckoutFields()) return;
+    skipPaymentRef.current = true;
+    createOrder.mutate(buildOrderPayload());
   };
 
   if (items.length === 0) {
@@ -394,7 +427,7 @@ export default function Cart() {
                     <PopoverTrigger asChild>
                       <button
                         type="button"
-                        className={`border border-[#e5e5e5] rounded-2xl h-[52px] flex items-center gap-2 px-4 w-full text-left text-sm ${fulfillmentDate ? "text-foreground" : "text-[#808582]"}`}
+                        className={`border border-[#e5e5e5] rounded-2xl h-[52px] flex items-center gap-2 px-4 w-full text-left text-sm outline-none focus-visible:border-primary/40 transition-colors ${fulfillmentDate ? "text-foreground" : "text-[#808582]"}`}
                       >
                         <MapPin className="h-4 w-4 shrink-0 text-[#603b17]" />
                         {fulfillmentDate ? format(fulfillmentDate, "PPP") : "Pick a date"}
@@ -414,9 +447,11 @@ export default function Cart() {
                 <div className="flex flex-col gap-2">
                   <Label className="text-[13px] font-medium">Time</Label>
                   <Select value={fulfillmentTime} onValueChange={setFulfillmentTime}>
-                    <SelectTrigger className={`${inputClass} !h-[52px] w-full gap-2 [&>span]:flex [&>span]:items-center [&>span]:gap-2`}>
-                      <MapPin className="h-4 w-4 shrink-0 text-[#603b17]" />
-                      <SelectValue placeholder="Select time slot" />
+                    <SelectTrigger className={`${inputClass} !h-[52px] w-full text-left`}>
+                      <span className="flex items-center gap-2 min-w-0">
+                        <MapPin className="h-4 w-4 shrink-0 text-[#603b17]" />
+                        <SelectValue placeholder="Select time slot" />
+                      </span>
                     </SelectTrigger>
                     <SelectContent>
                       {(deliveryMethod === "pickup" ? PICKUP_TIME_SLOTS : DELIVERY_TIME_SLOTS).map((slot) => (
@@ -546,6 +581,19 @@ export default function Cart() {
                 ? "Processing..."
                 : `Confirm and Pay  •  ${formatPrice(totalPrice)}`}
             </Button>
+
+            {import.meta.env.DEV && (
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                onClick={handleSkipPaymentDev}
+                disabled={createOrder.isPending || createPaymentRequest.isPending}
+                className="w-full h-[52px] rounded-full text-base border-dashed"
+              >
+                Skip Payment (Dev Only)
+              </Button>
+            )}
           </div>
 
           {/* Right: order summary */}

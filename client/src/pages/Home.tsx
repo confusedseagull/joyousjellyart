@@ -23,7 +23,7 @@ export default function Home() {
         src="/rose-watermark.png"
         alt=""
         aria-hidden="true"
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-[1100px] max-w-none opacity-[0.02] pointer-events-none select-none -z-10"
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] md:w-[900px] lg:w-[1100px] max-w-none opacity-[0.02] pointer-events-none select-none -z-10"
       />
 
       {/* Hero */}
@@ -32,7 +32,7 @@ export default function Home() {
           <p className="font-display text-2xl md:text-4xl text-muted-foreground">
             Making memories, creating magical moments
           </p>
-          <h1 className="text-4xl md:text-5xl lg:text-[52px]">
+          <h1 className="font-normal text-4xl md:text-5xl lg:text-[52px]">
             Create a jelly your loved ones will remember
           </h1>
         </div>
@@ -49,18 +49,18 @@ export default function Home() {
       {/* Gallery */}
       <section id="gallery" className="pb-20 md:pb-28">
         <div className="container">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-y-6 gap-x-2 md:gap-x-6 md:gap-y-4">
             {gallery.map((item) => (
               <div
                 key={item.name}
-                className="bg-[#faf7f3] flex flex-col gap-8 items-center px-5 pt-6 pb-8"
+                className="bg-[#faf7f3] rounded-[16px] md:rounded-[24px] flex flex-col gap-8 items-center px-5 pt-[12px] pb-[20px] md:pt-6 md:pb-8"
               >
-                <p className="w-full text-lg font-medium truncate">{item.name}</p>
+                <p className="font-display w-full text-lg font-medium line-clamp-2">{item.name}</p>
                 <div className="w-full flex justify-center">
                   <img
                     src={item.image}
                     alt={item.name}
-                    className="size-[250px] max-w-full rounded-full object-cover"
+                    className="w-full max-w-[250px] aspect-square rounded-full object-cover"
                   />
                 </div>
               </div>
