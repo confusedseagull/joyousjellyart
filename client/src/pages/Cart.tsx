@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
-import { Minus, Plus, Trash2, ShoppingBag, MapPin, Truck, Store } from "lucide-react";
+import { Minus, Plus, Trash2, ShoppingBag, MapPin, Truck, Store, ChevronDown } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { format } from "date-fns";
@@ -165,6 +165,10 @@ export default function Cart() {
   const [deliveryFee, setDeliveryFee] = useState(0);
   const [deliveryDistance, setDeliveryDistance] = useState<number | null>(null);
   const [deliveryError, setDeliveryError] = useState<string | null>(null);
+  // On mobile, "My Order" collapses into a tap-to-expand bar pinned under
+  // the header instead of a panel stacked below the checkout form; desktop
+  // keeps the always-visible sidebar regardless of this state.
+  const [mobileOrderOpen, setMobileOrderOpen] = useState(false);
 
   const { data: settings } = trpc.settings.get.useQuery();
   const pickupMapsUrl = settings ? "https://maps.google.com/?q=" + encodeURIComponent(settings.pickupAddress) : "#";
@@ -369,12 +373,130 @@ export default function Cart() {
     );
   }
 
+  // Shared between the mobile tap-to-expand bar (below the header) and the
+  // always-visible desktop sidebar.
+  const orderSummaryContent = (
+    <>
+      <div className="flex flex-col gap-4">
+        {items.map((item) => (
+          <div key={item.id} className="flex items-start justify-between gap-4 pb-4 border-b border-[#e4e6e8] last:border-b-0">
+            <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+              {item.collection === "custom" ? (
+                <>
+                  <p className="font-medium text-[15px]">Custom Cake</p>
+                  <p className="text-xs text-muted-foreground">Format: {FORMAT_LABELS[item.format]}</p>
+                  <p className="text-xs text-muted-foreground">Shape: {itemShapeDisplay(item)}</p>
+                  <p className="text-xs text-muted-foreground">Size: {shortSizeLabel(item.sizeLabel)}</p>
+                  <p className="text-xs text-muted-foreground">Design: {item.themeLabel}</p>
+                  <p className="text-xs text-muted-foreground">Base Flavour: {item.flavours.join(", ")}</p>
+                  {item.selectedColors && item.selectedColors.length > 0 && (
+                    <p className="text-xs text-muted-foreground">Colors: {item.selectedColors.join(", ")}</p>
+                  )}
+                </>
+              ) : (
+                <>
+                  <p className="font-medium text-[15px]">{item.name}</p>
+                  <p className="text-xs text-muted-foreground">Edition: {item.edition}</p>
+                  <p className="text-xs text-muted-foreground">Size: {item.size}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Flavour: {item.flavors && item.flavors.length > 0 ? item.flavors.join(", ") : item.flavor}
+                  </p>
+                  {item.dietaryRequirements && item.dietaryRequirements.length > 0 && (
+                    <p className="text-xs text-muted-foreground">Dietary: {item.dietaryRequirements.join(", ")}</p>
+                  )}
+                </>
+              )}
+              <div className="flex items-center gap-3 mt-1.5">
+                {item.collection === "custom" && item.format === "miniGiftBox" ? (
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.id, item.quantity - 1)} disabled={item.quantity <= 1}>
+                      <Minus className="h-3 w-3" />
+                    </Button>
+                    <span className="text-sm font-medium w-4 text-center">{item.quantity}</span>
+                    <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.id, item.quantity + 1)}>
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ) : item.collection === "cny" ? (
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.id, item.quantity - 1)} disabled={item.quantity <= 1}>
+                      <Minus className="h-3 w-3" />
+                    </Button>
+                    <span className="text-sm font-medium w-4 text-center">{item.quantity}</span>
+                    <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.id, item.quantity + 1)}>
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ) : null}
+                <button type="button" onClick={() => removeItem(item.id)} className="text-destructive text-xs flex items-center gap-1">
+                  <Trash2 className="h-3 w-3" /> Remove
+                </button>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 shrink-0">
+              <span className="bg-[#eef3f0] text-[#426b57] text-xs font-semibold px-2 py-1 rounded-md">{item.quantity}x</span>
+              <p className="font-semibold">{formatPrice(item.price * item.quantity)}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex flex-col gap-2 pt-2 border-t border-[#e4e6e8]">
+        <div className="flex justify-between text-sm text-muted-foreground">
+          <span>Subtotal</span>
+          <span>{formatPrice(subtotal)}</span>
+        </div>
+        <div className="flex justify-between text-sm text-muted-foreground">
+          <span>{deliveryMethod === "pickup" ? "Pick Up" : "Delivery"}</span>
+          <span>
+            {deliveryMethod === "pickup"
+              ? "FREE"
+              : deliveryFee > 0
+                ? formatPrice(deliveryFee)
+                : isCalculatingDeliveryFee
+                  ? "Calculating..."
+                  : formatPrice(0)}
+          </span>
+        </div>
+        <div className="flex justify-between items-baseline pt-2 border-t border-[#e4e6e8]">
+          <span className="font-medium">Total (incl. tax)</span>
+          <span className="text-xl font-semibold text-primary">{formatPrice(totalPrice)}</span>
+        </div>
+      </div>
+    </>
+  );
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container py-12">
         <div className="flex flex-col lg:flex-row gap-10 items-stretch">
           {/* Left: checkout form */}
           <div className="flex-1 min-w-0 flex flex-col gap-8">
+            {/* Mobile order summary: fixed full-width bar pinned under the header, so
+                it stays reachable no matter how far the user has scrolled. A spacer
+                reserves its height in the normal flow since the bar itself is fixed. */}
+            <div className="lg:hidden h-16" aria-hidden="true" />
+            <div className="lg:hidden fixed top-20 inset-x-0 z-40 bg-[#faf7f3]">
+              <button
+                type="button"
+                onClick={() => setMobileOrderOpen((v) => !v)}
+                className="w-full h-16 flex items-center justify-between px-6"
+              >
+                <span className="font-display text-lg">My Order</span>
+                <span className="flex items-center gap-2">
+                  <span className="font-display text-lg font-medium">{formatPrice(totalPrice)}</span>
+                  <ChevronDown
+                    className={`h-5 w-5 text-muted-foreground transition-transform ${mobileOrderOpen ? "rotate-180" : ""}`}
+                  />
+                </span>
+              </button>
+              {mobileOrderOpen && (
+                <div className="flex flex-col gap-6 p-6 max-h-[calc(100vh-176px)] overflow-y-auto">
+                  {orderSummaryContent}
+                </div>
+              )}
+            </div>
+
             <div className="flex flex-col gap-1">
               <h1>Secure Checkout</h1>
               <p className="text-muted-foreground text-base">Review your order details.</p>
@@ -596,97 +718,11 @@ export default function Cart() {
             )}
           </div>
 
-          {/* Right: order summary */}
-          <div className="w-full lg:w-[380px] shrink-0">
+          {/* Right: order summary (desktop only - mobile has its own tap-to-expand bar below the header) */}
+          <div className="hidden lg:block lg:w-[380px] shrink-0">
             <div className="bg-[#faf7f3] h-full p-10 flex flex-col gap-6">
               <h2 className="text-2xl">My Order</h2>
-
-              <div className="flex flex-col gap-4">
-                {items.map((item) => (
-                  <div key={item.id} className="flex items-start justify-between gap-4 pb-4 border-b border-[#e4e6e8] last:border-b-0">
-                    <div className="flex-1 min-w-0 flex flex-col gap-1.5">
-                      {item.collection === "custom" ? (
-                        <>
-                          <p className="font-medium text-[15px]">Custom Cake</p>
-                          <p className="text-xs text-muted-foreground">Format: {FORMAT_LABELS[item.format]}</p>
-                          <p className="text-xs text-muted-foreground">Shape: {itemShapeDisplay(item)}</p>
-                          <p className="text-xs text-muted-foreground">Size: {shortSizeLabel(item.sizeLabel)}</p>
-                          <p className="text-xs text-muted-foreground">Design: {item.themeLabel}</p>
-                          <p className="text-xs text-muted-foreground">Base Flavour: {item.flavours.join(", ")}</p>
-                          {item.selectedColors && item.selectedColors.length > 0 && (
-                            <p className="text-xs text-muted-foreground">Colors: {item.selectedColors.join(", ")}</p>
-                          )}
-                        </>
-                      ) : (
-                        <>
-                          <p className="font-medium text-[15px]">{item.name}</p>
-                          <p className="text-xs text-muted-foreground">Edition: {item.edition}</p>
-                          <p className="text-xs text-muted-foreground">Size: {item.size}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Flavour: {item.flavors && item.flavors.length > 0 ? item.flavors.join(", ") : item.flavor}
-                          </p>
-                          {item.dietaryRequirements && item.dietaryRequirements.length > 0 && (
-                            <p className="text-xs text-muted-foreground">Dietary: {item.dietaryRequirements.join(", ")}</p>
-                          )}
-                        </>
-                      )}
-                      <div className="flex items-center gap-3 mt-1.5">
-                        {item.collection === "custom" && item.format === "miniGiftBox" ? (
-                          <div className="flex items-center gap-2">
-                            <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.id, item.quantity - 1)} disabled={item.quantity <= 1}>
-                              <Minus className="h-3 w-3" />
-                            </Button>
-                            <span className="text-sm font-medium w-4 text-center">{item.quantity}</span>
-                            <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.id, item.quantity + 1)}>
-                              <Plus className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        ) : item.collection === "cny" ? (
-                          <div className="flex items-center gap-2">
-                            <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.id, item.quantity - 1)} disabled={item.quantity <= 1}>
-                              <Minus className="h-3 w-3" />
-                            </Button>
-                            <span className="text-sm font-medium w-4 text-center">{item.quantity}</span>
-                            <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.id, item.quantity + 1)}>
-                              <Plus className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        ) : null}
-                        <button type="button" onClick={() => removeItem(item.id)} className="text-destructive text-xs flex items-center gap-1">
-                          <Trash2 className="h-3 w-3" /> Remove
-                        </button>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4 shrink-0">
-                      <span className="bg-[#eef3f0] text-[#426b57] text-xs font-semibold px-2 py-1 rounded-md">{item.quantity}x</span>
-                      <p className="font-semibold">{formatPrice(item.price * item.quantity)}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex flex-col gap-2 pt-2 border-t border-[#e4e6e8]">
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>Subtotal</span>
-                  <span>{formatPrice(subtotal)}</span>
-                </div>
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>{deliveryMethod === "pickup" ? "Pick Up" : "Delivery"}</span>
-                  <span>
-                    {deliveryMethod === "pickup"
-                      ? "FREE"
-                      : deliveryFee > 0
-                        ? formatPrice(deliveryFee)
-                        : isCalculatingDeliveryFee
-                          ? "Calculating..."
-                          : formatPrice(0)}
-                  </span>
-                </div>
-                <div className="flex justify-between items-baseline pt-2 border-t border-[#e4e6e8]">
-                  <span className="font-medium">Total (incl. tax)</span>
-                  <span className="text-xl font-semibold text-primary">{formatPrice(totalPrice)}</span>
-                </div>
-              </div>
+              {orderSummaryContent}
             </div>
           </div>
         </div>

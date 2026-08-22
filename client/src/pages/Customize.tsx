@@ -118,7 +118,7 @@ function CircleOption({
           />
         )}
       </div>
-      <span className="text-[16px] sm:text-[14px] font-semibold text-center leading-tight line-clamp-2">
+      <span className="text-[16px] sm:text-[14px] font-medium text-center leading-tight line-clamp-2">
         {option.label}
       </span>
       {caption && (
@@ -201,7 +201,7 @@ function SizeOption({
         </span>
       </div>
       <div className="text-center text-[16px] sm:text-[14px] leading-tight">
-        <p className="font-semibold text-foreground">{option.label}</p>
+        <p className="font-medium text-foreground">{option.label}</p>
         {SERVES_INFO[option.value] && (
           <p className="text-muted-foreground">{SERVES_INFO[option.value]}</p>
         )}
@@ -243,7 +243,7 @@ function NumberCountOption({
         <span className="text-black text-[16px] sm:text-[14px] leading-none">{count === 1 ? "Number" : "Numbers"}</span>
       </div>
       <div className="text-center text-[16px] sm:text-[14px] leading-tight">
-        <p className="font-semibold text-foreground">{dimension}</p>
+        <p className="font-medium text-foreground">{dimension}</p>
         <p className="text-muted-foreground">{serves}</p>
       </div>
       <p className="font-display text-base font-medium">{formatPrice(price)}</p>
@@ -626,7 +626,7 @@ export default function Customize() {
                 </span>
               </button>
               {mobileOrderOpen && (
-                <div className="flex flex-col gap-6 p-6 pt-0 max-h-[calc(100vh-176px)] overflow-y-auto border-t border-[#e5e5e5]">
+                <div className="flex flex-col gap-6 p-6 max-h-[calc(100vh-176px)] overflow-y-auto">
                   {orderSummaryContent}
                 </div>
               )}
@@ -901,7 +901,7 @@ export default function Customize() {
                     value={coutureBrand}
                     onChange={(e) => setCoutureBrand(e.target.value)}
                     placeholder="Enter brand name (e.g., Chanel, Dior)..."
-                    className={`${inputClass} max-w-2xl`}
+                    className={inputClass}
                   />
                 )}
 
