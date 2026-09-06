@@ -99,7 +99,7 @@ function CircleOption({
       onClick={disabled ? undefined : onClick}
       disabled={disabled}
       className={`flex flex-col items-center gap-2 w-[calc(50%-12px)] sm:w-[110px] px-2 sm:px-0 py-2 rounded-lg group transition-colors ${
-        isSelected ? "bg-[#faf7f3]" : ""
+        isSelected ? "bg-[#F7F1EB]" : ""
       } ${disabled ? "opacity-40 cursor-not-allowed" : ""}`}
     >
       <div
@@ -192,7 +192,7 @@ function SizeOption({
       type="button"
       onClick={onClick}
       className={`flex flex-col items-center gap-2 w-[calc(50%-12px)] sm:w-[110px] px-2 sm:px-0 py-2 rounded-lg transition-colors ${
-        isSelected ? "bg-[#faf7f3]" : ""
+        isSelected ? "bg-[#F7F1EB]" : ""
       }`}
     >
       <div className="w-full aspect-square sm:size-20 rounded-full bg-[#c8e5e4] flex items-center justify-center">
@@ -235,7 +235,7 @@ function NumberCountOption({
       type="button"
       onClick={onClick}
       className={`flex flex-col items-center gap-2 w-[calc(50%-12px)] sm:w-[110px] px-2 sm:px-0 py-2 rounded-lg transition-colors ${
-        isSelected ? "bg-[#faf7f3]" : ""
+        isSelected ? "bg-[#F7F1EB]" : ""
       }`}
     >
       <div className="w-full aspect-square sm:size-20 rounded-full bg-[#c8e5e4] flex flex-col items-center justify-center gap-1">
@@ -284,7 +284,6 @@ export default function Customize() {
 
   // Personalized text
   const [textOnCake, setTextOnCake] = useState("");
-  const [textLanguage, setTextLanguage] = useState("english");
 
   // Dietary requirements
   const [dietaryRequirements, setDietaryRequirements] = useState<string[]>([]);
@@ -312,6 +311,35 @@ export default function Customize() {
     if (shape === "platter4" && size === "6cm") return true;
     return false;
   };
+
+  // Cheesecake is only available for a plain 6" or 8" round cake (not the
+  // 10" or 2-tier round sizes), the 6cm round piece within a jelly platter,
+  // or the 6cm round option in Mini Gift Boxes (the "cupcake" shape).
+  const isCheesecakeEligible = () => {
+    if (format === "cake") return shape === "round" && (size === "6inch" || size === "8inch");
+    if (format === "jellyPlatter") {
+      return (
+        (shape === "platter9" || shape === "platter6" || shape === "platter4") &&
+        size === "6cm" &&
+        platterShapes.includes("circle")
+      );
+    }
+    if (format === "miniGiftBox") return shape === "cupcake";
+    return false;
+  };
+
+  const availableFlavors = isCheesecakeEligible()
+    ? BASE_FLAVORS
+    : BASE_FLAVORS.filter((flavor) => flavor.value !== "Cheesecake");
+
+  // Drop a previously-selected Cheesecake pick if an earlier step changes
+  // (e.g. going back and switching to a 10" round) makes it ineligible.
+  useEffect(() => {
+    if (!isCheesecakeEligible() && selectedFlavors.includes("Cheesecake")) {
+      setSelectedFlavors((prev) => prev.filter((f) => f !== "Cheesecake"));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [format, shape, size, platterShapes]);
 
   // Calculate estimated unit price
   const estimatedPrice = useMemo(() => {
@@ -381,12 +409,20 @@ export default function Customize() {
   };
 
   const handleDietaryToggle = (requirement: string) => {
-    setDietaryRequirements(prev =>
-      prev.includes(requirement) ? prev.filter(r => r !== requirement) : [...prev, requirement]
-    );
+    setDietaryRequirements(prev => {
+      if (requirement === "none") {
+        return prev.includes("none") ? [] : ["none"];
+      }
+      const withoutNone = prev.filter(r => r !== "none");
+      return withoutNone.includes(requirement)
+        ? withoutNone.filter(r => r !== requirement)
+        : [...withoutNone, requirement];
+    });
   };
 
-  const readyToAddToCart = !!(format && theme && shapeSizeComplete && selectedFlavors.length > 0 && totalPrice);
+  const readyToAddToCart = !!(
+    format && theme && shapeSizeComplete && selectedFlavors.length > 0 && totalPrice && dietaryRequirements.length > 0
+  );
 
   // Wizard step navigation: one section visible at a time, matching the
   // Figma order-page's Back/Next pattern instead of a continuous scroll.
@@ -400,10 +436,14 @@ export default function Customize() {
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
-    // On reaching the final (optional) step, auto-expand the mobile order bar
-    // so the customer notices it's where "Add to Cart" lives.
-    setMobileOrderOpen(currentStep === STEP_COUNT);
   }, [currentStep]);
+
+  useEffect(() => {
+    // Only auto-expand the mobile order bar once a dietary requirement has
+    // actually been chosen on the final step, so the customer notices it's
+    // where "Add to Cart" lives right when it becomes usable.
+    setMobileOrderOpen(currentStep === STEP_COUNT && dietaryRequirements.length > 0);
+  }, [currentStep, dietaryRequirements]);
 
   const isStepComplete = (step: number): boolean => {
     switch (step) {
@@ -411,7 +451,8 @@ export default function Customize() {
       case 2: return shapeSizeComplete;
       case 3: return !!theme;
       case 4: return selectedFlavors.length >= getRequiredFlavorCount();
-      default: return true; // steps 5-7 are optional
+      case 7: return dietaryRequirements.length > 0;
+      default: return true; // steps 5-6 are optional
     }
   };
 
@@ -420,35 +461,6 @@ export default function Customize() {
 
   const goBack = () => canGoBack && setCurrentStep((s) => s - 1);
   const goNext = () => canGoNext && setCurrentStep((s) => s + 1);
-
-  // Auto-advance once a step's necessary selections are made — but only for
-  // steps that are fully decided by a single choice (format, shape/size,
-  // flavour). Step 3 (theme) is excluded even though it's required: themes
-  // like Floral Bouquet/Cartoon Characters/Hand Drawn carry their own
-  // optional sub-fields (flowers, character, description, reference notes)
-  // that the user should get a chance to fill in before moving on, so it
-  // stays on manual Next. Steps 5-7 are optional and would otherwise be
-  // skipped instantly. Tracks per-step completion so returning via Back
-  // doesn't re-trigger it.
-  const AUTO_ADVANCE_STEPS = [1, 2, 4];
-  const autoAdvanceState = useRef<{ step: number; wasComplete: boolean }>({ step: 1, wasComplete: false });
-  useEffect(() => {
-    const complete = isStepComplete(currentStep);
-    const state = autoAdvanceState.current;
-    if (state.step !== currentStep) {
-      autoAdvanceState.current = { step: currentStep, wasComplete: complete };
-      return;
-    }
-    if (AUTO_ADVANCE_STEPS.includes(currentStep) && complete && !state.wasComplete) {
-      autoAdvanceState.current = { step: currentStep, wasComplete: true };
-      const timer = setTimeout(() => {
-        setCurrentStep((s) => Math.min(STEP_COUNT, s + 1));
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-    autoAdvanceState.current = { step: currentStep, wasComplete: complete };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentStep, format, shape, size, platterShapes, number1, number2, theme, selectedFlavors]);
 
   const resetBuilder = () => {
     setFormat("");
@@ -471,7 +483,6 @@ export default function Customize() {
     setColor2("");
     setColor3("");
     setTextOnCake("");
-    setTextLanguage("english");
     setDietaryRequirements([]);
   };
 
@@ -505,7 +516,6 @@ export default function Customize() {
       platterShapes: platterShapes.length > 0 ? platterShapes : undefined,
       flavours: selectedFlavors,
       cakeText: textOnCake || undefined,
-      cakeTextLanguage: textOnCake ? (textLanguage as "english" | "chinese") : undefined,
       dietaryRequirements: dietaryRequirements.length > 0 ? dietaryRequirements.join(", ") : undefined,
       referenceLinks: referenceImageNames.length > 0 ? `Reference images: ${referenceImageNames.join(", ")}` : undefined,
       specialInstructions: specialInstructions || undefined,
@@ -535,57 +545,43 @@ export default function Customize() {
 
   // Shared between the mobile tap-to-expand bar (below the header) and the
   // always-visible desktop sticky sidebar.
+  const sizeLabel = shape === "numbers"
+    ? `8" ${numberCount === 2 ? '+ 8"' : ""}`
+    : SHAPE_SIZES[shape]?.find(s => s.value === size)?.label;
+  const colorPreferences = [color1, color2, color3].filter(Boolean).join(", ");
+  const dietaryLabel = dietaryRequirements
+    .map((value) => DIETARY_OPTIONS.find((o) => o.value === value)?.label ?? value)
+    .join(", ");
+
+  const summaryRows: { label: string; value: string }[] = [
+    { label: "Format", value: FORMATS.find(f => f.value === format)?.label ?? "None" },
+    { label: "Shape", value: SHAPES.find(s => s.value === shape)?.label ?? "None" },
+    { label: "Size", value: sizeLabel ?? "None" },
+    { label: "Theme", value: THEMES.find(t => t.value === theme)?.label ?? "None" },
+    { label: "Base Flavour", value: selectedFlavors.length > 0 ? selectedFlavors.join(", ") : "None" },
+    { label: "Color Preferences", value: colorPreferences || "None" },
+    { label: "Personalized Text", value: textOnCake || "None" },
+    { label: "Dietary Requirements", value: dietaryLabel || "None" },
+  ];
+
   const orderSummaryContent = (
     <>
-      <div className="flex flex-col">
-        {format && (
-          <div className="border border-[#e4e6e8] min-h-[95px] flex flex-col justify-center gap-3 px-4 py-6">
-            <p className="text-sm uppercase tracking-wide text-muted-foreground">Format</p>
-            <p className="font-display text-xl">{FORMATS.find(f => f.value === format)?.label}</p>
+      <div className="flex flex-col shrink-0 border border-[#e4e6e8] divide-y divide-[#e4e6e8]">
+        {summaryRows.map((row) => (
+          <div key={row.label} className="min-h-[95px] flex flex-col justify-center gap-3 px-4 py-5">
+            <p className="text-sm uppercase tracking-wide text-muted-foreground">{row.label}</p>
+            <p className="font-display text-xl">{row.value}</p>
           </div>
-        )}
-        {shape && (
-          <div className="border border-[#e4e6e8] min-h-[95px] flex flex-col justify-center gap-3 px-4 py-6">
-            <p className="text-sm uppercase tracking-wide text-muted-foreground">Shape</p>
-            <p className="font-display text-xl">{SHAPES.find(s => s.value === shape)?.label}</p>
-          </div>
-        )}
-        {shape && size && (
-          <div className="border border-[#e4e6e8] min-h-[95px] flex flex-col justify-center gap-3 px-4 py-6">
-            <p className="text-sm uppercase tracking-wide text-muted-foreground">Size</p>
-            <p className="font-display text-xl">
-              {shape === "numbers"
-                ? `8" ${numberCount === 2 ? '+ 8"' : ""}`
-                : SHAPE_SIZES[shape]?.find(s => s.value === size)?.label}
-            </p>
-          </div>
-        )}
-        {theme && (
-          <div className="border border-[#e4e6e8] min-h-[95px] flex flex-col justify-center gap-3 px-4 py-6">
-            <p className="text-sm uppercase tracking-wide text-muted-foreground">Theme</p>
-            <p className="font-display text-xl">{THEMES.find(t => t.value === theme)?.label}</p>
-          </div>
-        )}
-        {selectedFlavors.length > 0 && (
-          <div className="border border-[#e4e6e8] min-h-[95px] flex flex-col justify-center gap-3 px-4 py-6">
-            <p className="text-sm uppercase tracking-wide text-muted-foreground">Base Flavour</p>
-            <p className="font-display text-xl">{selectedFlavors.join(", ")}</p>
-          </div>
-        )}
+        ))}
         {totalPrice && (
-          <div className="border border-[#e4e6e8] min-h-[95px] flex items-center justify-between px-4 py-6">
+          <div className="min-h-[95px] flex items-center justify-between px-4 py-5">
             <p className="text-sm uppercase tracking-wide text-muted-foreground">Price</p>
             <p className="font-display text-2xl font-medium">{formatPrice(totalPrice)}</p>
           </div>
         )}
-        {!format && (
-          <p className="text-sm text-muted-foreground py-4">
-            Your selections will appear here as you build your cake.
-          </p>
-        )}
       </div>
 
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3 shrink-0">
         <Button
           type="button"
           size="lg"
@@ -616,7 +612,7 @@ export default function Customize() {
                 className="w-full h-16 flex items-center justify-between px-6"
               >
                 <span className="font-display text-lg">My Order</span>
-                <span className="flex items-center gap-2">
+                <span className="flex items-center gap-4">
                   {totalPrice && (
                     <span className="font-display text-lg font-medium">{formatPrice(totalPrice)}</span>
                   )}
@@ -954,7 +950,7 @@ export default function Customize() {
                   }
                 />
                 <div className="flex flex-wrap gap-6">
-                  {BASE_FLAVORS.map((flavor) => {
+                  {availableFlavors.map((flavor) => {
                     const isSelected = selectedFlavors.includes(flavor.value);
                     return (
                       <CircleOption
@@ -988,42 +984,22 @@ export default function Customize() {
             {/* 06 Personalized text (optional) */}
             {currentStep === 6 && (
                 <section className="flex flex-col gap-6 animate-in fade-in duration-300">
-                <StepHeader number={6} title="Add personalized text (optional)" description="The number of characters is limited to 25." />
+                <StepHeader number={6} title="Add personalized text (optional)" description="The number of English characters is limited to 30. Simple Chinese phrases and characters are available, such as 生日快乐，福，发财." />
                 <div className="max-w-2xl space-y-4">
                   <Input
                     value={textOnCake}
-                    onChange={(e) => setTextOnCake(e.target.value.slice(0, 25))}
-                    placeholder="Text on cake (English or Chinese)"
+                    onChange={(e) => setTextOnCake(e.target.value.slice(0, 30))}
+                    placeholder="Text on cake"
                     className={inputClass}
                   />
-                  {textOnCake && (
-                    <div className="flex gap-4">
-                      <SelectablePill
-                        selected={textLanguage === "english"}
-                        onClick={() => setTextLanguage("english")}
-                        className="flex-1 flex items-center justify-center px-4 py-3"
-                      >
-                        <span>English</span>
-                        {textLanguage === "english" && <Check className="h-4 w-4 text-primary ml-2" />}
-                      </SelectablePill>
-                      <SelectablePill
-                        selected={textLanguage === "chinese"}
-                        onClick={() => setTextLanguage("chinese")}
-                        className="flex-1 flex items-center justify-center px-4 py-3"
-                      >
-                        <span>Chinese</span>
-                        {textLanguage === "chinese" && <Check className="h-4 w-4 text-primary ml-2" />}
-                      </SelectablePill>
-                    </div>
-                  )}
                 </div>
               </section>
             )}
 
-            {/* 07 Dietary requirements (optional) */}
+            {/* 07 Dietary requirements */}
             {currentStep === 7 && (
                 <section className="flex flex-col gap-6 animate-in fade-in duration-300">
-                <StepHeader number={7} title="Dietary requirements (optional)" />
+                <StepHeader number={7} title="Dietary requirements" />
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-2xl">
                   {DIETARY_OPTIONS.map((option) => {
                     const isSelected = dietaryRequirements.includes(option.value);

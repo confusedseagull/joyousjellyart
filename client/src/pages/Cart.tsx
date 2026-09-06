@@ -298,13 +298,8 @@ export default function Cart() {
 
   // Shared by the real checkout and the dev-only skip-payment path.
   const validateCheckoutFields = () => {
-    if (!customerName || !customerEmail || !customerPhone || !fulfillmentDate || !fulfillmentTime) {
+    if (!customerName || !customerEmail || !customerPhone) {
       toast.error("Please fill in all required fields");
-      return false;
-    }
-
-    if (fulfillmentDate < getMinDate()) {
-      toast.error("Minimum 3 days advance notice required");
       return false;
     }
 
@@ -315,6 +310,16 @@ export default function Cart() {
 
     if (isCalculatingDeliveryFee) {
       toast.error("Please wait for the delivery fee to finish calculating");
+      return false;
+    }
+
+    if (!fulfillmentDate || !fulfillmentTime) {
+      toast.error("Please fill in all required fields");
+      return false;
+    }
+
+    if (fulfillmentDate < getMinDate()) {
+      toast.error("Minimum 3 days advance notice required");
       return false;
     }
 
@@ -534,59 +539,6 @@ export default function Cart() {
 
             <div className="h-px w-full bg-[#e5e5e5]" />
 
-            {/* Fulfillment Date and Time */}
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1">
-                <h2 className="text-base font-medium">Fulfillment Date and Time</h2>
-                <p className="text-muted-foreground text-sm">
-                  Minimum 3 days advance notice required. For example, if you place an order today, the earliest fulfillment date you can select will be 3 days from today.
-                </p>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex flex-col gap-2">
-                  <Label className="text-[13px] font-medium">Date</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <button
-                        type="button"
-                        className={`border border-[#e5e5e5] rounded-2xl h-[52px] flex items-center gap-2 px-4 w-full text-left text-sm outline-none focus-visible:border-primary/40 transition-colors ${fulfillmentDate ? "text-foreground" : "text-[#808582]"}`}
-                      >
-                        <MapPin className="h-4 w-4 shrink-0 text-[#603b17]" />
-                        {fulfillmentDate ? format(fulfillmentDate, "PPP") : "Pick a date"}
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={fulfillmentDate}
-                        onSelect={setFulfillmentDate}
-                        disabled={(date) => date < getMinDate()}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <Label className="text-[13px] font-medium">Time</Label>
-                  <Select value={fulfillmentTime} onValueChange={setFulfillmentTime}>
-                    <SelectTrigger className={`${inputClass} !h-[52px] w-full text-left`}>
-                      <span className="flex items-center gap-2 min-w-0">
-                        <MapPin className="h-4 w-4 shrink-0 text-[#603b17]" />
-                        <SelectValue placeholder="Select time slot" />
-                      </span>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(deliveryMethod === "pickup" ? PICKUP_TIME_SLOTS : DELIVERY_TIME_SLOTS).map((slot) => (
-                        <SelectItem key={slot} value={slot}>{slot}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-
-            <div className="h-px w-full bg-[#e5e5e5]" />
-
             {/* Delivery Method */}
             <div className="flex flex-col gap-4">
               <h2 className="text-base font-medium">Delivery Method</h2>
@@ -677,6 +629,59 @@ export default function Cart() {
                   </div>
                 </div>
               )}
+            </div>
+
+            <div className="h-px w-full bg-[#e5e5e5]" />
+
+            {/* Fulfillment Date and Time */}
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1">
+                <h2 className="text-base font-medium">Fulfillment Date and Time</h2>
+                <p className="text-muted-foreground text-sm">
+                  Minimum 3 days advance notice required. For example, if you place an order today, the earliest fulfillment date you can select will be 3 days from today.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-2">
+                  <Label className="text-[13px] font-medium">Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className={`border border-[#e5e5e5] rounded-2xl h-[52px] flex items-center gap-2 px-4 w-full text-left text-sm outline-none focus-visible:border-primary/40 transition-colors ${fulfillmentDate ? "text-foreground" : "text-[#808582]"}`}
+                      >
+                        <MapPin className="h-4 w-4 shrink-0 text-[#603b17]" />
+                        {fulfillmentDate ? format(fulfillmentDate, "PPP") : "Pick a date"}
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={fulfillmentDate}
+                        onSelect={setFulfillmentDate}
+                        disabled={(date) => date < getMinDate()}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label className="text-[13px] font-medium">Time</Label>
+                  <Select value={fulfillmentTime} onValueChange={setFulfillmentTime}>
+                    <SelectTrigger className={`${inputClass} !h-[52px] w-full text-left`}>
+                      <span className="flex items-center gap-2 min-w-0">
+                        <MapPin className="h-4 w-4 shrink-0 text-[#603b17]" />
+                        <SelectValue placeholder="Select time slot" />
+                      </span>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(deliveryMethod === "pickup" ? PICKUP_TIME_SLOTS : DELIVERY_TIME_SLOTS).map((slot) => (
+                        <SelectItem key={slot} value={slot}>{slot}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </div>
 
             <div className="h-px w-full bg-[#e5e5e5]" />

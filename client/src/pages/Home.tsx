@@ -1,6 +1,7 @@
+import { useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Star } from "lucide-react";
+import { ExternalLink, Star } from "lucide-react";
 import {
   Carousel,
   CarouselContent,
@@ -8,6 +9,30 @@ import {
   CarouselPrevious,
   CarouselNext,
 } from "@/components/ui/carousel";
+
+// Full-width, auto-rotating photo display for a review's attached customer
+// photos — one visible at a time instead of a grid, cycling automatically.
+function ReviewPhotoCarousel({ images, author }: { images: string[]; author: string }) {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    if (images.length <= 1) return;
+    const interval = setInterval(() => {
+      setIndex((prev) => (prev + 1) % images.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [images.length]);
+
+  return (
+    <div className="w-full aspect-square rounded-lg overflow-hidden">
+      <img
+        src={images[index]}
+        alt={`Photo from ${author}'s review`}
+        className="w-full h-full object-cover"
+      />
+    </div>
+  );
+}
 
 // Reviews curated by hand from the Google Business Profile listing rather
 // than pulled live, since Google's API doesn't expose a link to one specific
@@ -54,6 +79,46 @@ const reviews: {
     url: "https://share.google/B4y9M2X2RRtadigl6",
     images: ["/reviews/phyllis-1.jpg", "/reviews/phyllis-2.jpg", "/reviews/phyllis-3.jpg"],
   },
+  {
+    author: "Amy Yong",
+    rating: 5,
+    date: "4 months ago",
+    text: "The most creative cheesecake I've seen! The jelly art layer is breathtaking and the taste is incredibly yummy. It feels like a total luxury to eat. Highly recommend Joyous Jelly Art for anyone wanting a unique, high-quality dessert.",
+    url: "https://share.google/TMlzGiuBlv4qoDUnb",
+    images: ["/reviews/amy-1.jpg"],
+  },
+  {
+    author: "Pearly Woo",
+    rating: 5,
+    date: "2 months ago",
+    text: "Great customer service and attention to detail. The cake was a hit at our celebration! Beautifully designed! Thanks for taking special attention to the delivery instructions. Highly recommended",
+    url: "https://share.google/uP0lBMzp7lqRFVXhV",
+    images: ["/reviews/pearly-1.jpg"],
+  },
+  {
+    author: "Joce Huang",
+    rating: 5,
+    date: "2 months ago",
+    text: "I sent in my order last minute and so glad Joyousjellyart picked up my last minute request! Truly joyous and my mother in law loved the jelly cake and such intricate design. In celebration of Duanwu festival, we even got some mini jelly in bazhang shape. You can truly tell the love and passion from a local bakery! I'd highly recommend! It was such a great experience and the packaging was great too!",
+    url: "https://share.google/YxRlQuVAjQHayH3z3",
+    images: ["/reviews/joce-1.jpg"],
+  },
+  {
+    author: "C.N L",
+    rating: 5,
+    date: "4 months ago",
+    text: "We couldn't bear to eat the beautiful cake, especially the crane. The birthday guy was happy and impressed with the taste, which was not to sweet and it gave a refreshing afertaste. 'Thank you' to the beautiful artist (Doreen) who created this beautiful cake that melts the heart of many ❤️",
+    url: "https://share.google/7yLqSTJfDagBjxd72",
+    images: ["/reviews/cnl-1.jpg", "/reviews/cnl-2.jpg", "/reviews/cnl-3.jpg"],
+  },
+  {
+    author: "Nancy Koh",
+    rating: 5,
+    date: "7 months ago",
+    text: "Beautiful jelly cake and my kids had so much fun admiring at the design! And birthday girl likes the lychee flavor too. Communication for the order is very pleasant , prompt and smooth. Thanks for able to fulfil our order for dairy allergy ! 🙏🙏🙏😊",
+    url: "https://share.google/4AT8xKQNDiUhe37Wy",
+    images: ["/reviews/nancy-1.jpg", "/reviews/nancy-2.jpg"],
+  },
 ];
 
 const gallery = [
@@ -72,6 +137,30 @@ const gallery = [
 ];
 
 export default function Home() {
+  // Tracks which review cards actually overflow the 8-line clamp, so "See
+  // more" only shows up where there's really more text to reveal, plus
+  // which ones the visitor has expanded.
+  const [clampedReviews, setClampedReviews] = useState<Set<number>>(new Set());
+  const [expandedReviews, setExpandedReviews] = useState<Set<number>>(new Set());
+  const reviewTextRefs = useRef<(HTMLParagraphElement | null)[]>([]);
+
+  useEffect(() => {
+    const next = new Set<number>();
+    reviewTextRefs.current.forEach((el, i) => {
+      if (el && el.scrollHeight > el.clientHeight + 1) next.add(i);
+    });
+    setClampedReviews(next);
+  }, []);
+
+  const toggleReviewExpanded = (i: number) => {
+    setExpandedReviews((prev) => {
+      const next = new Set(prev);
+      if (next.has(i)) next.delete(i);
+      else next.add(i);
+      return next;
+    });
+  };
+
   return (
     <div className="relative isolate min-h-screen bg-background">
       <img
@@ -83,11 +172,11 @@ export default function Home() {
 
       {/* Hero */}
       <section className="flex flex-col items-center justify-center text-center gap-8 pt-16 pb-12 md:pt-24 md:pb-16 container">
-        <div className="flex flex-col items-center gap-4 max-w-3xl">
+        <div className="flex flex-col items-center gap-4 max-w-3xl lg:max-w-none">
           <p className="font-display text-2xl md:text-4xl text-muted-foreground">
             Making memories, creating magical moments
           </p>
-          <h1 className="font-normal text-4xl md:text-5xl lg:text-[52px]">
+          <h1 className="font-normal text-4xl md:text-5xl lg:text-[52px] lg:whitespace-nowrap">
             Create a jelly your loved ones will remember
           </h1>
         </div>
@@ -134,12 +223,7 @@ export default function Home() {
             <CarouselContent>
               {reviews.map((review, i) => (
                 <CarouselItem key={i} className="md:basis-1/2 lg:basis-1/3">
-                  <a
-                    href={review.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="h-full bg-[#faf7f3] rounded-[16px] md:rounded-[24px] flex flex-col gap-4 p-6 md:p-8 hover:opacity-90 transition-opacity"
-                  >
+                  <div className="h-full bg-[#faf7f3] rounded-[16px] md:rounded-[24px] flex flex-col gap-4 px-5 py-4 md:px-7 md:py-6">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex gap-0.5">
                         {Array.from({ length: 5 }).map((_, starIndex) => (
@@ -151,21 +235,40 @@ export default function Home() {
                       </div>
                       <span className="text-sm text-muted-foreground shrink-0">{review.date}</span>
                     </div>
-                    <p className="text-base leading-relaxed flex-1 line-clamp-6">{review.text}</p>
+                    <div className="flex-1 flex flex-col gap-1">
+                      <p
+                        ref={(el) => { reviewTextRefs.current[i] = el; }}
+                        className={`text-base leading-relaxed ${expandedReviews.has(i) ? "" : "line-clamp-8"}`}
+                      >
+                        {review.text}
+                      </p>
+                      {clampedReviews.has(i) && (
+                        <button
+                          type="button"
+                          onClick={() => toggleReviewExpanded(i)}
+                          className="text-sm text-primary font-medium text-left hover:underline w-fit"
+                        >
+                          {expandedReviews.has(i) ? "See less" : "See more"}
+                        </button>
+                      )}
+                    </div>
                     {review.images && review.images.length > 0 && (
-                      <div className="flex gap-2">
-                        {review.images.map((src, imgIndex) => (
-                          <img
-                            key={imgIndex}
-                            src={src}
-                            alt={`Photo from ${review.author}'s review`}
-                            className="size-16 rounded-lg object-cover"
-                          />
-                        ))}
-                      </div>
+                      <ReviewPhotoCarousel images={review.images} author={review.author} />
                     )}
-                    <p className="font-display text-lg font-medium">{review.author}</p>
-                  </a>
+                    <div className="flex items-center justify-between gap-2 mt-2">
+                      <p className="font-display text-lg font-normal">{review.author}</p>
+                      <a
+                        href={review.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label="View on Google"
+                        title="View on Google"
+                        className="inline-flex items-center justify-center text-primary border border-primary/40 rounded-full size-8 hover:bg-primary hover:text-primary-foreground transition-colors shrink-0"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </a>
+                    </div>
+                  </div>
                 </CarouselItem>
               ))}
             </CarouselContent>

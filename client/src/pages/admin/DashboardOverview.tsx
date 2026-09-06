@@ -104,7 +104,7 @@ export default function DashboardOverview() {
         <h1 className="mb-1">Dashboard</h1>
         <p className="text-muted-foreground mb-8">A quick view of today's orders and business at a glance.</p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+        <div className="grid grid-cols-2 gap-4 mb-8">
           <StatTile label="New Orders Today" value={stats?.newOrdersToday} icon={Package} loading={statsLoading} href="/admin/orders" />
           <StatTile label={`Upcoming Orders (${day === "today" ? "Today" : "Tomorrow"})`} value={upcomingCount} icon={Clock3} loading={statsLoading} href="/admin/orders" />
         </div>

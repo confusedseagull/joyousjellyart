@@ -112,16 +112,6 @@ export default function OrdersList() {
               className="w-full h-[46px] rounded-2xl border border-[#e5e5e5] pl-11 pr-4 text-sm bg-white outline-none focus:border-primary/40"
             />
           </div>
-          <Select value={collection} onValueChange={(v) => resetAndSet(setCollection, v as typeof collection)}>
-            <SelectTrigger className="!h-[46px] rounded-2xl border-[#e5e5e5] w-full md:w-[180px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All collections</SelectItem>
-              <SelectItem value="custom">Custom cakes</SelectItem>
-              <SelectItem value="cny">CNY collection</SelectItem>
-            </SelectContent>
-          </Select>
           <Select
             value={`${sortBy}:${sortDir}`}
             onValueChange={(v) => {

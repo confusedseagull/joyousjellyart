@@ -1,13 +1,8 @@
 import "dotenv/config";
-import express from "express";
 import { createServer } from "http";
 import net from "net";
-import { createExpressMiddleware } from "@trpc/server/adapters/express";
-import { appRouter } from "../routers";
-import { createContext } from "./context";
+import { createApp } from "./app";
 import { serveStatic, setupVite } from "./vite";
-import { handleHitPayWebhook } from "../webhooks/hitpay";
-import { rateLimitExpress } from "./rateLimit";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -29,34 +24,9 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 }
 
 async function startServer() {
-  const app = express();
+  const app = createApp();
   const server = createServer(app);
 
-  // Trust exactly one reverse-proxy hop (Railway's edge in production) so
-  // req.ip reflects the real client IP for rate limiting instead of the
-  // proxy's own address.
-  app.set("trust proxy", 1);
-
-  // Configure body parser with larger size limit for file uploads
-  app.use(express.json({ limit: "50mb" }));
-  app.use(express.urlencoded({ limit: "50mb", extended: true }));
-
-  // HitPay webhook endpoint — signature-verified inside the handler, this
-  // limit is just a backstop against a flood of junk requests.
-  app.post(
-    "/api/webhooks/hitpay",
-    rateLimitExpress({ windowMs: 60_000, max: 60 }),
-    handleHitPayWebhook
-  );
-  
-  // tRPC API
-  app.use(
-    "/api/trpc",
-    createExpressMiddleware({
-      router: appRouter,
-      createContext,
-    })
-  );
   // development mode uses Vite, production mode uses static files
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);

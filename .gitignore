@@ -109,3 +109,6 @@ temp/
 
 # Manus platform local cache (contains DB connection details in query logs)
 .manus/
+
+# Vercel CLI local project link
+.vercel

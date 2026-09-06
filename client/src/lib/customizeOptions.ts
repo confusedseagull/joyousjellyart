@@ -217,14 +217,15 @@ export const BASE_FLAVORS = [
   { value: "Taro", label: "Taro", image: "/customize/flavour-taro.png" },
   { value: "Strawberry", label: "Strawberry", image: "/customize/flavour-strawberry.png" },
   { value: "Jujube & Gojiberries", label: "Jujube & Gojiberries", image: "/customize/flavour-jujubeGojiberries.png" },
-  { value: "Pineapple", label: "Pineapple" },
+  { value: "Pineapple", label: "Pineapple", image: "/customize/flavour-pineapple.png" },
   { value: "Valrhona Chocolate", label: "Valrhona Chocolate", image: "/customize/flavour-valrhonaChocolate.png" },
   { value: "Passionfruit", label: "Passionfruit", image: "/customize/flavour-passionfruit.png" },
   { value: "Berries Delight", label: "Berries Delight", image: "/customize/flavour-berriesDelight.png" },
-  { value: "Cheesecake", label: "Cheesecake" },
+  { value: "Cheesecake", label: "Cheesecake", image: "/customize/flavour-cheesecake.png" },
 ];
 
 export const DIETARY_OPTIONS = [
+  { value: "none", label: "None" },
   { value: "noDairy", label: "Dairy Free" },
   { value: "noNuts", label: "No Nuts" },
   { value: "vegetarian", label: "Vegetarian" },
