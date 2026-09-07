@@ -12,6 +12,7 @@ import { Link, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { format } from "date-fns";
 import { formatPrice, shortSizeLabel } from "@/lib/utils";
+import { COUNTRY_CODES, DEFAULT_COUNTRY_DIAL_CODE } from "@/lib/countryCodes";
 import { toast } from "sonner";
 
 // Formats minutes-since-midnight as "H:MM AM/PM", matching the label style
@@ -75,6 +76,63 @@ function LabeledInput({
       <label className={`shrink-0 text-sm text-foreground ${labelWidth || ""}`}>{label}</label>
       <input
         {...props}
+        className="flex-1 min-w-0 text-sm bg-transparent outline-none placeholder:text-[#808582]"
+      />
+    </div>
+  );
+}
+
+// Same bordered-box shape as LabeledInput, but with a flag + dial-code
+// dropdown ahead of the number field, so customers only type the local
+// portion of their number.
+function PhoneInput({
+  label,
+  labelWidth,
+  country,
+  onCountryChange,
+  value,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  labelWidth?: string;
+  country: string;
+  onCountryChange: (countryCode: string) => void;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}) {
+  const selected = COUNTRY_CODES.find((c) => c.code === country) ?? COUNTRY_CODES[0];
+  return (
+    <div className="border border-[#e5e5e5] rounded-2xl h-[52px] flex items-center gap-2 pl-4 pr-2 w-full focus-within:border-primary/40 transition-colors">
+      <label className={`shrink-0 text-sm text-foreground ${labelWidth || ""}`}>{label}</label>
+      <Select value={country} onValueChange={onCountryChange}>
+        <SelectTrigger className="shrink-0 w-[88px] h-9 border-0 bg-transparent shadow-none px-2 gap-1 focus-visible:ring-0">
+          <SelectValue>
+            <span className="flex items-center gap-1.5 text-sm">
+              <span>{selected.flag}</span>
+              <span>{selected.dialCode}</span>
+            </span>
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          {COUNTRY_CODES.map((c) => (
+            <SelectItem key={c.code} value={c.code}>
+              <span className="flex items-center gap-2">
+                <span>{c.flag}</span>
+                <span>{c.dialCode}</span>
+                <span className="text-muted-foreground">{c.name}</span>
+              </span>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <div className="h-5 w-px bg-[#e5e5e5] shrink-0" />
+      <input
+        type="tel"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
         className="flex-1 min-w-0 text-sm bg-transparent outline-none placeholder:text-[#808582]"
       />
     </div>
@@ -153,12 +211,23 @@ export default function Cart() {
 
   const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
-  const [customerPhone, setCustomerPhone] = useState("");
+  const [customerPhoneCountry, setCustomerPhoneCountry] = useState("SG");
+  const [customerPhoneNumber, setCustomerPhoneNumber] = useState("");
   const [deliveryMethod, setDeliveryMethod] = useState<"pickup" | "delivery">("pickup");
   const [addressLine, setAddressLine] = useState("");
   const [aptUnit, setAptUnit] = useState("");
   const [postalCode, setPostalCode] = useState("");
-  const [recipientWhatsapp, setRecipientWhatsapp] = useState("");
+  const [recipientWhatsappCountry, setRecipientWhatsappCountry] = useState("SG");
+  const [recipientWhatsappNumber, setRecipientWhatsappNumber] = useState("");
+
+  // The rest of the app (validation, order payloads, admin display) just
+  // wants one phone string like "+65 8123 4567" — compose it here so the
+  // country-code dropdown is the only thing that changed, not every
+  // downstream consumer of customerPhone/recipientWhatsapp.
+  const customerPhoneDialCode = COUNTRY_CODES.find(c => c.code === customerPhoneCountry)?.dialCode ?? DEFAULT_COUNTRY_DIAL_CODE;
+  const customerPhone = customerPhoneNumber ? `${customerPhoneDialCode} ${customerPhoneNumber}` : "";
+  const recipientWhatsappDialCode = COUNTRY_CODES.find(c => c.code === recipientWhatsappCountry)?.dialCode ?? DEFAULT_COUNTRY_DIAL_CODE;
+  const recipientWhatsapp = recipientWhatsappNumber ? `${recipientWhatsappDialCode} ${recipientWhatsappNumber}` : "";
   const [fulfillmentDate, setFulfillmentDate] = useState<Date>();
   const [fulfillmentTime, setFulfillmentTime] = useState("");
   const [notes, setNotes] = useState("");
@@ -496,7 +565,7 @@ export default function Cart() {
                 </span>
               </button>
               {mobileOrderOpen && (
-                <div className="flex flex-col gap-6 p-6 max-h-[calc(100vh-176px)] overflow-y-auto">
+                <div className="flex flex-col gap-6 p-6 max-h-[calc(100dvh-176px)] overflow-y-auto">
                   {orderSummaryContent}
                 </div>
               )}
@@ -527,13 +596,14 @@ export default function Cart() {
                 onChange={(e) => setCustomerEmail(e.target.value)}
                 placeholder="e.g. doreenleexy@gmail.com"
               />
-              <LabeledInput
+              <PhoneInput
                 label="Phone"
                 labelWidth="w-[68px]"
-                type="tel"
-                value={customerPhone}
-                onChange={(e) => setCustomerPhone(e.target.value)}
-                placeholder="e.g. +65 8123 4567"
+                country={customerPhoneCountry}
+                onCountryChange={setCustomerPhoneCountry}
+                value={customerPhoneNumber}
+                onChange={setCustomerPhoneNumber}
+                placeholder="8123 4567"
               />
             </div>
 
@@ -589,13 +659,14 @@ export default function Cart() {
                     placeholder="Postal Code"
                     className={inputClass}
                   />
-                  <LabeledInput
+                  <PhoneInput
                     label="Recipient WhatsApp Number"
                     labelWidth="w-[190px]"
-                    type="tel"
-                    value={recipientWhatsapp}
-                    onChange={(e) => setRecipientWhatsapp(e.target.value)}
-                    placeholder="e.g. +65 8123 4567"
+                    country={recipientWhatsappCountry}
+                    onCountryChange={setRecipientWhatsappCountry}
+                    value={recipientWhatsappNumber}
+                    onChange={setRecipientWhatsappNumber}
+                    placeholder="8123 4567"
                   />
                   {deliveryDistance !== null && (
                     <p className="text-xs text-muted-foreground px-1">

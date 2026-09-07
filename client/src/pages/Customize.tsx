@@ -273,6 +273,7 @@ export default function Customize() {
   const [specialInstructions, setSpecialInstructions] = useState("");
   const [referenceImageNames, setReferenceImageNames] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const specialInstructionsRef = useRef<HTMLTextAreaElement>(null);
 
   // Flavor state
   const [selectedFlavors, setSelectedFlavors] = useState<string[]>([]);
@@ -450,7 +451,7 @@ export default function Customize() {
       case 1: return !!format;
       case 2: return shapeSizeComplete;
       case 3: return !!theme;
-      case 4: return selectedFlavors.length >= getRequiredFlavorCount();
+      case 4: return selectedFlavors.length >= 1;
       case 7: return dietaryRequirements.length > 0;
       default: return true; // steps 5-6 are optional
     }
@@ -524,6 +525,19 @@ export default function Customize() {
       quantity: format === "miniGiftBox" ? quantity : 1,
     };
   };
+
+  // Grows the Additional Notes field downward as its content wraps past one
+  // line, instead of clipping — width/layout stays exactly as-is.
+  const autoResizeTextarea = (el: HTMLTextAreaElement) => {
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  };
+
+  useEffect(() => {
+    if (specialInstructionsRef.current) {
+      autoResizeTextarea(specialInstructionsRef.current);
+    }
+  }, [theme]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -622,7 +636,7 @@ export default function Customize() {
                 </span>
               </button>
               {mobileOrderOpen && (
-                <div className="flex flex-col gap-6 p-6 max-h-[calc(100vh-176px)] overflow-y-auto">
+                <div className="flex flex-col gap-6 p-6 max-h-[calc(100dvh-176px)] overflow-y-auto">
                   {orderSummaryContent}
                 </div>
               )}
@@ -827,7 +841,7 @@ export default function Customize() {
             {/* 03 Theme */}
             {currentStep === 3 && (
                 <section className="flex flex-col gap-6 animate-in fade-in duration-300">
-                <StepHeader number={3} title="Choose a theme" description="Choose the design theme for your jelly cake" />
+                <StepHeader number={3} title="Choose a theme" description="Choose the design theme for your jelly cake. The final design will differ based on the customer's requirements on color, and other additional notes provided. If you would like the exact replica of a particular design, you can upload a picture and indicate it in the additional notes." />
                 <div className="flex flex-wrap gap-6">
                   {THEMES.map((themeOption) => (
                     <CircleOption
@@ -903,13 +917,18 @@ export default function Customize() {
 
                 {theme && (
                   <div className="flex flex-col gap-3">
-                    <div className="border border-[#e5e5e5] rounded-2xl h-[52px] flex items-center gap-7 px-4 focus-within:border-primary/40 transition-colors">
+                    <div className="border border-[#e5e5e5] rounded-2xl min-h-[52px] flex items-start gap-7 px-4 py-4 focus-within:border-primary/40 transition-colors">
                       <label className="shrink-0 text-sm text-foreground">Additional Notes</label>
-                      <input
+                      <textarea
+                        ref={specialInstructionsRef}
                         value={specialInstructions}
-                        onChange={(e) => setSpecialInstructions(e.target.value)}
+                        onChange={(e) => {
+                          setSpecialInstructions(e.target.value);
+                          autoResizeTextarea(e.target);
+                        }}
                         placeholder="Tell us more about what your loved one likes or add web links to references"
-                        className="flex-1 min-w-0 text-sm bg-transparent outline-none placeholder:text-[#808582]"
+                        rows={1}
+                        className="flex-1 min-w-0 text-sm bg-transparent outline-none placeholder:text-[#808582] resize-none leading-normal"
                       />
                     </div>
                     <input
