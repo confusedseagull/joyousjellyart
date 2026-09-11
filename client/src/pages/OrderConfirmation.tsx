@@ -124,13 +124,28 @@ export default function OrderConfirmation() {
 
   const orderId = orderNumber ? parseInt(orderNumber.replace(/^\D+/, ''), 10) : undefined;
 
-  // Fetch order from backend if we don't have sessionStorage data
+  // Always poll the backend for the authoritative payment status, even when
+  // we already have a sessionStorage snapshot. That snapshot is written
+  // (optimistically "pending") before the HitPay redirect and this page
+  // never re-checked it afterwards — so e.g. a customer who pays via a
+  // PayNow QR code on their phone would see the original tab stuck on
+  // "Payment Pending" forever, since only the webhook (not this tab) knew
+  // the payment had actually gone through. Poll every few seconds while
+  // still pending; stop once resolved either way.
   const { data: fetchedOrder } = trpc.orders.getByIdForConfirmation.useQuery(
     { id: orderId! },
-    { enabled: !!orderId && !orderData }
+    {
+      enabled: !!orderId,
+      refetchInterval: (query) => {
+        const status = query.state.data?.paymentStatus;
+        return !status || status === 'pending' ? 3000 : false;
+      },
+    }
   );
 
-  // If we fetched from backend, transform to orderData format
+  // If we fetched from backend, transform to orderData format (used when
+  // there's no sessionStorage snapshot at all, e.g. a reload or the
+  // customer's own phone landing here with no local state for this order).
   useEffect(() => {
     if (!orderData && orderNumber && fetchedOrder) {
       console.log('Fetched order from backend:', fetchedOrder);
@@ -160,6 +175,17 @@ export default function OrderConfirmation() {
       }
     }
   }, [fetchedOrder, orderData, orderNumber, clearCart]);
+
+  // If we already had a sessionStorage snapshot, keep its display details but
+  // sync in the backend's real payment status once it resolves.
+  useEffect(() => {
+    if (orderData && fetchedOrder && fetchedOrder.paymentStatus !== orderData.paymentStatus) {
+      setOrderData((prev) => (prev ? { ...prev, paymentStatus: fetchedOrder.paymentStatus || 'pending' } : prev));
+      if (fetchedOrder.paymentStatus === 'paid') {
+        clearCart();
+      }
+    }
+  }, [fetchedOrder, orderData, clearCart]);
 
   if (isLoading || (!orderData && !fetchedOrder)) {
     return (
