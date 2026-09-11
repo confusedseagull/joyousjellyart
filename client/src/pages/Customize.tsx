@@ -292,6 +292,13 @@ export default function Customize() {
   const shapeOptionsForFormat =
     format === "cake" ? CAKE_SHAPES : format === "jellyPlatter" ? PLATTER_FORMAT_SHAPES : GIFT_BOX_FORMAT_SHAPES;
 
+  // Hand Drawn only makes sense on a full cake — a platter or a box of
+  // individually-packaged jellies doesn't have a single canvas to draw on.
+  const themeOptionsForFormat =
+    format === "jellyPlatter" || format === "miniGiftBox"
+      ? THEMES.filter((t) => t.value !== "handDrawn")
+      : THEMES;
+
   const getRequiredFlavorCount = () => {
     if (shape === "platter9") return 3;
     if (shape === "platter6") return 2;
@@ -373,6 +380,12 @@ export default function Customize() {
     setQuantity(1);
     setNumber1("");
     setNumber2("");
+    // Hand Drawn isn't offered for platters/gift boxes — clear a stale
+    // selection (and its description) if the customer switches into one.
+    if ((value === "jellyPlatter" || value === "miniGiftBox") && theme === "handDrawn") {
+      setTheme("");
+      setHandDrawnDesign("");
+    }
   };
 
   const handleShapeSelect = (value: string) => {
@@ -450,7 +463,10 @@ export default function Customize() {
     switch (step) {
       case 1: return !!format;
       case 2: return shapeSizeComplete;
-      case 3: return !!theme;
+      case 3:
+        if (theme === "coutureFashion") return !!coutureBrand.trim();
+        if (theme === "handDrawn") return !!handDrawnDesign.trim();
+        return !!theme;
       case 4: return selectedFlavors.length >= 1;
       case 7: return dietaryRequirements.length > 0;
       default: return true; // steps 5-6 are optional
@@ -843,7 +859,7 @@ export default function Customize() {
                 <section className="flex flex-col gap-6 animate-in fade-in duration-300">
                 <StepHeader number={3} title="Choose a theme" description="Choose the design theme for your jelly cake. The final design will differ based on the customer's requirements on color, and other additional notes provided. If you would like the exact replica of a particular design, you can upload a picture and indicate it in the additional notes." />
                 <div className="flex flex-wrap gap-6">
-                  {THEMES.map((themeOption) => (
+                  {themeOptionsForFormat.map((themeOption) => (
                     <CircleOption
                       key={themeOption.value}
                       option={themeOption}
@@ -902,7 +918,7 @@ export default function Customize() {
                     value={handDrawnDesign}
                     onChange={(e) => setHandDrawnDesign(e.target.value)}
                     placeholder="Describe your custom hand-drawn design..."
-                    className="min-h-[120px] rounded-2xl border-[#e5e5e5] max-w-2xl"
+                    className="min-h-[120px] rounded-2xl border-[#e5e5e5] w-full"
                   />
                 )}
 

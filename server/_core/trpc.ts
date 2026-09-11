@@ -17,8 +17,13 @@ export const publicProcedure = t.procedure;
  * creation, paid third-party API calls like delivery fee lookups).
  */
 export function rateLimited(options: RateLimitOptions) {
-  return t.middleware(async ({ ctx, next }) => {
-    const result = checkRateLimit(clientIp(ctx.req), options);
+  return t.middleware(async ({ ctx, next, path }) => {
+    // Namespaced by procedure path: without this, every rate-limited
+    // procedure shared one counter per IP, so calling a high-limit endpoint
+    // (e.g. delivery.calculateFee, max 20) could exhaust the budget of an
+    // unrelated low-limit one (e.g. orders.create, max 10) called moments
+    // later by the same customer.
+    const result = checkRateLimit(`${path}:${clientIp(ctx.req)}`, options);
 
     if (!result.allowed) {
       throw new TRPCError({

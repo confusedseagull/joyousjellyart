@@ -258,8 +258,16 @@ export default function Cart() {
   // WhatsApp number and would break the Google Maps lookup.
   const feeQueryAddress = `${addressLine}${aptUnit ? ', Unit ' + aptUnit : ''}, Singapore ${postalCode}`;
 
+  // Debounced so typing an address doesn't fire a new (rate-limited, billed
+  // Google Maps) request on every keystroke.
+  const [debouncedFeeAddress, setDebouncedFeeAddress] = useState(feeQueryAddress);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedFeeAddress(feeQueryAddress), 600);
+    return () => clearTimeout(timer);
+  }, [feeQueryAddress]);
+
   const { data: deliveryFeeData, error: deliveryFeeError } = trpc.delivery.calculateFee.useQuery(
-    { address: feeQueryAddress },
+    { address: debouncedFeeAddress },
     { enabled: deliveryMethod === "delivery" && !!addressLine && !!postalCode }
   );
 
@@ -304,23 +312,44 @@ export default function Cart() {
   // in a production build since the button that sets it is import.meta.env.DEV-gated.
   const skipPaymentRef = useRef(false);
 
-  const buildPendingOrderPayload = () => ({
-    customerName,
-    customerEmail,
-    customerPhone,
-    deliveryMethod,
-    deliveryAddress: deliveryMethod === "delivery" ? composedDeliveryAddress() : undefined,
-    recipientPhone: deliveryMethod === "delivery" ? recipientWhatsapp : undefined,
-    fulfillmentDate: fulfillmentDate?.toISOString() || new Date().toISOString(),
+  // Dev-only: carries fixed test-customer/pickup details for
+  // `handleTestHitPaySandbox`, which — unlike the skip-payment path above —
+  // goes through the real order -> payment.createRequest -> HitPay redirect
+  // flow, so it doesn't touch (or need) the customer's own form state. Set
+  // right before `createOrder.mutate`, consumed and cleared once the
+  // resulting payment request redirects to HitPay's sandbox checkout.
+  const testSandboxOrderRef = useRef<{
+    customerName: string;
+    customerEmail: string;
+    customerPhone: string;
+    deliveryMethod: "pickup";
+    fulfillmentDate: Date;
+    timeRange: string;
+    total: number;
+  } | null>(null);
+
+  const buildPendingOrderPayload = (override?: NonNullable<typeof testSandboxOrderRef.current>) => ({
+    customerName: override?.customerName ?? customerName,
+    customerEmail: override?.customerEmail ?? customerEmail,
+    customerPhone: override?.customerPhone ?? customerPhone,
+    deliveryMethod: override?.deliveryMethod ?? deliveryMethod,
+    deliveryAddress: (override?.deliveryMethod ?? deliveryMethod) === "delivery" ? composedDeliveryAddress() : undefined,
+    recipientPhone: (override?.deliveryMethod ?? deliveryMethod) === "delivery" ? recipientWhatsapp : undefined,
+    fulfillmentDate: (override?.fulfillmentDate ?? fulfillmentDate)?.toISOString() || new Date().toISOString(),
     // Keep the richer display-ready cart items (labels, image) here rather
     // than the backend-stripped payload, since OrderConfirmation.tsx renders
     // straight from this when it's available (no need to match the zod schema).
     items,
     subtotal,
-    deliveryFee,
-    total: totalPrice,
-    timeRange: fulfillmentTime,
+    deliveryFee: override ? 0 : deliveryFee,
+    total: override?.total ?? totalPrice,
+    timeRange: override?.timeRange ?? fulfillmentTime,
     notes,
+  });
+
+  const devMarkPaidAndSendConfirmation = trpc.orders.devMarkPaidAndSendConfirmation.useMutation({
+    onSuccess: () => toast.success("Marked paid — confirmation email sent"),
+    onError: (error) => toast.error(error.message || "Failed to send confirmation email"),
   });
 
   const createOrder = trpc.orders.create.useMutation({
@@ -330,18 +359,20 @@ export default function Cart() {
         const orderNumber = `JJA${String(data.id).padStart(4, "0")}`;
         sessionStorage.setItem(
           "pendingOrder",
-          JSON.stringify({ ...buildPendingOrderPayload(), paymentStatus: "pending" })
+          JSON.stringify({ ...buildPendingOrderPayload(), paymentStatus: "paid" })
         );
         toast.success("Order created (payment skipped — dev mode)");
+        devMarkPaidAndSendConfirmation.mutate({ orderId: data.id });
         navigate(`/order-confirmation?order=${orderNumber}`);
         return;
       }
+      const sandbox = testSandboxOrderRef.current;
       createPaymentRequest.mutate({
         orderId: data.id,
-        amount: totalPrice.toFixed(2),
-        customerName,
-        customerEmail,
-        customerPhone,
+        amount: (sandbox?.total ?? totalPrice).toFixed(2),
+        customerName: sandbox?.customerName ?? customerName,
+        customerEmail: sandbox?.customerEmail ?? customerEmail,
+        customerPhone: sandbox?.customerPhone ?? customerPhone,
       });
     },
     onError: (error) => {
@@ -356,7 +387,9 @@ export default function Cart() {
         localStorage.setItem("lastOrderNumber", orderNumberMatch[1]);
       }
 
-      sessionStorage.setItem("pendingOrder", JSON.stringify(buildPendingOrderPayload()));
+      const sandbox = testSandboxOrderRef.current;
+      testSandboxOrderRef.current = null;
+      sessionStorage.setItem("pendingOrder", JSON.stringify(buildPendingOrderPayload(sandbox ?? undefined)));
 
       window.location.href = paymentData.url;
     },
@@ -421,13 +454,55 @@ export default function Cart() {
     createOrder.mutate(buildOrderPayload());
   };
 
-  // Dev-only: creates the order but skips the HitPay payment request, going
-  // straight to the confirmation page. Lets the order-creation flow be
-  // tested locally without a publicly reachable webhook URL for HitPay to call.
+  // Dev-only: creates the order, skips the HitPay payment request, marks the
+  // order paid, and sends the real confirmation email — exercising the same
+  // path a genuine payment would (server/webhooks/hitpay.ts), without a
+  // publicly reachable webhook URL for HitPay to call.
   const handleSkipPaymentDev = () => {
     if (!validateCheckoutFields()) return;
     skipPaymentRef.current = true;
     createOrder.mutate(buildOrderPayload());
+  };
+
+  // Dev-only: creates an order with fixed test-customer/pickup details (so it
+  // works with one click regardless of what's currently in the form) and
+  // sends it through the real payment.createRequest -> HitPay redirect flow,
+  // landing on HitPay's actual sandbox checkout page. Unlike the skip-payment
+  // path above, this exercises the genuine webhook-driven paid/email flow —
+  // useful for testing the real HitPay integration once PUBLIC_URL is
+  // publicly reachable (e.g. against the deployed site).
+  const handleTestHitPaySandbox = () => {
+    if (items.length === 0) {
+      toast.error("Your cart is empty");
+      return;
+    }
+
+    const pickupDate = getMinDate();
+    const pickupTime = PICKUP_TIME_SLOTS[0];
+
+    testSandboxOrderRef.current = {
+      customerName: "Test Customer",
+      customerEmail: "test@joyousjellyart.dev",
+      customerPhone: "+65 8123 4567",
+      deliveryMethod: "pickup",
+      fulfillmentDate: pickupDate,
+      timeRange: pickupTime,
+      total: subtotal,
+    };
+
+    createOrder.mutate({
+      customerName: "Test Customer",
+      customerEmail: "test@joyousjellyart.dev",
+      customerPhone: "+65 8123 4567",
+      deliveryMethod: "pickup",
+      fulfillmentDate: applySlotStartTime(pickupDate, pickupTime),
+      timeRange: pickupTime,
+      items: items.map(toOrderItemPayload),
+      subtotal,
+      deliveryFee: 0,
+      total: subtotal,
+      notes: "HitPay sandbox test order (dev only)",
+    });
   };
 
   if (items.length === 0) {
@@ -789,7 +864,20 @@ export default function Cart() {
                 disabled={createOrder.isPending || createPaymentRequest.isPending}
                 className="w-full h-[52px] rounded-full text-base border-dashed"
               >
-                Skip Payment (Dev Only)
+                Skip Payment & Email Confirmation (Dev Only)
+              </Button>
+            )}
+
+            {import.meta.env.DEV && (
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                onClick={handleTestHitPaySandbox}
+                disabled={createOrder.isPending || createPaymentRequest.isPending}
+                className="w-full h-[52px] rounded-full text-base border-dashed"
+              >
+                Test with HitPay Sandbox (Dev Only)
               </Button>
             )}
           </div>

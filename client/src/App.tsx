@@ -18,6 +18,13 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 import CNY2026 from "./pages/CNY2026";
 import Cart from "./pages/Cart";
+import { useAdminPwaMeta } from "./hooks/useAdminPwaMeta";
+
+function AdminPwaMeta() {
+  const [location] = useLocation();
+  useAdminPwaMeta(location.startsWith('/admin'));
+  return null;
+}
 
 function HeaderWrapper() {
   const [location] = useLocation();
@@ -35,6 +42,7 @@ function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
     <>
+      <AdminPwaMeta />
       <HeaderWrapper />
       <Switch>
         <Route path={"/"} component={Home} />

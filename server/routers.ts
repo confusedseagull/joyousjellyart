@@ -140,6 +140,27 @@ export const appRouter = router({
         return order;
       }),
 
+    // Dev-only: marks an order paid and sends the real confirmation email
+    // through the same sendOrderConfirmationEmail() the HitPay webhook uses,
+    // so the "Skip Payment (Dev Only)" checkout button can exercise the full
+    // email content/delivery without a real payment or a public webhook URL.
+    // Refuses outside development regardless of who calls it, since marking
+    // an order paid with no real payment would be a real integrity issue.
+    devMarkPaidAndSendConfirmation: publicProcedure
+      .input(z.object({ orderId: z.number() }))
+      .mutation(async ({ input }) => {
+        if (process.env.NODE_ENV === "production") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Not available outside development" });
+        }
+        const order = await updateOrder(input.orderId, { paymentStatus: "paid" });
+        if (!order) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Order not found" });
+        }
+        const { sendOrderConfirmationEmail } = await import("./email");
+        await sendOrderConfirmationEmail(order);
+        return { sent: true };
+      }),
+
     // Public procedure for order confirmation (no auth required)
     getByIdForConfirmation: publicProcedure
       .input(z.object({ id: z.number() }))

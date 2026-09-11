@@ -1,0 +1,25 @@
+{
+  "name": "Joyous JellyArt Admin",
+  "short_name": "JJA Admin",
+  "description": "Manage orders, calendar, and settings for Joyous JellyArt.",
+  "start_url": "/admin/dashboard",
+  "scope": "/admin",
+  "display": "standalone",
+  "background_color": "#faf7f3",
+  "theme_color": "#6fa4a6",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
