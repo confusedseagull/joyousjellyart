@@ -36,7 +36,7 @@ export default function About() {
             className="w-full md:w-72 aspect-[3/4] object-cover rounded-2xl shrink-0"
           />
           <div className="flex flex-col gap-5 max-w-2xl text-[15px] md:text-base leading-relaxed text-foreground">
-            <h2 className="text-3xl md:text-4xl">The Joyous JellyArt Story</h2>
+            <h2 className="text-3xl md:text-4xl font-normal">The Joyous JellyArt Story</h2>
             <p>
               Founded by Doreen Lee, a passionate artist whose work has been honoured with the
               MIVA Award 2024 (Champion in Creative Technical and Traditional category) and
@@ -57,7 +57,7 @@ export default function About() {
         {/* What we make */}
         <div className="flex flex-col md:flex-row gap-8 md:gap-16 mb-16 md:mb-24">
           <div className="flex flex-col gap-5 max-w-2xl text-[15px] md:text-base leading-relaxed text-foreground md:mt-12">
-            <h2 className="text-3xl md:text-4xl">What we make</h2>
+            <h2 className="text-3xl md:text-4xl font-normal">What we make</h2>
             <p>
               Joyous JellyArt creates bespoke, handmade jelly cakes — intricate, floral masterpieces
               that grace birthdays, weddings, baby showers, and everything in between. Each design
