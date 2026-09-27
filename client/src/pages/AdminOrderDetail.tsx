@@ -409,7 +409,7 @@ export default function AdminOrderDetail() {
                       </div>
                     </div>
 
-                    {(item.cakeText || item.dietaryRequirements || item.referenceLinks || item.specialInstructions) && (
+                    {(item.cakeText || item.designDetails || item.dietaryRequirements || item.referenceLinks || item.specialInstructions) && (
                       <div className="mt-4 pt-3 border-t border-[#e5e5e5] flex flex-col gap-1 text-sm">
                         {item.cakeText && (
                           <p>
@@ -419,6 +419,7 @@ export default function AdminOrderDetail() {
                             )}
                           </p>
                         )}
+                        {item.designDetails && <p>Design Details: <span className="text-muted-foreground">{item.designDetails}</span></p>}
                         {item.dietaryRequirements && <p>Dietary: <span className="text-muted-foreground">{item.dietaryRequirements}</span></p>}
                         {item.referenceLinks && <p>Reference Links: <span className="text-muted-foreground">{item.referenceLinks}</span></p>}
                         {item.specialInstructions && <p>Additional Requests: <span className="text-muted-foreground">{item.specialInstructions}</span></p>}

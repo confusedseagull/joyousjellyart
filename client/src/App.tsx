@@ -5,6 +5,8 @@ import { Route, Switch, useLocation } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
+import Discover from "./pages/Discover";
+import About from "./pages/About";
 import Customize from "./pages/Customize";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import AdminLogin from "./pages/AdminLogin";
@@ -46,6 +48,8 @@ function Router() {
       <HeaderWrapper />
       <Switch>
         <Route path={"/"} component={Home} />
+        <Route path="/discover" component={Discover} />
+        <Route path="/about" component={About} />
         <Route path="/customize" component={Customize} />
         <Route path="/cny-2026" component={CNY2026} />
         <Route path="/cart" component={Cart} />

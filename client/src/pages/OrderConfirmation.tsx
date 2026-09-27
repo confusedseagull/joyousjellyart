@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation, Link } from "wouter";
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { CheckCircle2, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
 import { trpc } from "@/lib/trpc";
@@ -33,6 +33,7 @@ interface ConfirmationCustomItem {
   platterShapes?: string[];
   flavours: string[];
   selectedColors?: string[];
+  designDetails?: string;
   price: number;
   quantity: number;
 }
@@ -76,6 +77,7 @@ export default function OrderConfirmation() {
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { clearCart } = useCart();
+  const hasClearedCartRef = useRef(false);
 
   useEffect(() => {
     // Get order number from URL query parameter
@@ -99,93 +101,80 @@ export default function OrderConfirmation() {
 
     setOrderNumber(orderNum);
 
-    // Get pending order data from sessionStorage
+    // Paint instantly from the sessionStorage snapshot (written right before
+    // the HitPay redirect) so there's no loading flash — the backend query
+    // below overwrites this with the authoritative row moments later.
     const storedData = sessionStorage.getItem("pendingOrder");
 
     if (storedData) {
       console.log('Found pending order data in sessionStorage');
       const pendingOrderData = JSON.parse(storedData);
-      // Combine order number from URL with stored order data
       setOrderData({
         ...pendingOrderData,
         orderNumber: orderNum,
-        paymentStatus: 'pending', // Mark as pending until webhook confirms
+        paymentStatus: pendingOrderData.paymentStatus || 'pending',
       });
-      // Clear pending order from sessionStorage
       sessionStorage.removeItem("pendingOrder");
-      // DO NOT clear cart here - wait for payment confirmation
       setIsLoading(false);
     } else {
       console.log('No sessionStorage data, will fetch from backend');
-      // SessionStorage might be cleared, we'll fetch from backend
       setIsLoading(false);
     }
-  }, [navigate, clearCart]);
+  }, [navigate]);
 
   const orderId = orderNumber ? parseInt(orderNumber.replace(/^\D+/, ''), 10) : undefined;
 
-  // Always poll the backend for the authoritative payment status, even when
-  // we already have a sessionStorage snapshot. That snapshot is written
-  // (optimistically "pending") before the HitPay redirect and this page
-  // never re-checked it afterwards — so e.g. a customer who pays via a
-  // PayNow QR code on their phone would see the original tab stuck on
-  // "Payment Pending" forever, since only the webhook (not this tab) knew
-  // the payment had actually gone through. Poll every few seconds while
-  // still pending; stop once resolved either way.
+  // Keep polling the backend for as long as this page stays open — not just
+  // until payment resolves. This is what lets the page pick up ANY change to
+  // the order automatically: a payment completing on another device (e.g. a
+  // PayNow QR scanned on a phone while this tab started checkout), or an
+  // admin editing the order's date/time/items/notes after the fact. Poll
+  // quickly while payment is still pending (the common, time-sensitive
+  // case), then back off to a slower interval once resolved.
   const { data: fetchedOrder } = trpc.orders.getByIdForConfirmation.useQuery(
     { id: orderId! },
     {
       enabled: !!orderId,
       refetchInterval: (query) => {
         const status = query.state.data?.paymentStatus;
-        return !status || status === 'pending' ? 3000 : false;
+        return !status || status === 'pending' ? 3000 : 20000;
       },
     }
   );
 
-  // If we fetched from backend, transform to orderData format (used when
-  // there's no sessionStorage snapshot at all, e.g. a reload or the
-  // customer's own phone landing here with no local state for this order).
+  // Whenever the backend row changes — on the first fetch, or any later
+  // poll — replace the displayed order wholesale with it, so every field
+  // (not just paymentStatus) always reflects the real current state.
   useEffect(() => {
-    if (!orderData && orderNumber && fetchedOrder) {
-      console.log('Fetched order from backend:', fetchedOrder);
-      const transformedData: OrderData = {
-        orderNumber,
-        customerName: fetchedOrder.customerName,
-        customerEmail: fetchedOrder.customerEmail || '',
-        customerPhone: fetchedOrder.customerPhone,
-        deliveryMethod: fetchedOrder.deliveryMethod,
-        deliveryAddress: fetchedOrder.deliveryAddress || undefined,
-        fulfillmentDate:
-          typeof fetchedOrder.fulfillmentDate === 'string'
-            ? fetchedOrder.fulfillmentDate
-            : fetchedOrder.fulfillmentDate.toISOString(),
-        timeRange: fetchedOrder.timeRange || undefined,
-        items: fetchedOrder.items as ConfirmationItem[],
-        subtotal: fetchedOrder.subtotal,
-        deliveryFee: fetchedOrder.deliveryFee,
-        total: fetchedOrder.total,
-        notes: fetchedOrder.notes || undefined,
-        paymentStatus: fetchedOrder.paymentStatus || 'pending',
-      };
-      setOrderData(transformedData);
-      // Only clear cart if payment is confirmed
-      if (fetchedOrder.paymentStatus === 'paid') {
-        clearCart();
-      }
-    }
-  }, [fetchedOrder, orderData, orderNumber, clearCart]);
+    if (!fetchedOrder || !orderNumber) return;
 
-  // If we already had a sessionStorage snapshot, keep its display details but
-  // sync in the backend's real payment status once it resolves.
-  useEffect(() => {
-    if (orderData && fetchedOrder && fetchedOrder.paymentStatus !== orderData.paymentStatus) {
-      setOrderData((prev) => (prev ? { ...prev, paymentStatus: fetchedOrder.paymentStatus || 'pending' } : prev));
-      if (fetchedOrder.paymentStatus === 'paid') {
-        clearCart();
-      }
+    const transformedData: OrderData = {
+      orderNumber,
+      customerName: fetchedOrder.customerName,
+      customerEmail: fetchedOrder.customerEmail || '',
+      customerPhone: fetchedOrder.customerPhone,
+      deliveryMethod: fetchedOrder.deliveryMethod,
+      deliveryAddress: fetchedOrder.deliveryAddress || undefined,
+      fulfillmentDate:
+        typeof fetchedOrder.fulfillmentDate === 'string'
+          ? fetchedOrder.fulfillmentDate
+          : fetchedOrder.fulfillmentDate.toISOString(),
+      timeRange: fetchedOrder.timeRange || undefined,
+      items: fetchedOrder.items as ConfirmationItem[],
+      subtotal: fetchedOrder.subtotal,
+      deliveryFee: fetchedOrder.deliveryFee,
+      total: fetchedOrder.total,
+      notes: fetchedOrder.notes || undefined,
+      paymentStatus: fetchedOrder.paymentStatus || 'pending',
+    };
+
+    setOrderData(transformedData);
+
+    if (fetchedOrder.paymentStatus === 'paid' && !hasClearedCartRef.current) {
+      hasClearedCartRef.current = true;
+      clearCart();
     }
-  }, [fetchedOrder, orderData, clearCart]);
+  }, [fetchedOrder, orderNumber, clearCart]);
 
   if (isLoading || (!orderData && !fetchedOrder)) {
     return (
@@ -215,181 +204,152 @@ export default function OrderConfirmation() {
   const isPending = !orderData.paymentStatus || orderData.paymentStatus === 'pending';
   const isFailed = orderData.paymentStatus === 'failed';
 
+  const detailRows: { label: string; value: string }[] = [
+    { label: "Customer Name", value: orderData.customerName },
+    { label: "Email", value: orderData.customerEmail },
+    { label: "Phone", value: orderData.customerPhone },
+    { label: "Delivery Method", value: orderData.deliveryMethod === "delivery" ? "Delivery" : "Pickup" },
+    ...(orderData.deliveryAddress ? [{ label: "Delivery Address", value: orderData.deliveryAddress }] : []),
+    { label: "Fulfillment Date & Time", value: formattedDateTime },
+    ...(hasAdditionalNotes ? [{ label: "Special Instructions", value: orderData.notes! }] : []),
+  ];
+
   return (
-    <div className="min-h-screen bg-background py-12">
-      <div className="container max-w-3xl">
-        {/* Header - varies by payment status */}
-        <div className="text-center mb-8">
+    <div className="min-h-screen bg-background py-12 md:py-16">
+      <div className="container max-w-2xl">
+        {/* Status header — varies by payment status */}
+        <div className="text-center mb-10 flex flex-col items-center gap-4">
           {isPaid && (
             <>
-              <CheckCircle2 className="h-16 w-16 text-green-600 mx-auto mb-4" />
-              <h1 className="text-4xl font-bold mb-2">Order Confirmed!</h1>
-              <p className="text-muted-foreground">
-                Thank you for your order. We'll be in touch once your order is ready!
-              </p>
+              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                <CheckCircle2 className="h-8 w-8 text-primary" />
+              </div>
+              <div className="flex flex-col gap-2">
+                <h1>Order Confirmed!</h1>
+                <p className="text-muted-foreground">
+                  Thank you, {orderData.customerName.split(" ")[0]} — we'll be in touch once your order is ready.
+                </p>
+              </div>
             </>
           )}
           {isPending && (
             <>
-              <div className="h-16 w-16 rounded-full bg-yellow-100 flex items-center justify-center mx-auto mb-4">
-                <Loader2 className="h-8 w-8 text-yellow-600 animate-spin" />
+              <div className="h-16 w-16 rounded-full bg-[#faf7f3] flex items-center justify-center">
+                <Loader2 className="h-8 w-8 text-primary animate-spin" />
               </div>
-              <h1 className="text-4xl font-bold mb-2">Payment Pending</h1>
-              <p className="text-muted-foreground">
-                Your order has been created, but we haven't received payment confirmation yet. Please complete your payment to confirm your order.
-              </p>
+              <div className="flex flex-col gap-2">
+                <h1>Payment Pending</h1>
+                <p className="text-muted-foreground">
+                  Your order has been created, but we haven't received payment confirmation yet. This page will update automatically once it's through.
+                </p>
+              </div>
             </>
           )}
           {isFailed && (
             <>
-              <div className="h-16 w-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
-                <span className="text-3xl text-red-600">✕</span>
+              <div className="h-16 w-16 rounded-full bg-red-50 flex items-center justify-center">
+                <X className="h-8 w-8 text-red-600" />
               </div>
-              <h1 className="text-4xl font-bold mb-2">Payment Failed</h1>
-              <p className="text-muted-foreground">
-                Your payment could not be processed. Please try again or contact us for assistance.
-              </p>
+              <div className="flex flex-col gap-2">
+                <h1>Payment Failed</h1>
+                <p className="text-muted-foreground">
+                  Your payment could not be processed. Please try again or contact us for assistance.
+                </p>
+              </div>
             </>
           )}
         </div>
 
-        {/* Order Summary */}
-        <div className="bg-card rounded-lg shadow-sm p-6 mb-6">
-          <h2 className="text-2xl font-semibold mb-4">{orderData.orderNumber}</h2>
+        {/* Order number */}
+        <p className="font-display text-2xl text-center mb-6">{orderData.orderNumber}</p>
 
-          {/* Items */}
-          <div className="space-y-4 mb-6">
-            {orderData.items.map((item, index) => {
-              if (item.collection === "cny") {
-                return (
-                  <div key={item.id ?? index} className="flex gap-4">
+        {/* Items */}
+        <div className="flex flex-col gap-4 mb-8">
+          {orderData.items.map((item, index) => {
+            if (item.collection === "cny") {
+              return (
+                <div key={item.id ?? index} className="flex items-start justify-between gap-4 pb-4 border-b border-[#e5e5e5] last:border-b-0">
+                  <div className="flex gap-4 min-w-0">
                     {item.image && (
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-20 h-20 object-cover rounded-md"
-                      />
+                      <img src={item.image} alt={item.name} className="w-16 h-16 rounded-full object-cover shrink-0" />
                     )}
-                    <div className="flex-1">
-                      <h3 className="font-semibold">{item.name}</h3>
-                      <p className="text-sm text-muted-foreground">{item.edition}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Size: {item.size} | Flavor: {item.flavors ? item.flavors.join(', ') : item.flavor}
+                    <div className="flex flex-col gap-1 min-w-0">
+                      <p className="font-medium text-[15px]">{item.name}</p>
+                      <p className="text-xs text-muted-foreground">{item.edition}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Size: {item.size} &middot; Flavour: {item.flavors ? item.flavors.join(', ') : item.flavor}
                       </p>
                       {item.dietaryRequirements && item.dietaryRequirements.length > 0 && (
-                        <p className="text-sm text-muted-foreground">
-                          Dietary: {item.dietaryRequirements.join(', ')}
-                        </p>
+                        <p className="text-xs text-muted-foreground">Dietary: {item.dietaryRequirements.join(', ')}</p>
                       )}
-                      <p className="text-sm">Quantity: {item.quantity}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold">{formatPrice(item.price)}</p>
                     </div>
                   </div>
-                );
-              }
-
-              const shapeText =
-                item.shapeLabel || (item.platterShapes?.length ? item.platterShapes.join(', ') : humanize(item.shape));
-
-              return (
-                <div key={item.id ?? index} className="flex gap-4">
-                  <div className="flex-1">
-                    <h3 className="font-semibold">Custom Cake — {item.themeLabel || humanize(item.theme)}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {FORMAT_LABELS[item.format] || humanize(item.format)}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Shape: {shapeText} | Size: {item.sizeLabel || item.size}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Flavour: {item.flavours.join(', ')}
-                    </p>
-                    {item.selectedColors && item.selectedColors.length > 0 && (
-                      <p className="text-sm text-muted-foreground">Colors: {item.selectedColors.join(', ')}</p>
-                    )}
-                    <p className="text-sm">Quantity: {item.quantity}</p>
-                  </div>
-                  <div className="text-right">
+                  <div className="flex items-center gap-4 shrink-0">
+                    <span className="bg-[#eef3f0] text-[#426b57] text-xs font-semibold px-2 py-1 rounded-md">{item.quantity}x</span>
                     <p className="font-semibold">{formatPrice(item.price)}</p>
                   </div>
                 </div>
               );
-            })}
-          </div>
+            }
 
-          {/* Divider */}
-          <div className="border-t mb-4" />
+            const shapeText =
+              item.shapeLabel || (item.platterShapes?.length ? item.platterShapes.join(', ') : humanize(item.shape));
 
-          {/* Order Details */}
-          <div className="grid grid-cols-2 gap-6 mb-6">
-            {/* Left Column */}
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Customer Name</p>
-                <p className="font-medium">{orderData.customerName}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Email</p>
-                <p className="font-medium">{orderData.customerEmail}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Phone</p>
-                <p className="font-medium">{orderData.customerPhone}</p>
-              </div>
-            </div>
-
-            {/* Right Column */}
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Delivery Method</p>
-                <p className="font-medium capitalize">{orderData.deliveryMethod}</p>
-              </div>
-              {orderData.deliveryAddress && (
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Delivery Address</p>
-                  <p className="font-medium">{orderData.deliveryAddress}</p>
+            return (
+              <div key={item.id ?? index} className="flex items-start justify-between gap-4 pb-4 border-b border-[#e5e5e5] last:border-b-0">
+                <div className="flex flex-col gap-1 min-w-0">
+                  <p className="font-medium text-[15px]">Custom Cake &mdash; {item.themeLabel || humanize(item.theme)}</p>
+                  <p className="text-xs text-muted-foreground">{FORMAT_LABELS[item.format] || humanize(item.format)}</p>
+                  <p className="text-xs text-muted-foreground">Shape: {shapeText} &middot; Size: {item.sizeLabel || item.size}</p>
+                  <p className="text-xs text-muted-foreground">Flavour: {item.flavours.join(', ')}</p>
+                  {item.selectedColors && item.selectedColors.length > 0 && (
+                    <p className="text-xs text-muted-foreground">Colors: {item.selectedColors.join(', ')}</p>
+                  )}
+                  {item.designDetails && (
+                    <p className="text-xs text-muted-foreground">Design Details: {item.designDetails}</p>
+                  )}
                 </div>
-              )}
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Fulfillment Date and Time</p>
-                <p className="font-medium">{formattedDateTime}</p>
+                <div className="flex items-center gap-4 shrink-0">
+                  <span className="bg-[#eef3f0] text-[#426b57] text-xs font-semibold px-2 py-1 rounded-md">{item.quantity}x</span>
+                  <p className="font-semibold">{formatPrice(item.price)}</p>
+                </div>
               </div>
+            );
+          })}
+        </div>
+
+        {/* Order & delivery details — hairline-divided box matching the rest of the app's order-summary pattern */}
+        <div className="flex flex-col shrink-0 border border-[#e5e5e5] divide-y divide-[#e5e5e5] mb-8">
+          {detailRows.map((row) => (
+            <div key={row.label} className="flex flex-col justify-center gap-1.5 px-5 py-4">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">{row.label}</p>
+              <p className="font-display text-lg">{row.value}</p>
             </div>
+          ))}
+        </div>
+
+        {/* Pricing */}
+        <div className="flex flex-col gap-2 pt-2 mb-10">
+          <div className="flex justify-between text-sm text-muted-foreground">
+            <span>Subtotal</span>
+            <span>{formatPrice(orderData.subtotal)}</span>
           </div>
-
-          {/* Additional Notes */}
-          {hasAdditionalNotes && (
-            <div className="mb-6">
-              <p className="text-sm text-muted-foreground mb-1">Special Instructions</p>
-              <p className="font-medium">{orderData.notes}</p>
-            </div>
-          )}
-
-          {/* Pricing */}
-          <div className="border-t pt-4 space-y-2">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Subtotal</span>
-              <span>{formatPrice(orderData.subtotal)}</span>
-            </div>
-            {orderData.deliveryFee > 0 && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Delivery Fee</span>
-                <span>{formatPrice(orderData.deliveryFee)}</span>
-              </div>
-            )}
-            <div className="flex justify-between font-semibold text-lg">
-              <span>Total</span>
-              <span>{formatPrice(orderData.total)}</span>
-            </div>
+          <div className="flex justify-between text-sm text-muted-foreground">
+            <span>{orderData.deliveryMethod === "delivery" ? "Delivery" : "Pickup"}</span>
+            <span>{orderData.deliveryFee > 0 ? formatPrice(orderData.deliveryFee) : "FREE"}</span>
+          </div>
+          <div className="flex justify-between items-baseline pt-2 border-t border-[#e5e5e5]">
+            <span className="font-medium">Total</span>
+            <span className="text-xl font-semibold text-primary">{formatPrice(orderData.total)}</span>
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex gap-4 justify-center">
+        {/* Action */}
+        <div className="flex justify-center">
           <Link href="/">
-            <Button variant="outline">Continue Shopping</Button>
+            <Button variant="outline" className="rounded-full border-[#eae6e1] px-8">
+              Continue Shopping
+            </Button>
           </Link>
         </div>
       </div>

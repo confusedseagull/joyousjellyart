@@ -184,6 +184,7 @@ function toOrderItemPayload(item: CartItem) {
       flavours: item.flavours,
       cakeText: item.cakeText,
       cakeTextLanguage: item.cakeTextLanguage,
+      designDetails: item.designDetails,
       dietaryRequirements: item.dietaryRequirements,
       referenceLinks: item.referenceLinks,
       specialInstructions: item.specialInstructions,
@@ -406,7 +407,7 @@ export default function Cart() {
     }
 
     if (deliveryMethod === "delivery" && (!addressLine || !postalCode || !recipientWhatsapp)) {
-      toast.error("Please provide a delivery address, postal code, and recipient WhatsApp number");
+      toast.error("Please provide a delivery address, postal code, and recipient number");
       return false;
     }
 
@@ -541,6 +542,9 @@ export default function Cart() {
                   {item.selectedColors && item.selectedColors.length > 0 && (
                     <p className="text-xs text-muted-foreground">Colors: {item.selectedColors.join(", ")}</p>
                   )}
+                  {item.designDetails && (
+                    <p className="text-xs text-muted-foreground">Design Details: {item.designDetails}</p>
+                  )}
                 </>
               ) : (
                 <>
@@ -672,8 +676,8 @@ export default function Cart() {
                 placeholder="e.g. doreenleexy@gmail.com"
               />
               <PhoneInput
-                label="Phone"
-                labelWidth="w-[68px]"
+                label="WhatsApp Number"
+                labelWidth="w-[130px]"
                 country={customerPhoneCountry}
                 onCountryChange={setCustomerPhoneCountry}
                 value={customerPhoneNumber}
@@ -735,8 +739,8 @@ export default function Cart() {
                     className={inputClass}
                   />
                   <PhoneInput
-                    label="Recipient WhatsApp Number"
-                    labelWidth="w-[190px]"
+                    label="Recipient Number"
+                    labelWidth="w-[120px]"
                     country={recipientWhatsappCountry}
                     onCountryChange={setRecipientWhatsappCountry}
                     value={recipientWhatsappNumber}

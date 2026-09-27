@@ -61,6 +61,7 @@ export type CustomOrderItem = {
   flavours: string[];
   cakeText?: string;
   cakeTextLanguage?: "english" | "chinese";
+  designDetails?: string;
   dietaryRequirements?: string;
   referenceLinks?: string;
   specialInstructions?: string;

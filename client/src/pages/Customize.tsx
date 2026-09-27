@@ -283,6 +283,9 @@ export default function Customize() {
   const [color2, setColor2] = useState("");
   const [color3, setColor3] = useState("");
 
+  // Design details (optional, generic, all themes)
+  const [designDetails, setDesignDetails] = useState("");
+
   // Personalized text
   const [textOnCake, setTextOnCake] = useState("");
 
@@ -440,7 +443,7 @@ export default function Customize() {
 
   // Wizard step navigation: one section visible at a time, matching the
   // Figma order-page's Back/Next pattern instead of a continuous scroll.
-  const STEP_COUNT = 7;
+  const STEP_COUNT = 8;
   const [currentStep, setCurrentStep] = useState(1);
 
   // On mobile, "My Order" collapses into a tap-to-expand bar at the top of
@@ -468,8 +471,8 @@ export default function Customize() {
         if (theme === "handDrawn") return !!handDrawnDesign.trim();
         return !!theme;
       case 4: return selectedFlavors.length >= 1;
-      case 7: return dietaryRequirements.length > 0;
-      default: return true; // steps 5-6 are optional
+      case 8: return dietaryRequirements.length > 0;
+      default: return true; // steps 5-7 are optional
     }
   };
 
@@ -478,6 +481,25 @@ export default function Customize() {
 
   const goBack = () => canGoBack && setCurrentStep((s) => s - 1);
   const goNext = () => canGoNext && setCurrentStep((s) => s + 1);
+
+  // Auto-scroll to the Back/Next bar the moment a selection completes the
+  // current step, so the customer doesn't have to manually scroll past a
+  // tall options grid to find Next. Only fires on the false -> true
+  // transition within the same step (not on every subsequent change, and
+  // not when the step itself just changed — that's handled by the
+  // scroll-to-top effect above).
+  const navRef = useRef<HTMLDivElement>(null);
+  const prevStepRef = useRef(currentStep);
+  const prevStepCompleteRef = useRef(isStepComplete(currentStep));
+  const stepComplete = isStepComplete(currentStep);
+
+  useEffect(() => {
+    if (currentStep === prevStepRef.current && stepComplete && !prevStepCompleteRef.current) {
+      navRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+    prevStepRef.current = currentStep;
+    prevStepCompleteRef.current = stepComplete;
+  }, [currentStep, stepComplete]);
 
   const resetBuilder = () => {
     setFormat("");
@@ -499,6 +521,7 @@ export default function Customize() {
     setColor1("");
     setColor2("");
     setColor3("");
+    setDesignDetails("");
     setTextOnCake("");
     setDietaryRequirements([]);
   };
@@ -533,6 +556,7 @@ export default function Customize() {
       platterShapes: platterShapes.length > 0 ? platterShapes : undefined,
       flavours: selectedFlavors,
       cakeText: textOnCake || undefined,
+      designDetails: designDetails || undefined,
       dietaryRequirements: dietaryRequirements.length > 0 ? dietaryRequirements.join(", ") : undefined,
       referenceLinks: referenceImageNames.length > 0 ? `Reference images: ${referenceImageNames.join(", ")}` : undefined,
       specialInstructions: specialInstructions || undefined,
@@ -590,6 +614,7 @@ export default function Customize() {
     { label: "Theme", value: THEMES.find(t => t.value === theme)?.label ?? "None" },
     { label: "Base Flavour", value: selectedFlavors.length > 0 ? selectedFlavors.join(", ") : "None" },
     { label: "Color Preferences", value: colorPreferences || "None" },
+    { label: "Design Details", value: designDetails || "None" },
     { label: "Personalized Text", value: textOnCake || "None" },
     { label: "Dietary Requirements", value: dietaryLabel || "None" },
   ];
@@ -627,7 +652,7 @@ export default function Customize() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container py-12">
+      <div className="container pt-5 sm:pt-7 pb-12">
         <div className="flex flex-col lg:flex-row gap-10 items-stretch">
           {/* Main builder column */}
           <div className="flex-1 min-w-0 flex flex-col gap-12">
@@ -658,13 +683,16 @@ export default function Customize() {
               )}
             </div>
 
-            {/* Hero */}
+            {/* Hero — only shown on step 1, so later steps aren't pushed down
+                by a title/subtitle the customer has already seen. */}
+            {currentStep === 1 && (
             <section className="flex flex-col gap-4">
               <h1 className="font-normal text-[28px] md:text-[52px]">Customise your jelly cake</h1>
               <p className="text-muted-foreground text-base md:text-lg max-w-2xl">
                 Customize every detail of your perfect jelly art cake — from format and shape to flavour and finishing touches.
               </p>
             </section>
+            )}
 
             {/* 01 Format */}
             {currentStep === 1 && (
@@ -873,12 +901,12 @@ export default function Customize() {
                   <div className="flex flex-col gap-4">
                     <div className="h-px w-full max-w-2xl bg-[#e5e5e5]" />
                     <p className="text-sm text-muted-foreground">
-                      Choose up to 3 flower types. Flower colors will be customised based on the color preferences indicated. Images provided are for reference only.
+                      Choose up to 5 flower types. Flower colors will be customised based on the color preferences indicated. Images provided are for reference only.
                     </p>
                     <div className="flex flex-wrap gap-6">
                       {FLOWERS.map((flower) => {
                         const isSelected = selectedFlowers.includes(flower.value);
-                        const isDisabled = !isSelected && selectedFlowers.length >= 3;
+                        const isDisabled = !isSelected && selectedFlowers.length >= 5;
                         return (
                           <CircleOption
                             key={flower.value}
@@ -1016,10 +1044,29 @@ export default function Customize() {
               </section>
             )}
 
-            {/* 06 Personalized text (optional) */}
+            {/* 06 Design details (optional) */}
             {currentStep === 6 && (
                 <section className="flex flex-col gap-6 animate-in fade-in duration-300">
-                <StepHeader number={6} title="Add personalized text (optional)" description="The number of English characters is limited to 30. Simple Chinese phrases and characters are available, such as 生日快乐，福，发财." />
+                <StepHeader
+                  number={6}
+                  title="Add design details (optional)"
+                  description="Your loved one loves music? Stars? Bunnies? Let us know here and we can incorporate it in."
+                />
+                <div className="max-w-2xl">
+                  <Textarea
+                    value={designDetails}
+                    onChange={(e) => setDesignDetails(e.target.value)}
+                    placeholder="Tell us about their interests, favourite things, or anything else you'd like included..."
+                    className="min-h-[120px] rounded-2xl border-[#e5e5e5] w-full"
+                  />
+                </div>
+              </section>
+            )}
+
+            {/* 07 Personalized text (optional) */}
+            {currentStep === 7 && (
+                <section className="flex flex-col gap-6 animate-in fade-in duration-300">
+                <StepHeader number={7} title="Add personalized text (optional)" description="The number of English characters is limited to 30. Simple Chinese phrases and characters are available, such as 生日快乐，福，发财." />
                 <div className="max-w-2xl space-y-4">
                   <Input
                     value={textOnCake}
@@ -1031,10 +1078,14 @@ export default function Customize() {
               </section>
             )}
 
-            {/* 07 Dietary requirements */}
-            {currentStep === 7 && (
+            {/* 08 Dietary requirements */}
+            {currentStep === 8 && (
                 <section className="flex flex-col gap-6 animate-in fade-in duration-300">
-                <StepHeader number={7} title="Dietary requirements" />
+                <StepHeader
+                  number={8}
+                  title="Dietary requirements"
+                  description="Our standard jelly cakes are made from a seaweed-based formula, coconut milk and full cream milk but we are able to substitute ingredients to accommodate your dietary requirements. Our cakes are gluten free and no pork or lard is used in our studio."
+                />
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-2xl">
                   {DIETARY_OPTIONS.map((option) => {
                     const isSelected = dietaryRequirements.includes(option.value);
@@ -1055,7 +1106,7 @@ export default function Customize() {
             )}
 
             {/* Back / Next navigation */}
-            <div className="flex items-center justify-between w-full">
+            <div ref={navRef} className="flex items-center justify-between w-full">
               <button
                 type="button"
                 onClick={goBack}
