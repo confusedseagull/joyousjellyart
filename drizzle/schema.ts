@@ -102,6 +102,11 @@ export const orders = mysqlTable("orders", {
   customerEmail: varchar("customerEmail", { length: 320 }),
   customerPhone: varchar("customerPhone", { length: 50 }).notNull(),
 
+  // Billing address — collected for every order regardless of delivery
+  // method, distinct from deliveryAddress below (which is only where the
+  // order itself gets sent/picked up).
+  billingAddress: text("billingAddress"),
+
   // Delivery details
   deliveryMethod: mysqlEnum("deliveryMethod", ["delivery", "pickup"]).notNull(),
   deliveryAddress: text("deliveryAddress"), // Only for delivery orders

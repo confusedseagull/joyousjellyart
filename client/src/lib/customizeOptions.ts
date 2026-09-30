@@ -74,6 +74,10 @@ export const THEMES = [
   { value: "cactus", label: "Cactus/Foliage", image: "/customize/cactus.jpg" },
   { value: "butterflies", label: "Butterflies", image: "/customize/butterflies.jpg" },
   { value: "mermaid", label: "Mermaid", image: "/customize/mermaid.jpg" },
+  { value: "nameAndInitial", label: "Name and Initial", images: [
+    "/customize/nameAndInitial-1.jpg",
+    "/customize/nameAndInitial-2.jpg"
+  ] },
 ];
 
 export const FLOWERS = [

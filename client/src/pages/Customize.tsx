@@ -295,11 +295,12 @@ export default function Customize() {
   const shapeOptionsForFormat =
     format === "cake" ? CAKE_SHAPES : format === "jellyPlatter" ? PLATTER_FORMAT_SHAPES : GIFT_BOX_FORMAT_SHAPES;
 
-  // Hand Drawn only makes sense on a full cake — a platter or a box of
-  // individually-packaged jellies doesn't have a single canvas to draw on.
+  // Hand Drawn and Name and Initial only make sense on a full cake — a
+  // platter or a box of individually-packaged jellies doesn't have a single
+  // canvas large enough for either.
   const themeOptionsForFormat =
     format === "jellyPlatter" || format === "miniGiftBox"
-      ? THEMES.filter((t) => t.value !== "handDrawn")
+      ? THEMES.filter((t) => t.value !== "handDrawn" && t.value !== "nameAndInitial")
       : THEMES;
 
   const getRequiredFlavorCount = () => {

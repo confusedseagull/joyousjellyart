@@ -87,6 +87,7 @@ interface FormValues {
   customerName: string;
   customerEmail: string;
   customerPhone: string;
+  billingAddress: string;
   status: string;
   fulfillmentDate: string;
   timeRange: string;
@@ -123,6 +124,7 @@ function orderToFormValues(order: Order): FormValues {
     customerName: order.customerName,
     customerEmail: order.customerEmail || "",
     customerPhone: order.customerPhone,
+    billingAddress: order.billingAddress || "",
     status: order.status,
     fulfillmentDate: format(new Date(order.fulfillmentDate), "yyyy-MM-dd"),
     timeRange: order.timeRange || "",
@@ -176,6 +178,7 @@ export default function AdminOrderDetail() {
       customerName: values.customerName,
       customerEmail: values.customerEmail || undefined,
       customerPhone: values.customerPhone,
+      billingAddress: values.billingAddress || undefined,
       status: values.status as any,
       fulfillmentDate: new Date(`${values.fulfillmentDate}T00:00:00`),
       timeRange: values.timeRange || undefined,
@@ -279,6 +282,14 @@ export default function AdminOrderDetail() {
                 )}
                 {customerWhatsapp && <WhatsAppButton phone={order.customerPhone} label="Message Customer" />}
               </div>
+            </div>
+            <div className="md:col-span-2">
+              <SectionLabel>Billing Address</SectionLabel>
+              {isEditing ? (
+                <input {...register("billingAddress")} className={inputClass} />
+              ) : (
+                <div className={displayClass}>{order.billingAddress || <span className="text-muted-foreground">—</span>}</div>
+              )}
             </div>
           </div>
         </section>
