@@ -1,7 +1,14 @@
-import { describe, expect, it, beforeEach } from "vitest";
+import { describe, expect, it, beforeEach, vi } from "vitest";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
 import { resetRateLimits } from "./_core/rateLimit";
+
+// orders.create sends an order-received email as a side effect — stub it out
+// so these tests never make a real Resend API call.
+vi.mock("./email", () => ({
+  sendOrderReceivedEmail: vi.fn().mockResolvedValue(undefined),
+  sendOrderConfirmationEmail: vi.fn().mockResolvedValue(undefined),
+}));
 
 // orders.create is rate-limited per IP; the test context has no real IP, so
 // every call in this file shares one bucket. Reset it before each test so

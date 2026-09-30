@@ -93,6 +93,7 @@ interface FormValues {
   timeRange: string;
   deliveryMethod: "delivery" | "pickup";
   deliveryAddress: string;
+  recipientName: string;
   recipientPhone: string;
   notes: string;
 }
@@ -130,6 +131,7 @@ function orderToFormValues(order: Order): FormValues {
     timeRange: order.timeRange || "",
     deliveryMethod: order.deliveryMethod,
     deliveryAddress: order.deliveryAddress || "",
+    recipientName: order.recipientName || "",
     recipientPhone: order.recipientPhone || "",
     notes: order.notes || "",
   };
@@ -184,6 +186,7 @@ export default function AdminOrderDetail() {
       timeRange: values.timeRange || undefined,
       deliveryMethod: values.deliveryMethod,
       deliveryAddress: values.deliveryMethod === "delivery" ? values.deliveryAddress : undefined,
+      recipientName: values.deliveryMethod === "delivery" ? values.recipientName : undefined,
       recipientPhone: values.deliveryMethod === "delivery" ? values.recipientPhone : undefined,
       notes: values.notes || undefined,
     });
@@ -502,6 +505,14 @@ export default function AdminOrderDetail() {
 
             {(isEditing ? deliveryMethod : order.deliveryMethod) === "delivery" && (
               <>
+                <div>
+                  <SectionLabel>Recipient Name</SectionLabel>
+                  {isEditing ? (
+                    <input {...register("recipientName")} className={inputClass} />
+                  ) : (
+                    <div className={displayClass}>{order.recipientName || <span className="text-muted-foreground">—</span>}</div>
+                  )}
+                </div>
                 <div>
                   <SectionLabel>Delivery Address</SectionLabel>
                   {isEditing ? (

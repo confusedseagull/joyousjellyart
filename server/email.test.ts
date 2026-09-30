@@ -1,5 +1,11 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import { sendEmail, buildOrderConfirmationEmailHtml, sendOrderConfirmationEmail } from "./email";
+import {
+  sendEmail,
+  buildOrderConfirmationEmailHtml,
+  sendOrderConfirmationEmail,
+  buildOrderReceivedEmailHtml,
+  sendOrderReceivedEmail,
+} from "./email";
 import type { Order } from "../drizzle/schema";
 
 function makeOrder(overrides: Partial<Order> = {}): Order {
@@ -162,6 +168,53 @@ describe("sendOrderConfirmationEmail", () => {
 
   it("does nothing when the order has no customer email", async () => {
     await sendOrderConfirmationEmail(makeOrder({ customerEmail: null }));
+
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+});
+
+describe("buildOrderReceivedEmailHtml", () => {
+  it("renders customer name, order number, item details, and payment instructions", () => {
+    const html = buildOrderReceivedEmailHtml(makeOrder());
+
+    expect(html).toContain("Jane Doe");
+    expect(html).toContain("JJA0001");
+    expect(html).toContain("Custom Cake");
+    expect(html).toContain("chess");
+    expect(html).toContain("Longan");
+    expect(html).toContain("$99.00");
+    expect(html).toContain("PayNow");
+    expect(html).toContain("324-316261-9");
+    expect(html).toContain("paynow-qr.png");
+  });
+});
+
+describe("sendOrderReceivedEmail", () => {
+  const originalFetch = global.fetch;
+
+  beforeEach(() => {
+    global.fetch = vi.fn();
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    vi.restoreAllMocks();
+  });
+
+  it("sends to the order's customer email with a subject containing the order number", async () => {
+    vi.mocked(global.fetch).mockResolvedValue(new Response(null, { status: 200 }));
+
+    await sendOrderReceivedEmail(makeOrder());
+
+    const call = vi.mocked(global.fetch).mock.calls[0];
+    const body = JSON.parse((call[1] as RequestInit).body as string);
+    expect(body.to).toBe("jane@example.com");
+    expect(body.subject).toContain("JJA0001");
+    expect(body.subject).toContain("received");
+  });
+
+  it("does nothing when the order has no customer email", async () => {
+    await sendOrderReceivedEmail(makeOrder({ customerEmail: null }));
 
     expect(global.fetch).not.toHaveBeenCalled();
   });

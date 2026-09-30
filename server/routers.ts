@@ -128,6 +128,7 @@ export const appRouter = router({
         billingAddress: z.string().optional(),
         deliveryMethod: z.enum(["delivery", "pickup"]),
         deliveryAddress: z.string().optional(),
+        recipientName: z.string().optional(),
         recipientPhone: z.string().optional(),
         fulfillmentDate: z.date(),
         timeRange: z.string().optional(),
@@ -139,6 +140,19 @@ export const appRouter = router({
       }))
       .mutation(async ({ input }) => {
         const order = await createOrder(input);
+
+        // Payment is now manual PayNow/bank transfer, not an automatic
+        // HitPay webhook, so there's no later "payment confirmed" event to
+        // hang an email off — send the order-received acknowledgment now,
+        // right as the order is created. A failure here shouldn't fail
+        // checkout for the customer, so it's logged rather than thrown.
+        try {
+          const { sendOrderReceivedEmail } = await import("./email");
+          await sendOrderReceivedEmail(order);
+        } catch (error) {
+          console.error("Failed to send order-received email:", error);
+        }
+
         return order;
       }),
 
@@ -218,6 +232,7 @@ export const appRouter = router({
         billingAddress: z.string().optional(),
         deliveryMethod: z.enum(["delivery", "pickup"]).optional(),
         deliveryAddress: z.string().optional(),
+        recipientName: z.string().optional(),
         recipientPhone: z.string().optional(),
         fulfillmentDate: z.date().optional(),
         timeRange: z.string().optional(),

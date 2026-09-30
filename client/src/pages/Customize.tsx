@@ -270,6 +270,7 @@ export default function Customize() {
   const [cartoonCharacter, setCartoonCharacter] = useState("");
   const [handDrawnDesign, setHandDrawnDesign] = useState("");
   const [coutureBrand, setCoutureBrand] = useState("");
+  const [nameAndInitialName, setNameAndInitialName] = useState("");
   const [specialInstructions, setSpecialInstructions] = useState("");
   const [referenceImageNames, setReferenceImageNames] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -470,6 +471,7 @@ export default function Customize() {
       case 3:
         if (theme === "coutureFashion") return !!coutureBrand.trim();
         if (theme === "handDrawn") return !!handDrawnDesign.trim();
+        if (theme === "nameAndInitial") return !!nameAndInitialName.trim();
         return !!theme;
       case 4: return selectedFlavors.length >= 1;
       case 8: return dietaryRequirements.length > 0;
@@ -516,6 +518,7 @@ export default function Customize() {
     setCartoonCharacter("");
     setHandDrawnDesign("");
     setCoutureBrand("");
+    setNameAndInitialName("");
     setSpecialInstructions("");
     setReferenceImageNames([]);
     setSelectedFlavors([]);
@@ -547,7 +550,7 @@ export default function Customize() {
       selectedFlowers: selectedFlowers.length > 0 ? selectedFlowers : undefined,
       selectedColors: selectedColors.length > 0 ? selectedColors : undefined,
       cartoonCharacter: cartoonCharacter || undefined,
-      themeCustomText: handDrawnDesign || undefined,
+      themeCustomText: handDrawnDesign || nameAndInitialName || undefined,
       fashionBrand: coutureBrand || undefined,
       shape,
       shapeLabel,
@@ -608,11 +611,28 @@ export default function Customize() {
     .map((value) => DIETARY_OPTIONS.find((o) => o.value === value)?.label ?? value)
     .join(", ");
 
+  // Theme-specific detail the customer entered while customizing (flowers
+  // picked, cartoon character, couture brand, or the name for a Name and
+  // Initial design) — surfaced next to the theme itself in the summary.
+  const themeDetail =
+    theme === "floralBouquet" && selectedFlowers.length > 0
+      ? selectedFlowers.join(", ")
+      : theme === "cartoonCharacters" && cartoonCharacter
+        ? cartoonCharacter
+        : theme === "coutureFashion" && coutureBrand
+          ? coutureBrand
+          : theme === "nameAndInitial" && nameAndInitialName
+            ? nameAndInitialName
+            : theme === "handDrawn" && handDrawnDesign
+              ? handDrawnDesign
+              : undefined;
+  const themeLabel = THEMES.find(t => t.value === theme)?.label;
+
   const summaryRows: { label: string; value: string }[] = [
     { label: "Format", value: FORMATS.find(f => f.value === format)?.label ?? "None" },
     { label: "Shape", value: SHAPES.find(s => s.value === shape)?.label ?? "None" },
     { label: "Size", value: sizeLabel ?? "None" },
-    { label: "Theme", value: THEMES.find(t => t.value === theme)?.label ?? "None" },
+    { label: "Theme", value: themeLabel ? (themeDetail ? `${themeLabel} — ${themeDetail}` : themeLabel) : "None" },
     { label: "Base Flavour", value: selectedFlavors.length > 0 ? selectedFlavors.join(", ") : "None" },
     { label: "Color Preferences", value: colorPreferences || "None" },
     { label: "Design Details", value: designDetails || "None" },
@@ -956,6 +976,15 @@ export default function Customize() {
                     value={coutureBrand}
                     onChange={(e) => setCoutureBrand(e.target.value)}
                     placeholder="Enter brand name (e.g., Chanel, Dior)..."
+                    className={inputClass}
+                  />
+                )}
+
+                {theme === "nameAndInitial" && (
+                  <Input
+                    value={nameAndInitialName}
+                    onChange={(e) => setNameAndInitialName(e.target.value)}
+                    placeholder="Enter the name to be carved (e.g., Doreen)..."
                     className={inputClass}
                   />
                 )}

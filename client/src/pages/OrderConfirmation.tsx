@@ -46,11 +46,33 @@ interface ConfirmationCustomItem {
   platterShapes?: string[];
   flavours: string[];
   selectedColors?: string[];
+  selectedFlowers?: string[];
+  cartoonCharacter?: string;
+  themeCustomText?: string;
+  fashionBrand?: string;
   designDetails?: string;
   cakeText?: string;
   dietaryRequirements?: string;
   price: number;
   quantity: number;
+}
+
+// Theme-specific detail the customer entered while customizing (flowers
+// picked, cartoon character, couture brand, or the name for a Name and
+// Initial design) — surfaced next to the theme itself, matching how the
+// Customize wizard's own order summary presents it.
+function themeDetailFor(item: ConfirmationCustomItem): string | undefined {
+  if (item.theme === "floralBouquet" && item.selectedFlowers?.length) return item.selectedFlowers.join(', ');
+  if (item.theme === "cartoonCharacters" && item.cartoonCharacter) return item.cartoonCharacter;
+  if (item.theme === "coutureFashion" && item.fashionBrand) return item.fashionBrand;
+  if ((item.theme === "nameAndInitial" || item.theme === "handDrawn") && item.themeCustomText) return item.themeCustomText;
+  return undefined;
+}
+
+function themeValueFor(item: ConfirmationCustomItem): string {
+  const label = item.themeLabel || humanize(item.theme);
+  const detail = themeDetailFor(item);
+  return detail ? `${label} — ${detail}` : label;
 }
 
 interface ConfirmationCnyItem {
@@ -77,6 +99,7 @@ interface OrderData {
   billingAddress?: string;
   deliveryMethod: string;
   deliveryAddress?: string;
+  recipientName?: string;
   recipientPhone?: string;
   fulfillmentDate: string;
   timeRange?: string;
@@ -107,6 +130,10 @@ export default function OrderConfirmation() {
   const { clearCart } = useCart();
   const hasClearedCartRef = useRef(false);
   const { data: settings } = trpc.settings.get.useQuery();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   useEffect(() => {
     // Get order number from URL query parameter
@@ -185,6 +212,7 @@ export default function OrderConfirmation() {
       billingAddress: fetchedOrder.billingAddress || undefined,
       deliveryMethod: fetchedOrder.deliveryMethod,
       deliveryAddress: fetchedOrder.deliveryAddress || undefined,
+      recipientName: fetchedOrder.recipientName || undefined,
       recipientPhone: fetchedOrder.recipientPhone || undefined,
       fulfillmentDate:
         typeof fetchedOrder.fulfillmentDate === 'string'
@@ -231,8 +259,54 @@ export default function OrderConfirmation() {
   const isPaid = orderData.paymentStatus === 'paid';
   const isDelivery = orderData.deliveryMethod === "delivery";
 
+  // Full order recap for the WhatsApp message, so staff can confirm payment
+  // against the right order without switching back to the admin dashboard —
+  // everything shown on this page except the billing address.
+  const orderMessageLines: string[] = [];
+  orderData.items.forEach((item) => {
+    if (item.collection === "cny") {
+      orderMessageLines.push(`${item.name} - ${formatPrice(item.price)}`);
+      orderMessageLines.push(`Edition: ${item.edition}`);
+      orderMessageLines.push(`Size: ${item.size}`);
+      orderMessageLines.push(`Flavour: ${item.flavors ? item.flavors.join(', ') : item.flavor || "None"}`);
+      if (item.dietaryRequirements && item.dietaryRequirements.length > 0) {
+        orderMessageLines.push(`Dietary Requirements: ${item.dietaryRequirements.join(', ')}`);
+      }
+    } else {
+      const shapeText =
+        item.shapeLabel || (item.platterShapes?.length ? item.platterShapes.join(', ') : humanize(item.shape));
+      orderMessageLines.push(`Custom Cake - ${formatPrice(item.price)}`);
+      orderMessageLines.push(`Format: ${FORMAT_LABELS[item.format] || humanize(item.format)}`);
+      orderMessageLines.push(`Shape: ${shapeText}`);
+      orderMessageLines.push(`Size: ${item.sizeLabel || item.size}`);
+      orderMessageLines.push(`Theme: ${themeValueFor(item)}`);
+      orderMessageLines.push(`Base Flavour: ${item.flavours.join(', ')}`);
+      if (item.selectedColors?.length) orderMessageLines.push(`Color Preferences: ${item.selectedColors.join(', ')}`);
+      if (item.designDetails) orderMessageLines.push(`Design Details: ${item.designDetails}`);
+      if (item.cakeText) orderMessageLines.push(`Personalized Text: ${item.cakeText}`);
+      if (item.dietaryRequirements) orderMessageLines.push(`Dietary Requirements: ${item.dietaryRequirements}`);
+    }
+    orderMessageLines.push("");
+  });
+  orderMessageLines.push(`${isDelivery ? "Delivery" : "Pickup"}: ${orderData.deliveryFee > 0 ? formatPrice(orderData.deliveryFee) : "FREE"}`);
+  orderMessageLines.push(`Total: ${formatPrice(orderData.total)}`);
+  orderMessageLines.push("");
+  orderMessageLines.push(`${isDelivery ? "Delivery Method" : "Pickup Method"}: ${isDelivery ? "Delivery" : "Pickup"}`);
+  orderMessageLines.push(isDelivery ? (orderData.deliveryAddress || "") : (settings?.pickupAddress || ""));
+  if (isDelivery && orderData.recipientName) orderMessageLines.push(`Recipient Name: ${orderData.recipientName}`);
+  if (isDelivery && orderData.recipientPhone) orderMessageLines.push(`Recipient Number: ${orderData.recipientPhone}`);
+  orderMessageLines.push("");
+  orderMessageLines.push(`Fulfillment Date: ${formattedDate}`);
+  if (orderData.timeRange) orderMessageLines.push(orderData.timeRange);
+  if (hasAdditionalNotes) {
+    orderMessageLines.push("");
+    orderMessageLines.push(`Additional Instructions: ${orderData.notes}`);
+  }
+
+  // Addressed to Doreen (the business owner, who receives these messages),
+  // not the customer — this is the message the customer sends her.
   const whatsappMessage = encodeURIComponent(
-    `Hi! Here's my payment screenshot for order ${orderData.orderNumber}.`
+    `Hi Doreen, here's my payment screenshot for order ${orderData.orderNumber}\n\n${orderMessageLines.join("\n")}`
   );
   const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${whatsappMessage}`;
 
@@ -302,7 +376,7 @@ export default function OrderConfirmation() {
                       <DetailLine label="Format" value={FORMAT_LABELS[item.format] || humanize(item.format)} />
                       <DetailLine label="Shape" value={shapeText} />
                       <DetailLine label="Size" value={item.sizeLabel || item.size} />
-                      <DetailLine label="Theme" value={item.themeLabel || humanize(item.theme)} />
+                      <DetailLine label="Theme" value={themeValueFor(item)} />
                       <DetailLine label="Base Flavour" value={item.flavours.join(', ')} />
                       <DetailLine label="Color Preferences" value={item.selectedColors?.join(', ')} />
                       <DetailLine label="Design Details" value={item.designDetails} />
@@ -363,6 +437,9 @@ export default function OrderConfirmation() {
                 <p className="text-[#6d726e] text-lg leading-[1.3]">
                   {isDelivery ? orderData.deliveryAddress : settings?.pickupAddress}
                 </p>
+                {isDelivery && orderData.recipientName && (
+                  <p className="text-[#6d726e] text-lg leading-[1.3]">Recipient Name: {orderData.recipientName}</p>
+                )}
                 {isDelivery && orderData.recipientPhone && (
                   <p className="text-[#6d726e] text-lg leading-[1.3]">Recipient Number: {orderData.recipientPhone}</p>
                 )}

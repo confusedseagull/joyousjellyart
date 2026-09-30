@@ -110,6 +110,7 @@ export const orders = mysqlTable("orders", {
   // Delivery details
   deliveryMethod: mysqlEnum("deliveryMethod", ["delivery", "pickup"]).notNull(),
   deliveryAddress: text("deliveryAddress"), // Only for delivery orders
+  recipientName: varchar("recipientName", { length: 255 }), // Only for delivery orders; may differ from customerName
   recipientPhone: varchar("recipientPhone", { length: 50 }), // Only for delivery orders; may differ from customerPhone
 
   // Order timing

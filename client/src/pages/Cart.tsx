@@ -219,6 +219,7 @@ export default function Cart() {
   const [billingAptUnit, setBillingAptUnit] = useState("");
   const [billingPostalCode, setBillingPostalCode] = useState("");
   const [deliveryMethod, setDeliveryMethod] = useState<"pickup" | "delivery">("pickup");
+  const [recipientName, setRecipientName] = useState("");
   const [addressLine, setAddressLine] = useState("");
   const [aptUnit, setAptUnit] = useState("");
   const [postalCode, setPostalCode] = useState("");
@@ -366,6 +367,7 @@ export default function Cart() {
     billingAddress: override ? "123 Sandbox Street, Singapore 123456" : composedBillingAddress(),
     deliveryMethod: override?.deliveryMethod ?? deliveryMethod,
     deliveryAddress: (override?.deliveryMethod ?? deliveryMethod) === "delivery" ? composedDeliveryAddress() : undefined,
+    recipientName: (override?.deliveryMethod ?? deliveryMethod) === "delivery" ? recipientName : undefined,
     recipientPhone: (override?.deliveryMethod ?? deliveryMethod) === "delivery" ? recipientWhatsapp : undefined,
     fulfillmentDate: (override?.fulfillmentDate ?? fulfillmentDate)?.toISOString() || new Date().toISOString(),
     // Keep the richer display-ready cart items (labels, image) here rather
@@ -457,8 +459,8 @@ export default function Cart() {
       return false;
     }
 
-    if (deliveryMethod === "delivery" && (!addressLine || !postalCode || !recipientWhatsapp)) {
-      toast.error("Please provide a delivery address, postal code, and recipient number");
+    if (deliveryMethod === "delivery" && (!recipientName || !addressLine || !postalCode || !recipientWhatsapp)) {
+      toast.error("Please provide a recipient name, delivery address, postal code, and recipient number");
       return false;
     }
 
@@ -496,6 +498,7 @@ export default function Cart() {
     billingAddress: composedBillingAddress(),
     deliveryMethod,
     deliveryAddress: deliveryMethod === "delivery" ? composedDeliveryAddress() : undefined,
+    recipientName: deliveryMethod === "delivery" ? recipientName : undefined,
     recipientPhone: deliveryMethod === "delivery" ? recipientWhatsapp : undefined,
     fulfillmentDate: applySlotStartTime(fulfillmentDate!, fulfillmentTime),
     timeRange: fulfillmentTime,
@@ -808,6 +811,12 @@ export default function Cart() {
                     />
                     Same as Billing Address
                   </label>
+                  <Input
+                    value={recipientName}
+                    onChange={(e) => setRecipientName(e.target.value)}
+                    placeholder="Recipient Name"
+                    className={inputClass}
+                  />
                   <Input
                     value={addressLine}
                     onChange={(e) => setAddressLine(e.target.value)}
