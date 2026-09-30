@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
@@ -184,6 +185,7 @@ function toOrderItemPayload(item: CartItem) {
       flavours: item.flavours,
       cakeText: item.cakeText,
       cakeTextLanguage: item.cakeTextLanguage,
+      designDetails: item.designDetails,
       dietaryRequirements: item.dietaryRequirements,
       referenceLinks: item.referenceLinks,
       specialInstructions: item.specialInstructions,
@@ -213,10 +215,16 @@ export default function Cart() {
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerPhoneCountry, setCustomerPhoneCountry] = useState("SG");
   const [customerPhoneNumber, setCustomerPhoneNumber] = useState("");
+  const [billingAddressLine, setBillingAddressLine] = useState("");
+  const [billingAptUnit, setBillingAptUnit] = useState("");
+  const [billingPostalCode, setBillingPostalCode] = useState("");
   const [deliveryMethod, setDeliveryMethod] = useState<"pickup" | "delivery">("pickup");
   const [addressLine, setAddressLine] = useState("");
   const [aptUnit, setAptUnit] = useState("");
   const [postalCode, setPostalCode] = useState("");
+  // When checked, the delivery address fields mirror the billing address
+  // instead of being entered separately.
+  const [sameAsBilling, setSameAsBilling] = useState(false);
   const [recipientWhatsappCountry, setRecipientWhatsappCountry] = useState("SG");
   const [recipientWhatsappNumber, setRecipientWhatsappNumber] = useState("");
 
@@ -246,9 +254,16 @@ export default function Cart() {
     window.scrollTo(0, 0);
   }, []);
 
+  // Name and Initial designs are fully hand-carved and need a longer lead
+  // time — if any item in the cart uses that theme, the whole order (one
+  // shared fulfillment date) is held to the longer minimum.
+  const hasNameAndInitialItem = items.some(
+    (item) => item.collection === "custom" && item.theme === "nameAndInitial"
+  );
+
   const getMinDate = () => {
     const minDate = new Date();
-    minDate.setDate(minDate.getDate() + 3);
+    minDate.setDate(minDate.getDate() + (hasNameAndInitialItem ? 14 : 3));
     minDate.setHours(0, 0, 0, 0);
     return minDate;
   };
@@ -291,6 +306,16 @@ export default function Cart() {
     }
   }, [deliveryMethod]);
 
+  // Keep the delivery address mirrored to the billing address while "Same
+  // as Billing Address" is checked, so editing billing afterward still
+  // updates delivery instead of leaving it stale.
+  useEffect(() => {
+    if (!sameAsBilling) return;
+    setAddressLine(billingAddressLine);
+    setAptUnit(billingAptUnit);
+    setPostalCode(billingPostalCode);
+  }, [sameAsBilling, billingAddressLine, billingAptUnit, billingPostalCode]);
+
   // react-query silently clears `error` between retry attempts, so reading
   // deliveryFeeData/deliveryFeeError directly can flash "Calculating..." even
   // after deliveryError has already been set below. Derive a single stable
@@ -302,6 +327,12 @@ export default function Cart() {
 
   const composedDeliveryAddress = () => {
     return [addressLine, aptUnit ? `Unit ${aptUnit}` : null, postalCode ? `Singapore ${postalCode}` : null]
+      .filter(Boolean)
+      .join(", ");
+  };
+
+  const composedBillingAddress = () => {
+    return [billingAddressLine, billingAptUnit ? `Unit ${billingAptUnit}` : null, billingPostalCode ? `Singapore ${billingPostalCode}` : null]
       .filter(Boolean)
       .join(", ");
   };
@@ -332,6 +363,7 @@ export default function Cart() {
     customerName: override?.customerName ?? customerName,
     customerEmail: override?.customerEmail ?? customerEmail,
     customerPhone: override?.customerPhone ?? customerPhone,
+    billingAddress: override ? "123 Sandbox Street, Singapore 123456" : composedBillingAddress(),
     deliveryMethod: override?.deliveryMethod ?? deliveryMethod,
     deliveryAddress: (override?.deliveryMethod ?? deliveryMethod) === "delivery" ? composedDeliveryAddress() : undefined,
     recipientPhone: (override?.deliveryMethod ?? deliveryMethod) === "delivery" ? recipientWhatsapp : undefined,
@@ -354,9 +386,10 @@ export default function Cart() {
 
   const createOrder = trpc.orders.create.useMutation({
     onSuccess: (data) => {
+      const orderNumber = `JJA${String(data.id).padStart(4, "0")}`;
+
       if (skipPaymentRef.current) {
         skipPaymentRef.current = false;
-        const orderNumber = `JJA${String(data.id).padStart(4, "0")}`;
         sessionStorage.setItem(
           "pendingOrder",
           JSON.stringify({ ...buildPendingOrderPayload(), paymentStatus: "paid" })
@@ -366,14 +399,28 @@ export default function Cart() {
         navigate(`/order-confirmation?order=${orderNumber}`);
         return;
       }
+
+      // Dev-only HitPay sandbox test path — kept working so the integration
+      // can still be verified while it's on hold for real customers below.
       const sandbox = testSandboxOrderRef.current;
-      createPaymentRequest.mutate({
-        orderId: data.id,
-        amount: (sandbox?.total ?? totalPrice).toFixed(2),
-        customerName: sandbox?.customerName ?? customerName,
-        customerEmail: sandbox?.customerEmail ?? customerEmail,
-        customerPhone: sandbox?.customerPhone ?? customerPhone,
-      });
+      if (sandbox) {
+        createPaymentRequest.mutate({
+          orderId: data.id,
+          amount: sandbox.total.toFixed(2),
+          customerName: sandbox.customerName,
+          customerEmail: sandbox.customerEmail,
+          customerPhone: sandbox.customerPhone,
+        });
+        return;
+      }
+
+      // HitPay is on hold for real checkout — the order is created as
+      // usual (payment stays "pending") and the customer goes straight to
+      // the confirmation page instead of a HitPay redirect. The business
+      // follows up to arrange payment and marks the order paid manually
+      // from the admin dashboard once that's settled.
+      sessionStorage.setItem("pendingOrder", JSON.stringify(buildPendingOrderPayload()));
+      navigate(`/order-confirmation?order=${orderNumber}`);
     },
     onError: (error) => {
       toast.error(error.message || "Failed to create order");
@@ -405,8 +452,13 @@ export default function Cart() {
       return false;
     }
 
+    if (!billingAddressLine || !billingPostalCode) {
+      toast.error("Please provide a billing address and postal code");
+      return false;
+    }
+
     if (deliveryMethod === "delivery" && (!addressLine || !postalCode || !recipientWhatsapp)) {
-      toast.error("Please provide a delivery address, postal code, and recipient WhatsApp number");
+      toast.error("Please provide a delivery address, postal code, and recipient number");
       return false;
     }
 
@@ -421,7 +473,11 @@ export default function Cart() {
     }
 
     if (fulfillmentDate < getMinDate()) {
-      toast.error("Minimum 3 days advance notice required");
+      toast.error(
+        hasNameAndInitialItem
+          ? "Minimum 2 weeks advance notice required for Name and Initial designs"
+          : "Minimum 3 days advance notice required"
+      );
       return false;
     }
 
@@ -437,6 +493,7 @@ export default function Cart() {
     customerName,
     customerEmail,
     customerPhone,
+    billingAddress: composedBillingAddress(),
     deliveryMethod,
     deliveryAddress: deliveryMethod === "delivery" ? composedDeliveryAddress() : undefined,
     recipientPhone: deliveryMethod === "delivery" ? recipientWhatsapp : undefined,
@@ -540,6 +597,9 @@ export default function Cart() {
                   <p className="text-xs text-muted-foreground">Base Flavour: {item.flavours.join(", ")}</p>
                   {item.selectedColors && item.selectedColors.length > 0 && (
                     <p className="text-xs text-muted-foreground">Colors: {item.selectedColors.join(", ")}</p>
+                  )}
+                  {item.designDetails && (
+                    <p className="text-xs text-muted-foreground">Design Details: {item.designDetails}</p>
                   )}
                 </>
               ) : (
@@ -672,13 +732,38 @@ export default function Cart() {
                 placeholder="e.g. doreenleexy@gmail.com"
               />
               <PhoneInput
-                label="Phone"
-                labelWidth="w-[68px]"
+                label="WhatsApp Number"
+                labelWidth="w-[130px]"
                 country={customerPhoneCountry}
                 onCountryChange={setCustomerPhoneCountry}
                 value={customerPhoneNumber}
                 onChange={setCustomerPhoneNumber}
                 placeholder="8123 4567"
+              />
+            </div>
+
+            <div className="h-px w-full bg-[#e5e5e5]" />
+
+            {/* Billing Address */}
+            <div className="flex flex-col gap-4">
+              <h2 className="text-base font-medium">Billing Address</h2>
+              <Input
+                value={billingAddressLine}
+                onChange={(e) => setBillingAddressLine(e.target.value)}
+                placeholder="Address"
+                className={inputClass}
+              />
+              <Input
+                value={billingAptUnit}
+                onChange={(e) => setBillingAptUnit(e.target.value)}
+                placeholder="Apartment/Unit No (optional)"
+                className={inputClass}
+              />
+              <Input
+                value={billingPostalCode}
+                onChange={(e) => setBillingPostalCode(e.target.value)}
+                placeholder="Postal Code"
+                className={inputClass}
               />
             </div>
 
@@ -716,27 +801,37 @@ export default function Cart() {
 
               {deliveryMethod === "delivery" ? (
                 <div className="flex flex-col gap-2">
+                  <label className="flex items-center gap-2 px-1 pb-1 text-sm text-muted-foreground cursor-pointer">
+                    <Checkbox
+                      checked={sameAsBilling}
+                      onCheckedChange={(checked) => setSameAsBilling(checked === true)}
+                    />
+                    Same as Billing Address
+                  </label>
                   <Input
                     value={addressLine}
                     onChange={(e) => setAddressLine(e.target.value)}
                     placeholder="Address"
                     className={inputClass}
+                    disabled={sameAsBilling}
                   />
                   <Input
                     value={aptUnit}
                     onChange={(e) => setAptUnit(e.target.value)}
                     placeholder="Apartment/Unit No (optional)"
                     className={inputClass}
+                    disabled={sameAsBilling}
                   />
                   <Input
                     value={postalCode}
                     onChange={(e) => setPostalCode(e.target.value)}
                     placeholder="Postal Code"
                     className={inputClass}
+                    disabled={sameAsBilling}
                   />
                   <PhoneInput
-                    label="Recipient WhatsApp Number"
-                    labelWidth="w-[190px]"
+                    label="Recipient Number"
+                    labelWidth="w-[120px]"
                     country={recipientWhatsappCountry}
                     onCountryChange={setRecipientWhatsappCountry}
                     value={recipientWhatsappNumber}
@@ -784,7 +879,9 @@ export default function Cart() {
               <div className="flex flex-col gap-1">
                 <h2 className="text-base font-medium">Fulfillment Date and Time</h2>
                 <p className="text-muted-foreground text-sm">
-                  Minimum 3 days advance notice required. For example, if you place an order today, the earliest fulfillment date you can select will be 3 days from today.
+                  {hasNameAndInitialItem
+                    ? "Minimum 2 weeks advance notice required for Name and Initial designs. For example, if you place an order today, the earliest fulfillment date you can select will be 2 weeks from today."
+                    : "Minimum 3 days advance notice required. For example, if you place an order today, the earliest fulfillment date you can select will be 3 days from today."}
                 </p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -852,7 +949,7 @@ export default function Cart() {
             >
               {createOrder.isPending || createPaymentRequest.isPending
                 ? "Processing..."
-                : `Confirm and Pay  •  ${formatPrice(totalPrice)}`}
+                : `Confirm Order  •  ${formatPrice(totalPrice)}`}
             </Button>
 
             {import.meta.env.DEV && (

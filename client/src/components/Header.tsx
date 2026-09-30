@@ -6,8 +6,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 
 const NAV_LINKS = [
   { href: "/customize", label: "Customize" },
-  { href: "/#gallery", label: "Discover" },
-  { href: "/#footer", label: "About" },
+  { href: "/discover", label: "Discover" },
+  { href: "/about", label: "About" },
 ];
 
 function CartLink({ totalItems }: { totalItems: number }) {

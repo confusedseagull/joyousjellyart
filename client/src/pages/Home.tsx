@@ -131,7 +131,7 @@ const gallery = [
   { name: "Oriental Blessing", image: "/gallery/oriental-blessing.png" },
   { name: "Koi Pond", image: "/gallery/koi-pond.png" },
   { name: "Princess Choo-Choo Train", image: "/gallery/princess-choochoo.png" },
-  { name: "The Muse", image: "/gallery/the-muse.png" },
+  { name: "The Blooming Muse", image: "/gallery/the-muse.png" },
   { name: "Scarlet Devotion", image: "/gallery/scarlet-devotion.png" },
   { name: "Cactus Valley", image: "/gallery/cactus-valley.png" },
 ];

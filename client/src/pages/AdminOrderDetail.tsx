@@ -87,6 +87,7 @@ interface FormValues {
   customerName: string;
   customerEmail: string;
   customerPhone: string;
+  billingAddress: string;
   status: string;
   fulfillmentDate: string;
   timeRange: string;
@@ -123,6 +124,7 @@ function orderToFormValues(order: Order): FormValues {
     customerName: order.customerName,
     customerEmail: order.customerEmail || "",
     customerPhone: order.customerPhone,
+    billingAddress: order.billingAddress || "",
     status: order.status,
     fulfillmentDate: format(new Date(order.fulfillmentDate), "yyyy-MM-dd"),
     timeRange: order.timeRange || "",
@@ -176,6 +178,7 @@ export default function AdminOrderDetail() {
       customerName: values.customerName,
       customerEmail: values.customerEmail || undefined,
       customerPhone: values.customerPhone,
+      billingAddress: values.billingAddress || undefined,
       status: values.status as any,
       fulfillmentDate: new Date(`${values.fulfillmentDate}T00:00:00`),
       timeRange: values.timeRange || undefined,
@@ -279,6 +282,14 @@ export default function AdminOrderDetail() {
                 )}
                 {customerWhatsapp && <WhatsAppButton phone={order.customerPhone} label="Message Customer" />}
               </div>
+            </div>
+            <div className="md:col-span-2">
+              <SectionLabel>Billing Address</SectionLabel>
+              {isEditing ? (
+                <input {...register("billingAddress")} className={inputClass} />
+              ) : (
+                <div className={displayClass}>{order.billingAddress || <span className="text-muted-foreground">—</span>}</div>
+              )}
             </div>
           </div>
         </section>
@@ -409,7 +420,7 @@ export default function AdminOrderDetail() {
                       </div>
                     </div>
 
-                    {(item.cakeText || item.dietaryRequirements || item.referenceLinks || item.specialInstructions) && (
+                    {(item.cakeText || item.designDetails || item.dietaryRequirements || item.referenceLinks || item.specialInstructions) && (
                       <div className="mt-4 pt-3 border-t border-[#e5e5e5] flex flex-col gap-1 text-sm">
                         {item.cakeText && (
                           <p>
@@ -419,6 +430,7 @@ export default function AdminOrderDetail() {
                             )}
                           </p>
                         )}
+                        {item.designDetails && <p>Design Details: <span className="text-muted-foreground">{item.designDetails}</span></p>}
                         {item.dietaryRequirements && <p>Dietary: <span className="text-muted-foreground">{item.dietaryRequirements}</span></p>}
                         {item.referenceLinks && <p>Reference Links: <span className="text-muted-foreground">{item.referenceLinks}</span></p>}
                         {item.specialInstructions && <p>Additional Requests: <span className="text-muted-foreground">{item.specialInstructions}</span></p>}

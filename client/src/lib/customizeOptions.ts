@@ -28,7 +28,8 @@ export const THEMES = [
     "/customize/handDrawn-1.jpg",
     "/customize/handDrawn-2.png",
     "/customize/handDrawn-3.png",
-    "/customize/handDrawn-4.jpg"
+    "/customize/handDrawn-4.jpg",
+    "/customize/handDrawn-5.webp"
   ] },
   { value: "lego", label: "Lego", images: [
     "/customize/lego-1.jpg",
@@ -73,6 +74,10 @@ export const THEMES = [
   { value: "cactus", label: "Cactus/Foliage", image: "/customize/cactus.jpg" },
   { value: "butterflies", label: "Butterflies", image: "/customize/butterflies.jpg" },
   { value: "mermaid", label: "Mermaid", image: "/customize/mermaid.jpg" },
+  { value: "nameAndInitial", label: "Name and Initial", images: [
+    "/customize/nameAndInitial-1.jpg",
+    "/customize/nameAndInitial-2.jpg"
+  ] },
 ];
 
 export const FLOWERS = [
@@ -222,11 +227,12 @@ export const BASE_FLAVORS = [
   { value: "Passionfruit", label: "Passionfruit", image: "/customize/flavour-passionfruit.png" },
   { value: "Berries Delight", label: "Berries Delight", image: "/customize/flavour-berriesDelight.png" },
   { value: "Cheesecake", label: "Cheesecake", image: "/customize/flavour-cheesecake.png" },
+  { value: "Hawthorn", label: "Hawthorn" },
 ];
 
 export const DIETARY_OPTIONS = [
   { value: "none", label: "None" },
-  { value: "noDairy", label: "Dairy Free" },
+  { value: "noDairy", label: "No Dairy" },
   { value: "noNuts", label: "No Nuts" },
   { value: "vegetarian", label: "Vegetarian" },
   { value: "vegan", label: "Vegan" },

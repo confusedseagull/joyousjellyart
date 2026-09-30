@@ -61,6 +61,7 @@ export type CustomOrderItem = {
   flavours: string[];
   cakeText?: string;
   cakeTextLanguage?: "english" | "chinese";
+  designDetails?: string;
   dietaryRequirements?: string;
   referenceLinks?: string;
   specialInstructions?: string;
@@ -100,6 +101,11 @@ export const orders = mysqlTable("orders", {
   customerName: varchar("customerName", { length: 255 }).notNull(),
   customerEmail: varchar("customerEmail", { length: 320 }),
   customerPhone: varchar("customerPhone", { length: 50 }).notNull(),
+
+  // Billing address — collected for every order regardless of delivery
+  // method, distinct from deliveryAddress below (which is only where the
+  // order itself gets sent/picked up).
+  billingAddress: text("billingAddress"),
 
   // Delivery details
   deliveryMethod: mysqlEnum("deliveryMethod", ["delivery", "pickup"]).notNull(),
