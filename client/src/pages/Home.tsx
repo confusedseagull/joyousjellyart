@@ -53,7 +53,7 @@ const reviews: {
     date: "3 months ago",
     text: "Doreen from Joyous JellyArt kindly acceded to my request for my teen and preteen to contribute to the making of the jelly cake for my dad's 70th birthday. Doreen conducted a mini hands-on workshop to teach and guide my girls to make the Koi fishes, longevity peaches, 寿 word, and the entire jelly cake (except the flowers). Doreen's patience, kindness, encouragement and jovial personality helped make those tasks less daunting, and I must say that my girls thoroughly enjoyed the session. My girls even had the privilege to bring back samples of their jellywork to savour at home. Appreciate Doreen for going the extra mile beyond crafting the cake, but allowing my girls to have a part in it. Thank you so much Doreen! The cake turned out gorgeous with the skilful addition of intricate flowers. It was delectable and its sweetness level was just right for both the young and old to enjoy.",
     url: "https://share.google/HkzMbfrtmbWQYtTQ5",
-    images: ["/reviews/rennieunice-1.jpg", "/reviews/rennieunice-2.jpg", "/reviews/rennieunice-3.jpg"],
+    images: ["/reviews/rennieunice-1.webp", "/reviews/rennieunice-2.webp", "/reviews/rennieunice-3.webp"],
   },
   {
     author: "Amanda",
@@ -61,7 +61,7 @@ const reviews: {
     date: "3 months ago",
     text: "Ordered a goldfish jellycake to celebrate my dad's 60th birthday! Look how beautiful it is!\n\nWhen we discussed the design ,doreen was very patient with me and transaction was very smooth!\n\nLychee flavour is delicious, not overly sweet.\nMy parents and old folks loved it!\n\nThank you❤️",
     url: "https://share.google/G83GXnFIEnJZjDjTG",
-    images: ["/reviews/amanda-1.jpg", "/reviews/amanda-2.jpg"],
+    images: ["/reviews/amanda-1.webp", "/reviews/amanda-2.webp"],
   },
   {
     author: "Evan Loke",
@@ -69,7 +69,7 @@ const reviews: {
     date: "3 months ago",
     text: "Thank you so much for taking my last minute order! The jelly cake was absolutely stunning, delicious and received compliments from my family! Sweetness just right. Osmanthus bloom & lychee was a perfect combination. Such beautiful artwork, you're incredibly talented!\nThank you and will order again!",
     url: "https://share.google/vLDo8FaxjNZB1EkKd",
-    images: ["/reviews/evan-1.jpg"],
+    images: ["/reviews/evan-1.webp"],
   },
   {
     author: "phyllis tan",
@@ -77,7 +77,7 @@ const reviews: {
     date: "5 months ago",
     text: "Super talented artwork! 💯 It's not just visually stunning, it tastes so refreshing and yummy too. The coconut flavour is light and not overpowering, and the jellies were perfectly firm and beautifully presented. I love that customised picture designs are available too! My friends were impressed! will definitely be ordering again! 💪",
     url: "https://share.google/B4y9M2X2RRtadigl6",
-    images: ["/reviews/phyllis-1.jpg", "/reviews/phyllis-2.jpg", "/reviews/phyllis-3.jpg"],
+    images: ["/reviews/phyllis-1.webp", "/reviews/phyllis-2.webp", "/reviews/phyllis-3.webp"],
   },
   {
     author: "Amy Yong",
@@ -85,7 +85,7 @@ const reviews: {
     date: "4 months ago",
     text: "The most creative cheesecake I've seen! The jelly art layer is breathtaking and the taste is incredibly yummy. It feels like a total luxury to eat. Highly recommend Joyous Jelly Art for anyone wanting a unique, high-quality dessert.",
     url: "https://share.google/TMlzGiuBlv4qoDUnb",
-    images: ["/reviews/amy-1.jpg"],
+    images: ["/reviews/amy-1.webp"],
   },
   {
     author: "Pearly Woo",
@@ -93,7 +93,7 @@ const reviews: {
     date: "2 months ago",
     text: "Great customer service and attention to detail. The cake was a hit at our celebration! Beautifully designed! Thanks for taking special attention to the delivery instructions. Highly recommended",
     url: "https://share.google/uP0lBMzp7lqRFVXhV",
-    images: ["/reviews/pearly-1.jpg"],
+    images: ["/reviews/pearly-1.webp"],
   },
   {
     author: "Joce Huang",
@@ -101,7 +101,7 @@ const reviews: {
     date: "2 months ago",
     text: "I sent in my order last minute and so glad Joyousjellyart picked up my last minute request! Truly joyous and my mother in law loved the jelly cake and such intricate design. In celebration of Duanwu festival, we even got some mini jelly in bazhang shape. You can truly tell the love and passion from a local bakery! I'd highly recommend! It was such a great experience and the packaging was great too!",
     url: "https://share.google/YxRlQuVAjQHayH3z3",
-    images: ["/reviews/joce-1.jpg"],
+    images: ["/reviews/joce-1.webp"],
   },
   {
     author: "C.N L",
@@ -109,7 +109,7 @@ const reviews: {
     date: "4 months ago",
     text: "We couldn't bear to eat the beautiful cake, especially the crane. The birthday guy was happy and impressed with the taste, which was not to sweet and it gave a refreshing afertaste. 'Thank you' to the beautiful artist (Doreen) who created this beautiful cake that melts the heart of many ❤️",
     url: "https://share.google/7yLqSTJfDagBjxd72",
-    images: ["/reviews/cnl-1.jpg", "/reviews/cnl-2.jpg", "/reviews/cnl-3.jpg"],
+    images: ["/reviews/cnl-1.webp", "/reviews/cnl-2.webp", "/reviews/cnl-3.webp"],
   },
   {
     author: "Nancy Koh",
@@ -117,23 +117,23 @@ const reviews: {
     date: "7 months ago",
     text: "Beautiful jelly cake and my kids had so much fun admiring at the design! And birthday girl likes the lychee flavor too. Communication for the order is very pleasant , prompt and smooth. Thanks for able to fulfil our order for dairy allergy ! 🙏🙏🙏😊",
     url: "https://share.google/4AT8xKQNDiUhe37Wy",
-    images: ["/reviews/nancy-1.jpg", "/reviews/nancy-2.jpg"],
+    images: ["/reviews/nancy-1.webp", "/reviews/nancy-2.webp"],
   },
 ];
 
 const gallery = [
-  { name: "Mahjong Huat", image: "/gallery/mahjong-huat.png" },
-  { name: "Fan of Flowers", image: "/gallery/fan-of-flowers.png" },
-  { name: "Space Explorer", image: "/gallery/space-explorer.png" },
-  { name: "Pikachu", image: "/gallery/pikachu.png" },
-  { name: "Under the Sea", image: "/gallery/under-the-sea.png" },
-  { name: "Happy Woof-day!", image: "/gallery/happy-woofday.png" },
-  { name: "Oriental Blessing", image: "/gallery/oriental-blessing.png" },
-  { name: "Koi Pond", image: "/gallery/koi-pond.png" },
-  { name: "Princess Choo-Choo Train", image: "/gallery/princess-choochoo.png" },
-  { name: "The Blooming Muse", image: "/gallery/the-muse.png" },
-  { name: "Scarlet Devotion", image: "/gallery/scarlet-devotion.png" },
-  { name: "Cactus Valley", image: "/gallery/cactus-valley.png" },
+  { name: "Mahjong Huat", image: "/gallery/mahjong-huat.webp" },
+  { name: "Fan of Flowers", image: "/gallery/fan-of-flowers.webp" },
+  { name: "Space Explorer", image: "/gallery/space-explorer.webp" },
+  { name: "Pikachu", image: "/gallery/pikachu.webp" },
+  { name: "Under the Sea", image: "/gallery/under-the-sea.webp" },
+  { name: "Happy Woof-day!", image: "/gallery/happy-woofday.webp" },
+  { name: "Oriental Blessing", image: "/gallery/oriental-blessing.webp" },
+  { name: "Koi Pond", image: "/gallery/koi-pond.webp" },
+  { name: "Princess Choo-Choo Train", image: "/gallery/princess-choochoo.webp" },
+  { name: "The Blooming Muse", image: "/gallery/the-muse.webp" },
+  { name: "Scarlet Devotion", image: "/gallery/scarlet-devotion.webp" },
+  { name: "Cactus Valley", image: "/gallery/cactus-valley.webp" },
 ];
 
 export default function Home() {
@@ -164,7 +164,7 @@ export default function Home() {
   return (
     <div className="relative isolate min-h-screen bg-background">
       <img
-        src="/rose-watermark.png"
+        src="/rose-watermark.webp"
         alt=""
         aria-hidden="true"
         className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] md:w-[900px] lg:w-[1100px] max-w-none opacity-[0.02] pointer-events-none select-none -z-10"

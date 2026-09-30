@@ -155,12 +155,12 @@ function QuantityStepper({ value, onChange }: { value: number; onChange: (value:
 // "Serves X pax" copy from the Figma size-options frame, keyed by SHAPE_SIZES value.
 // Only round/square share this exact size set with real servings data from Figma.
 const SERVES_INFO: Record<string, string> = {
-  "6inch": "serves 8-12 pax",
-  "8inch": "serves 16-22 pax",
-  "10inch": "serves 26-38 pax",
-  "2tier_6_8": "serves 26-38 pax",
-  "2tier_6_10": "serves 26-38 pax",
-  "2tier_8_10": "serves 26-38 pax",
+  "6inch": "serves 4-8 pax",
+  "8inch": "serves 8-16 pax",
+  "10inch": "serves 12-20 pax",
+  "2tier_6_8": "serves 12-24 pax",
+  "2tier_6_10": "serves 16-28 pax",
+  "2tier_8_10": "serves 24-36 pax",
 };
 
 function getSizeBadge(value: string): string {

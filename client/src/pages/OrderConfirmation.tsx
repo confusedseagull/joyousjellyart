@@ -75,6 +75,15 @@ function themeValueFor(item: ConfirmationCustomItem): string {
   return detail ? `${label} — ${detail}` : label;
 }
 
+// Item name shown in place of a generic "Custom Cake" label, e.g. "Floral
+// Bouquet Cake" or "Space Mini Gift Box" — the theme and format the
+// customer actually chose.
+function itemNameFor(item: ConfirmationCustomItem): string {
+  const themeLabel = item.themeLabel || humanize(item.theme);
+  const formatLabel = FORMAT_LABELS[item.format] || humanize(item.format);
+  return `${themeLabel} ${formatLabel}`;
+}
+
 interface ConfirmationCnyItem {
   collection: "cny";
   id: string;
@@ -261,52 +270,56 @@ export default function OrderConfirmation() {
 
   // Full order recap for the WhatsApp message, so staff can confirm payment
   // against the right order without switching back to the admin dashboard —
-  // everything shown on this page except the billing address.
+  // everything shown on this page except the billing address. Field labels
+  // use WhatsApp's own *bold* syntax (rendered by the WhatsApp app itself)
+  // so the recap has visual hierarchy instead of reading as one flat block.
+  const field = (label: string, value: string) => `*${label}:* ${value}`;
+
   const orderMessageLines: string[] = [];
   orderData.items.forEach((item) => {
     if (item.collection === "cny") {
-      orderMessageLines.push(`${item.name} - ${formatPrice(item.price)}`);
-      orderMessageLines.push(`Edition: ${item.edition}`);
-      orderMessageLines.push(`Size: ${item.size}`);
-      orderMessageLines.push(`Flavour: ${item.flavors ? item.flavors.join(', ') : item.flavor || "None"}`);
+      orderMessageLines.push(`*${item.name}* - ${formatPrice(item.price)}`);
+      orderMessageLines.push(field("Edition", item.edition));
+      orderMessageLines.push(field("Size", item.size));
+      orderMessageLines.push(field("Flavour", item.flavors ? item.flavors.join(', ') : item.flavor || "None"));
       if (item.dietaryRequirements && item.dietaryRequirements.length > 0) {
-        orderMessageLines.push(`Dietary Requirements: ${item.dietaryRequirements.join(', ')}`);
+        orderMessageLines.push(field("Dietary Requirements", item.dietaryRequirements.join(', ')));
       }
     } else {
       const shapeText =
         item.shapeLabel || (item.platterShapes?.length ? item.platterShapes.join(', ') : humanize(item.shape));
-      orderMessageLines.push(`Custom Cake - ${formatPrice(item.price)}`);
-      orderMessageLines.push(`Format: ${FORMAT_LABELS[item.format] || humanize(item.format)}`);
-      orderMessageLines.push(`Shape: ${shapeText}`);
-      orderMessageLines.push(`Size: ${item.sizeLabel || item.size}`);
-      orderMessageLines.push(`Theme: ${themeValueFor(item)}`);
-      orderMessageLines.push(`Base Flavour: ${item.flavours.join(', ')}`);
-      if (item.selectedColors?.length) orderMessageLines.push(`Color Preferences: ${item.selectedColors.join(', ')}`);
-      if (item.designDetails) orderMessageLines.push(`Design Details: ${item.designDetails}`);
-      if (item.cakeText) orderMessageLines.push(`Personalized Text: ${item.cakeText}`);
-      if (item.dietaryRequirements) orderMessageLines.push(`Dietary Requirements: ${item.dietaryRequirements}`);
+      orderMessageLines.push(`*${itemNameFor(item)}* - ${formatPrice(item.price)}`);
+      orderMessageLines.push(field("Format", FORMAT_LABELS[item.format] || humanize(item.format)));
+      orderMessageLines.push(field("Shape", shapeText));
+      orderMessageLines.push(field("Size", item.sizeLabel || item.size));
+      orderMessageLines.push(field("Theme", themeValueFor(item)));
+      orderMessageLines.push(field("Base Flavour", item.flavours.join(', ')));
+      if (item.selectedColors?.length) orderMessageLines.push(field("Color Preferences", item.selectedColors.join(', ')));
+      if (item.designDetails) orderMessageLines.push(field("Design Details", item.designDetails));
+      if (item.cakeText) orderMessageLines.push(field("Personalized Text", item.cakeText));
+      if (item.dietaryRequirements) orderMessageLines.push(field("Dietary Requirements", item.dietaryRequirements));
     }
     orderMessageLines.push("");
   });
-  orderMessageLines.push(`${isDelivery ? "Delivery" : "Pickup"}: ${orderData.deliveryFee > 0 ? formatPrice(orderData.deliveryFee) : "FREE"}`);
-  orderMessageLines.push(`Total: ${formatPrice(orderData.total)}`);
+  orderMessageLines.push(field(isDelivery ? "Delivery" : "Pickup", orderData.deliveryFee > 0 ? formatPrice(orderData.deliveryFee) : "FREE"));
+  orderMessageLines.push(field("Total", formatPrice(orderData.total)));
   orderMessageLines.push("");
-  orderMessageLines.push(`${isDelivery ? "Delivery Method" : "Pickup Method"}: ${isDelivery ? "Delivery" : "Pickup"}`);
+  orderMessageLines.push(field(isDelivery ? "Delivery Method" : "Pickup Method", isDelivery ? "Delivery" : "Pickup"));
   orderMessageLines.push(isDelivery ? (orderData.deliveryAddress || "") : (settings?.pickupAddress || ""));
-  if (isDelivery && orderData.recipientName) orderMessageLines.push(`Recipient Name: ${orderData.recipientName}`);
-  if (isDelivery && orderData.recipientPhone) orderMessageLines.push(`Recipient Number: ${orderData.recipientPhone}`);
+  if (isDelivery && orderData.recipientName) orderMessageLines.push(field("Recipient Name", orderData.recipientName));
+  if (isDelivery && orderData.recipientPhone) orderMessageLines.push(field("Recipient Number", orderData.recipientPhone));
   orderMessageLines.push("");
-  orderMessageLines.push(`Fulfillment Date: ${formattedDate}`);
+  orderMessageLines.push(field("Fulfillment Date", formattedDate));
   if (orderData.timeRange) orderMessageLines.push(orderData.timeRange);
   if (hasAdditionalNotes) {
     orderMessageLines.push("");
-    orderMessageLines.push(`Additional Instructions: ${orderData.notes}`);
+    orderMessageLines.push(field("Additional Instructions", orderData.notes!));
   }
 
   // Addressed to Doreen (the business owner, who receives these messages),
   // not the customer — this is the message the customer sends her.
   const whatsappMessage = encodeURIComponent(
-    `Hi Doreen, here's my payment screenshot for order ${orderData.orderNumber}\n\n${orderMessageLines.join("\n")}`
+    `Hi Doreen, here's my payment screenshot for order *${orderData.orderNumber}*\n\n${orderMessageLines.join("\n")}`
   );
   const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${whatsappMessage}`;
 
@@ -327,7 +340,7 @@ export default function OrderConfirmation() {
           </div>
 
           <img
-            src="/order-confirmation-hero.png"
+            src="/order-confirmation-hero.webp"
             alt=""
             className="order-1 lg:order-2 max-w-full lg:max-w-[531px] max-h-[260px] lg:max-h-[531px] w-auto h-auto rounded-[24px] lg:rounded-[40px]"
           />
@@ -371,7 +384,7 @@ export default function OrderConfirmation() {
               return (
                 <div key={item.id ?? index} className="flex items-start justify-between gap-4 w-full">
                   <div className="flex flex-col gap-2.5">
-                    <p className="font-display text-[24px] font-normal text-[#1c1e22] leading-[1.3]">Custom Cake</p>
+                    <p className="font-display text-[24px] font-normal text-[#1c1e22] leading-[1.3]">{itemNameFor(item)}</p>
                     <div className="flex flex-col gap-2">
                       <DetailLine label="Format" value={FORMAT_LABELS[item.format] || humanize(item.format)} />
                       <DetailLine label="Shape" value={shapeText} />
@@ -493,7 +506,7 @@ export default function OrderConfirmation() {
                   </div>
                   <p className="font-medium text-[#1c1e22] text-lg mt-1">PROMETHEAN CONCEPT LLP</p>
                   <p className="font-medium text-[#6d726e] text-lg">UEN: T22LL0093A</p>
-                  <img src="/paynow-logo.png" alt="PayNow" className="h-5 mt-1" />
+                  <img src="/paynow-logo.webp" alt="PayNow" className="h-5 mt-1" />
                 </div>
 
                 <div className="flex flex-col gap-5 items-center">

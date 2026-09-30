@@ -49,6 +49,7 @@ export type CustomOrderItem = {
   id: string;
   format: "cake" | "jellyPlatter" | "miniGiftBox";
   theme: string;
+  themeLabel?: string;
   selectedFlowers?: string[];
   selectedColors?: string[];
   cartoonCharacter?: string;

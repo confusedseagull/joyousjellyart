@@ -8,6 +8,16 @@ import App from "./App";
 import { CartProvider } from "./contexts/CartContext";
 import "./index.css";
 
+// Client-side route changes (wouter's navigate()) don't reload the page, so
+// without this the browser's native scroll restoration can re-impose the
+// previous page's scroll offset after a route's own `window.scrollTo(0, 0)`
+// already ran — e.g. landing on order confirmation still scrolled down from
+// a long checkout form. Turning it off hands scroll position fully to the
+// app, which is what each route's own scroll-to-top effect expects.
+if (typeof window !== "undefined" && "scrollRestoration" in window.history) {
+  window.history.scrollRestoration = "manual";
+}
+
 const queryClient = new QueryClient();
 
 const redirectToLoginIfUnauthorized = (error: unknown) => {

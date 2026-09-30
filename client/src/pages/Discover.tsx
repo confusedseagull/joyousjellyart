@@ -48,7 +48,7 @@ const THEME_NOTES: Record<string, string> = {
 // wizard's reference photos — e.g. the Lego Princess Choo Choo Train called
 // out in that theme's copy above.
 const THEME_EXTRA_IMAGES: Record<string, string[]> = {
-  lego: ["/gallery/princess-choochoo.png"],
+  lego: ["/gallery/princess-choochoo.webp"],
 };
 
 // Every reference photo for each customizable theme (the same assets used in

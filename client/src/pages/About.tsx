@@ -5,7 +5,7 @@ export default function About() {
   return (
     <div className="relative isolate min-h-screen bg-background">
       <img
-        src="/rose-watermark.png"
+        src="/rose-watermark.webp"
         alt=""
         aria-hidden="true"
         className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] md:w-[900px] lg:w-[1100px] max-w-none opacity-[0.02] pointer-events-none select-none -z-10"

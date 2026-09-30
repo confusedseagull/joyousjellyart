@@ -34,7 +34,7 @@ export default function Header() {
       <div className="container flex items-center justify-between h-20">
         <Link href="/">
           <img
-            src="/logo.png"
+            src="/logo.webp"
             alt="Joyous JellyArt"
             className="h-9 md:h-10 w-auto"
           />

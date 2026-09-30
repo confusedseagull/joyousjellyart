@@ -173,6 +173,7 @@ function toOrderItemPayload(item: CartItem) {
       id: item.id,
       format: item.format,
       theme: item.theme,
+      themeLabel: item.themeLabel,
       selectedFlowers: item.selectedFlowers,
       selectedColors: item.selectedColors,
       cartoonCharacter: item.cartoonCharacter,
@@ -208,7 +209,7 @@ function toOrderItemPayload(item: CartItem) {
 }
 
 export default function Cart() {
-  const { items, updateQuantity, removeItem, totalPrice: subtotal } = useCart();
+  const { items, updateQuantity, removeItem, totalPrice: subtotal, clearCart } = useCart();
   const [, navigate] = useLocation();
 
   const [customerName, setCustomerName] = useState("");
@@ -396,6 +397,7 @@ export default function Cart() {
           "pendingOrder",
           JSON.stringify({ ...buildPendingOrderPayload(), paymentStatus: "paid" })
         );
+        clearCart();
         toast.success("Order created (payment skipped — dev mode)");
         devMarkPaidAndSendConfirmation.mutate({ orderId: data.id });
         navigate(`/order-confirmation?order=${orderNumber}`);
@@ -422,6 +424,7 @@ export default function Cart() {
       // follows up to arrange payment and marks the order paid manually
       // from the admin dashboard once that's settled.
       sessionStorage.setItem("pendingOrder", JSON.stringify(buildPendingOrderPayload()));
+      clearCart();
       navigate(`/order-confirmation?order=${orderNumber}`);
     },
     onError: (error) => {
@@ -592,7 +595,7 @@ export default function Cart() {
             <div className="flex-1 min-w-0 flex flex-col gap-1.5">
               {item.collection === "custom" ? (
                 <>
-                  <p className="font-medium text-[15px]">Custom Cake</p>
+                  <p className="font-medium text-[15px]">{item.themeLabel} {FORMAT_LABELS[item.format]}</p>
                   <p className="text-xs text-muted-foreground">Format: {FORMAT_LABELS[item.format]}</p>
                   <p className="text-xs text-muted-foreground">Shape: {itemShapeDisplay(item)}</p>
                   <p className="text-xs text-muted-foreground">Size: {shortSizeLabel(item.sizeLabel)}</p>

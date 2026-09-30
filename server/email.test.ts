@@ -96,8 +96,7 @@ describe("buildOrderConfirmationEmailHtml", () => {
 
     expect(html).toContain("Jane Doe");
     expect(html).toContain("JJA0001");
-    expect(html).toContain("Custom Cake");
-    expect(html).toContain("chess");
+    expect(html).toContain("Chess Cake");
     expect(html).toContain("Longan");
     expect(html).toContain("$99.00");
   });
@@ -127,6 +126,51 @@ describe("buildOrderConfirmationEmailHtml", () => {
     expect(html).toContain("Prosperity Edition");
     expect(html).toContain("Longan");
     expect(html).toContain("$128.00");
+  });
+
+  it("names the item as '{theme} {format}', preferring a saved themeLabel over the raw theme slug", () => {
+    const order = makeOrder({
+      items: [
+        {
+          collection: "custom",
+          id: "item-1",
+          format: "miniGiftBox",
+          theme: "space",
+          themeLabel: "Space",
+          shape: "round",
+          size: "6inch",
+          flavours: ["Longan"],
+          price: 118,
+          quantity: 1,
+        },
+      ],
+    });
+
+    const html = buildOrderConfirmationEmailHtml(order);
+
+    expect(html).toContain("Space Mini Gift Box");
+  });
+
+  it("falls back to humanizing the raw theme slug when no themeLabel was saved", () => {
+    const order = makeOrder({
+      items: [
+        {
+          collection: "custom",
+          id: "item-1",
+          format: "cake",
+          theme: "floralBouquet",
+          shape: "round",
+          size: "6inch",
+          flavours: ["Longan"],
+          price: 99,
+          quantity: 1,
+        },
+      ],
+    });
+
+    const html = buildOrderConfirmationEmailHtml(order);
+
+    expect(html).toContain("Floral Bouquet Cake");
   });
 
   it("renders a delivery address when the order is a delivery order", () => {
@@ -179,8 +223,7 @@ describe("buildOrderReceivedEmailHtml", () => {
 
     expect(html).toContain("Jane Doe");
     expect(html).toContain("JJA0001");
-    expect(html).toContain("Custom Cake");
-    expect(html).toContain("chess");
+    expect(html).toContain("Chess Cake");
     expect(html).toContain("Longan");
     expect(html).toContain("$99.00");
     expect(html).toContain("PayNow");

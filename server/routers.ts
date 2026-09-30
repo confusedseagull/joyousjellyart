@@ -25,6 +25,7 @@ const customOrderItemSchema = z.object({
   id: z.string(),
   format: z.enum(["cake", "jellyPlatter", "miniGiftBox"]),
   theme: z.string(),
+  themeLabel: z.string().optional(),
   selectedFlowers: z.array(z.string()).optional(),
   selectedColors: z.array(z.string()).optional(),
   cartoonCharacter: z.string().optional(),

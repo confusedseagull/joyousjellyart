@@ -18,6 +18,23 @@ const FORMAT_LABELS: Record<string, string> = {
   miniGiftBox: "Mini Gift Box",
 };
 
+// Turns a raw camelCase/underscore value (e.g. "cartoonCharacters") into
+// readable text ("Cartoon Characters") for older orders whose stored item
+// never had a themeLabel saved alongside the raw theme slug.
+function humanize(value: string): string {
+  const spaced = value.replace(/_/g, " ").replace(/([a-z])([A-Z])/g, "$1 $2");
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
+
+// Item name shown in place of a generic "Custom Cake" label, e.g. "Floral
+// Bouquet Cake" or "Space Mini Gift Box" — the theme and format the
+// customer actually chose.
+function itemNameFor(item: Extract<OrderItem, { collection: "custom" }>): string {
+  const themeLabel = item.themeLabel || humanize(item.theme);
+  const formatLabel = FORMAT_LABELS[item.format] || humanize(item.format);
+  return `${themeLabel} ${formatLabel}`;
+}
+
 export interface SendEmailParams {
   to: string;
   subject: string;
@@ -66,9 +83,9 @@ function renderItemRow(item: OrderItem): string {
   return `
     <tr>
       <td style="padding: 12px 0; border-bottom: 1px solid ${BORDER_COLOR};">
-        <p style="margin: 0 0 4px; font-weight: 600; color: #1a1e1b;">Custom Cake</p>
+        <p style="margin: 0 0 4px; font-weight: 600; color: #1a1e1b;">${itemNameFor(item)}</p>
         <p style="margin: 0; font-size: 13px; color: ${MUTED_TEXT};">${formatLabel} &middot; ${item.shape} &middot; ${item.size}</p>
-        <p style="margin: 0; font-size: 13px; color: ${MUTED_TEXT};">Theme: ${item.theme} &middot; Flavour: ${item.flavours.join(", ")}</p>
+        <p style="margin: 0; font-size: 13px; color: ${MUTED_TEXT};">Theme: ${item.themeLabel || humanize(item.theme)} &middot; Flavour: ${item.flavours.join(", ")}</p>
         <p style="margin: 4px 0 0; font-size: 13px; color: ${MUTED_TEXT};">Qty: ${item.quantity} &middot; ${formatPrice(item.price)} each</p>
       </td>
     </tr>`;

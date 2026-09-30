@@ -16,7 +16,7 @@ const cnyDesigns = [
     id: 1,
     name: "Golden Gallop",
     edition: "Prosperity Edition",
-    image: "/GoldenGallop.jpg",
+    image: "/GoldenGallop.webp",
     dimensions: "8\" / 20 cm or 10\" / 25 cm",
     sizes: [
       { size: "8\"", price: "$128" },
@@ -27,7 +27,7 @@ const cnyDesigns = [
     id: 2,
     name: "Mahjong Huat",
     edition: "Prosperity Edition",
-    image: "/MahjongHuat.jpeg",
+    image: "/MahjongHuat.webp",
     dimensions: "8\" / 20 cm or 10\" / 25 cm",
     sizes: [
       { size: "8\"", price: "$128" },
@@ -38,7 +38,7 @@ const cnyDesigns = [
     id: 3,
     name: "Huat Huat Box",
     edition: "Prosperity Edition",
-    image: "/HuatHuatBox2.jpeg",
+    image: "/HuatHuatBox2.webp",
     dimensions: "7\" x 5\" / 18 cm x 13 cm",
     sizes: [
       { size: "Standard", price: "$118" }
@@ -48,7 +48,7 @@ const cnyDesigns = [
     id: 4,
     name: "Huat Huat Box (Lion Edition)",
     edition: "Prosperity Edition",
-    image: "/Huat-huat-box-lion.jpg",
+    image: "/Huat-huat-box-lion.webp",
     dimensions: "7\" x 5\" / 18 cm x 13 cm",
     sizes: [
       { size: "Standard", price: "$118" }
@@ -58,7 +58,7 @@ const cnyDesigns = [
     id: 5,
     name: "Lucky Stallion",
     edition: "Prosperity Edition",
-    image: "/LuckyStallion.jpg",
+    image: "/LuckyStallion.webp",
     dimensions: "8\" / 20 cm or 10\" / 25 cm",
     sizes: [
       { size: "8\"", price: "$128" },
@@ -69,7 +69,7 @@ const cnyDesigns = [
     id: 6,
     name: "Joyful Koi Lux Platter",
     edition: "Prosperity Edition",
-    image: "/JoyfulKoiLuxPlatter.jpeg",
+    image: "/JoyfulKoiLuxPlatter.webp",
     dimensions: "10\" / 25 cm",
     sizes: [
       { size: "Standard", price: "$128" }
@@ -79,7 +79,7 @@ const cnyDesigns = [
     id: 7,
     name: "Lucky Strike",
     edition: "Prosperity Edition",
-    image: "/LuckyStrike.jpeg",
+    image: "/LuckyStrike.webp",
     dimensions: "3\" / 8 cm each",
     sizes: [
       { size: "Standard", price: "$118" }
@@ -90,7 +90,7 @@ const cnyDesigns = [
     id: 8,
     name: "Spring Blossoms",
     edition: "Blooms Edition",
-    image: "/SpringBlossoms.jpg",
+    image: "/SpringBlossoms.webp",
     dimensions: "8\" / 20 cm or 10\" / 25 cm",
     sizes: [
       { size: "8\"", price: "$128" },
@@ -101,7 +101,7 @@ const cnyDesigns = [
     id: 9,
     name: "Abundance Wealth",
     edition: "Blooms Edition",
-    image: "/AbundanceWealth.jpeg",
+    image: "/AbundanceWealth.webp",
     dimensions: "8\" / 20 cm or 10\" / 25 cm",
     sizes: [
       { size: "8\"", price: "$128" },
@@ -112,7 +112,7 @@ const cnyDesigns = [
     id: 10,
     name: "Joyous Blooms",
     edition: "Blooms Edition",
-    image: "/JoyousBlooms.jpg",
+    image: "/JoyousBlooms.webp",
     dimensions: "8\" / 20 cm or 10\" / 25 cm",
     sizes: [
       { size: "8\"", price: "$128" },
@@ -123,7 +123,7 @@ const cnyDesigns = [
     id: 11,
     name: "Bountiful Blessing",
     edition: "Blooms Edition",
-    image: "/BountifulBlessing.jpg",
+    image: "/BountifulBlessing.webp",
     dimensions: "8\" / 20 cm or 10\" / 25 cm",
     sizes: [
       { size: "8\"", price: "$128" },
@@ -135,7 +135,7 @@ const cnyDesigns = [
     id: 12,
     name: "Prosperity Koi",
     edition: "Fortune Edition",
-    image: "/ProsperityKoi.png",
+    image: "/ProsperityKoi.webp",
     dimensions: "9\" / 23 cm",
     sizes: [
       { size: "Standard", price: "$88.80" }
@@ -145,7 +145,7 @@ const cnyDesigns = [
     id: 13,
     name: "Auspicious Angbao",
     edition: "Fortune Edition",
-    image: "/13-AuspiciousAngbao.jpeg",
+    image: "/13-AuspiciousAngbao.webp",
     dimensions: "11\" x 7\" / 28 cm x 18 cm",
     sizes: [
       { size: "Standard", price: "$88.80" }
@@ -155,7 +155,7 @@ const cnyDesigns = [
     id: 14,
     name: "Fortune Ingot",
     edition: "Fortune Edition",
-    image: "/Fortune.Ingot.JPEG",
+    image: "/Fortune.Ingot.webp",
     dimensions: "6\" / 15 cm or 8\" / 20 cm or 10\" / 25 cm",
     sizes: [
       { size: "6\"", price: "$88" },
@@ -167,7 +167,7 @@ const cnyDesigns = [
     id: 15,
     name: "Fortune Lion",
     edition: "Fortune Edition",
-    image: "/FortuneLion.jpg",
+    image: "/FortuneLion.webp",
     dimensions: "3\" / 8 cm each",
     sizes: [
       { size: "Standard", price: "$88.80" }
@@ -177,7 +177,7 @@ const cnyDesigns = [
     id: 16,
     name: "Fortune Koi",
     edition: "Fortune Edition",
-    image: "/FortuneKoi.png",
+    image: "/FortuneKoi.webp",
     dimensions: "9\" / 23 cm",
     sizes: [
       { size: "Standard", price: "$88.80" }
@@ -187,7 +187,7 @@ const cnyDesigns = [
     id: 17,
     name: "Gold Wealth Bar",
     edition: "Fortune Edition",
-    image: "/Gold-bar2.jpg",
+    image: "/Gold-bar2.webp",
     dimensions: "8\" x 3\" / 20 cm x 8 cm",
     sizes: [
       { size: "Standard", price: "$88.80" }
@@ -197,7 +197,7 @@ const cnyDesigns = [
     id: 18,
     name: "Firecracker",
     edition: "Fortune Edition",
-    image: "/18-Firecracker.jpeg",
+    image: "/18-Firecracker.webp",
     dimensions: "10\" / 25 cm",
     sizes: [
       { size: "Standard", price: "$108" }
@@ -208,7 +208,7 @@ const cnyDesigns = [
     id: 19,
     name: "Auspicious Platter 福多多",
     edition: "Auspicious Edition",
-    image: "/fuwangwang.JPEG",
+    image: "/fuwangwang.webp",
     dimensions: "3\" / 8 cm each",
     sizes: [
       { size: "9-piece set", price: "$108" }
@@ -218,7 +218,7 @@ const cnyDesigns = [
     id: 20,
     name: "Auspicious Platter 发满满",
     edition: "Auspicious Edition",
-    image: "/huatman.JPEG",
+    image: "/huatman.webp",
     dimensions: "3\" / 8 cm each",
     sizes: [
       { size: "9-piece set", price: "$108" }
@@ -228,7 +228,7 @@ const cnyDesigns = [
     id: 21,
     name: "Blessings Gift Box 福到人间",
     edition: "Auspicious Edition",
-    image: "/Test_1.JPEG",
+    image: "/Test_1.webp",
     dimensions: "4\" / 10 cm each",
     sizes: [
       { size: "4-piece set", price: "$68" }
@@ -238,7 +238,7 @@ const cnyDesigns = [
     id: 22,
     name: "Huat Ah",
     edition: "Auspicious Edition",
-    image: "/IMG_20260115_113738.JPEG",
+    image: "/IMG_20260115_113738.webp",
     dimensions: "10\" / 25 cm",
     sizes: [
       { size: "10\"", price: "$168" }

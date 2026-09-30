@@ -22,7 +22,7 @@ export default function Footer() {
     <footer id="footer" className="bg-[#faf8f5] mt-16">
       <div className="container flex flex-col gap-10 pt-16 pb-12">
         <div className="flex items-center justify-between gap-4 flex-wrap">
-          <img src="/logo.png" alt="Joyous JellyArt" className="h-8 w-auto" />
+          <img src="/logo.webp" alt="Joyous JellyArt" className="h-8 w-auto" />
           <p className="text-sm text-muted-foreground">
             Handcrafted Jellies • Crafted Memories • Joyous Moments
           </p>

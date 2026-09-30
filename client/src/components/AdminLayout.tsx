@@ -48,7 +48,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       <Sidebar className="border-r border-[#e5e5e5]">
         <SidebarHeader className="px-4 py-5">
           <Link href="/admin/dashboard">
-            <img src="/logo.png" alt="Joyous JellyArt" className="h-8 w-auto" />
+            <img src="/logo.webp" alt="Joyous JellyArt" className="h-8 w-auto" />
           </Link>
           <p className="text-xs text-muted-foreground mt-0.5">Admin</p>
         </SidebarHeader>
@@ -89,7 +89,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       <SidebarInset className="bg-background">
         <div className="flex items-center gap-3 px-6 py-4 md:hidden">
           <SidebarTrigger />
-          <img src="/logo.png" alt="Joyous JellyArt" className="h-8 w-auto" />
+          <img src="/logo.webp" alt="Joyous JellyArt" className="h-8 w-auto" />
         </div>
         {children}
       </SidebarInset>

@@ -148,6 +148,7 @@ export default function AdminOrderDetail() {
     { id: orderId! },
     { enabled: !!orderId, refetchOnWindowFocus: false }
   );
+  const { data: settings } = trpc.settings.get.useQuery();
 
   const { register, handleSubmit, reset, watch } = useForm<FormValues>();
   const deliveryMethod = watch("deliveryMethod");
@@ -323,7 +324,9 @@ export default function AdminOrderDetail() {
                 ) : (
                   <div>
                     <div className="flex items-start justify-between gap-4 mb-4">
-                      <p className="font-display text-lg">{FORMAT_LABELS[item.format] || item.format}</p>
+                      <p className="font-display text-lg">
+                        {item.themeLabel || THEME_LABEL[item.theme] || item.theme} {FORMAT_LABELS[item.format] || item.format}
+                      </p>
                       <div className="text-right shrink-0">
                         <p className="font-semibold">{formatPrice(item.price)}</p>
                         {item.quantity > 1 && <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>}
@@ -353,7 +356,9 @@ export default function AdminOrderDetail() {
                           <p className="text-sm text-foreground mt-2">Flowers: <span className="text-muted-foreground">{item.selectedFlowers.join(", ")}</span></p>
                         )}
                         {item.themeCustomText && (
-                          <p className="text-sm text-foreground mt-2">Theme Note: <span className="text-muted-foreground">{item.themeCustomText}</span></p>
+                          <p className="text-sm text-foreground mt-2">
+                            {item.theme === "nameAndInitial" ? "Name" : "Design Description"}: <span className="text-muted-foreground">{item.themeCustomText}</span>
+                          </p>
                         )}
                       </div>
 
@@ -533,6 +538,16 @@ export default function AdminOrderDetail() {
                   </div>
                 </div>
               </>
+            )}
+
+            {(isEditing ? deliveryMethod : order.deliveryMethod) === "pickup" && settings?.pickupAddress && (
+              <div>
+                <SectionLabel>Pickup Address</SectionLabel>
+                <div className={displayClass}>
+                  {settings.pickupAddress}
+                  {settings.pickupInstructions ? ` — ${settings.pickupInstructions}` : ""}
+                </div>
+              </div>
             )}
           </div>
         </section>
