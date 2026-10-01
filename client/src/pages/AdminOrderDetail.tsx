@@ -472,7 +472,7 @@ export default function AdminOrderDetail() {
                         {item.designDetails && <p>Design Details: <span className="text-muted-foreground">{item.designDetails}</span></p>}
                         {item.dietaryRequirements && <p>Dietary: <span className="text-muted-foreground">{item.dietaryRequirements}</span></p>}
                         {item.referenceLinks && <p>Reference Links: <span className="text-muted-foreground">{item.referenceLinks}</span></p>}
-                        {item.specialInstructions && <p>Additional Requests: <span className="text-muted-foreground">{item.specialInstructions}</span></p>}
+                        {item.specialInstructions && <p>Additional Notes: <span className="text-muted-foreground">{item.specialInstructions}</span></p>}
                       </div>
                     )}
                   </div>
