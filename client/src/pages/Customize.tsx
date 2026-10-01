@@ -3,8 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, ArrowRight, Check, ChevronDown, Minus, Plus } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, ChevronDown, Minus, Plus, X } from "lucide-react";
 import { SelectablePill } from "@/components/SelectablePill";
+import { upload } from "@vercel/blob/client";
 import { toast } from "sonner";
 import { getCustomOrderPrice } from "../../../shared/customOrderPricing";
 import { formatPrice } from "@/lib/utils";
@@ -272,7 +273,8 @@ export default function Customize() {
   const [coutureBrand, setCoutureBrand] = useState("");
   const [nameAndInitialName, setNameAndInitialName] = useState("");
   const [specialInstructions, setSpecialInstructions] = useState("");
-  const [referenceImageNames, setReferenceImageNames] = useState<string[]>([]);
+  const [referenceImages, setReferenceImages] = useState<{ url: string; name: string }[]>([]);
+  const [isUploadingReferenceImages, setIsUploadingReferenceImages] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const specialInstructionsRef = useRef<HTMLTextAreaElement>(null);
 
@@ -547,7 +549,7 @@ export default function Customize() {
     setCoutureBrand("");
     setNameAndInitialName("");
     setSpecialInstructions("");
-    setReferenceImageNames([]);
+    setReferenceImages([]);
     setSelectedFlavors([]);
     setBackgroundColor("");
     setColor1("");
@@ -591,7 +593,7 @@ export default function Customize() {
       cakeText: textOnCake || undefined,
       designDetails: designDetails || undefined,
       dietaryRequirements: dietaryRequirements.length > 0 ? dietaryRequirements.join(", ") : undefined,
-      referenceLinks: referenceImageNames.length > 0 ? `Reference images: ${referenceImageNames.join(", ")}` : undefined,
+      referenceImages: referenceImages.length > 0 ? referenceImages.map((r) => r.url) : undefined,
       specialInstructions: specialInstructions || undefined,
       image,
       price: totalPrice,
@@ -612,10 +614,29 @@ export default function Customize() {
     }
   }, [theme]);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    if (files.length > 0) {
-      setReferenceImageNames(files.map(f => f.name));
+    // Reset the input's own value so selecting the same file again (e.g.
+    // after removing it) still fires a change event.
+    e.target.value = "";
+    if (files.length === 0) return;
+
+    setIsUploadingReferenceImages(true);
+    try {
+      const uploaded = await Promise.all(
+        files.map(async (file) => {
+          const blob = await upload(`reference-images/${Date.now()}-${file.name}`, file, {
+            access: "public",
+            handleUploadUrl: "/api/upload-reference-image",
+          });
+          return { url: blob.url, name: file.name };
+        })
+      );
+      setReferenceImages(uploaded);
+    } catch {
+      toast.error("Failed to upload reference image(s). Please try again.");
+    } finally {
+      setIsUploadingReferenceImages(false);
     }
   };
 
@@ -1042,20 +1063,41 @@ export default function Customize() {
                       accept="image/*"
                       multiple
                       onChange={handleFileSelect}
+                      disabled={isUploadingReferenceImages}
                       className="hidden"
                     />
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="border border-[#e5e5e5] rounded-2xl h-[52px] flex items-center justify-center gap-2 px-4 text-sm outline-none hover:border-primary/40 focus-visible:border-primary/40 transition-colors"
+                      disabled={isUploadingReferenceImages}
+                      className="border border-[#e5e5e5] rounded-2xl h-[52px] flex items-center justify-center gap-2 px-4 text-sm outline-none hover:border-primary/40 focus-visible:border-primary/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <img src="/customize/icon-cloud-upload.svg" alt="" className="size-[18px]" />
                       <span>
-                        {referenceImageNames.length > 0
-                          ? referenceImageNames.join(", ")
-                          : "Upload reference images"}
+                        {isUploadingReferenceImages
+                          ? "Uploading..."
+                          : referenceImages.length > 0
+                            ? `${referenceImages.length} image${referenceImages.length > 1 ? "s" : ""} uploaded`
+                            : "Upload reference images"}
                       </span>
                     </button>
+                    {referenceImages.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {referenceImages.map((img, index) => (
+                          <div key={img.url} className="relative size-16 rounded-xl overflow-hidden border border-[#e5e5e5]">
+                            <img src={img.url} alt={img.name} className="w-full h-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => setReferenceImages((prev) => prev.filter((_, i) => i !== index))}
+                              aria-label={`Remove ${img.name}`}
+                              className="absolute top-0.5 right-0.5 size-4 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 transition-colors"
+                            >
+                              <X className="size-2.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </section>

@@ -192,7 +192,7 @@ function toOrderItemPayload(item: CartItem) {
       cakeTextLanguage: item.cakeTextLanguage,
       designDetails: item.designDetails,
       dietaryRequirements: item.dietaryRequirements,
-      referenceLinks: item.referenceLinks,
+      referenceImages: item.referenceImages,
       specialInstructions: item.specialInstructions,
       price: item.price,
       quantity: item.quantity,

@@ -65,7 +65,7 @@ export type CustomOrderItem = {
   cakeTextLanguage?: "english" | "chinese";
   designDetails?: string;
   dietaryRequirements?: string;
-  referenceLinks?: string;
+  referenceImages?: string[];
   specialInstructions?: string;
   price: number;
   quantity: number;

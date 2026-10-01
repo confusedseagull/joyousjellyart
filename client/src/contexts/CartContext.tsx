@@ -25,7 +25,7 @@ export interface CustomCartItem {
   cakeTextLanguage?: "english" | "chinese";
   designDetails?: string;
   dietaryRequirements?: string;
-  referenceLinks?: string;
+  referenceImages?: string[];
   specialInstructions?: string;
   image: string;
   price: number;

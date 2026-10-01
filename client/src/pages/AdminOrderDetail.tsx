@@ -469,8 +469,8 @@ export default function AdminOrderDetail() {
                       </div>
                     </div>
 
-                    {(item.cakeText || item.designDetails || item.dietaryRequirements || item.referenceLinks || item.specialInstructions) && (
-                      <div className="mt-4 pt-3 border-t border-[#e5e5e5] flex flex-col gap-1 text-sm">
+                    {(item.cakeText || item.designDetails || item.dietaryRequirements || item.referenceImages?.length || item.specialInstructions) && (
+                      <div className="mt-4 pt-3 border-t border-[#e5e5e5] flex flex-col gap-2 text-sm">
                         {item.cakeText && (
                           <p>
                             Cake Message: <span className="text-muted-foreground">{item.cakeText}</span>
@@ -481,7 +481,18 @@ export default function AdminOrderDetail() {
                         )}
                         {item.designDetails && <p>Design Details: <span className="text-muted-foreground">{item.designDetails}</span></p>}
                         {item.dietaryRequirements && <p>Dietary: <span className="text-muted-foreground">{item.dietaryRequirements}</span></p>}
-                        {item.referenceLinks && <p>Reference Links: <span className="text-muted-foreground">{item.referenceLinks}</span></p>}
+                        {item.referenceImages && item.referenceImages.length > 0 && (
+                          <div>
+                            <p className="mb-1">Reference Images</p>
+                            <div className="flex flex-wrap gap-2">
+                              {item.referenceImages.map((url: string) => (
+                                <a key={url} href={url} target="_blank" rel="noreferrer" className="block size-16 rounded-xl overflow-hidden border border-[#e5e5e5] hover:border-primary/40 transition-colors">
+                                  <img src={url} alt="Reference" className="w-full h-full object-cover" />
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                         {item.specialInstructions && <p>Additional Notes: <span className="text-muted-foreground">{item.specialInstructions}</span></p>}
                       </div>
                     )}

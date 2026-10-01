@@ -41,7 +41,7 @@ const customOrderItemSchema = z.object({
   cakeTextLanguage: z.enum(["english", "chinese"]).optional(),
   designDetails: z.string().optional(),
   dietaryRequirements: z.string().optional(),
-  referenceLinks: z.string().optional(),
+  referenceImages: z.array(z.string()).optional(),
   specialInstructions: z.string().optional(),
   price: z.number(),
   quantity: z.number(),

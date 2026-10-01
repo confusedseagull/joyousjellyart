@@ -3,6 +3,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { handleHitPayWebhook } from "../webhooks/hitpay";
+import { handleReferenceImageUpload } from "../uploads";
 import { rateLimitExpress } from "./rateLimit";
 
 // The API surface (webhook + tRPC) as a standalone Express app, decoupled
@@ -29,6 +30,14 @@ export function createApp(): Express {
     "/api/webhooks/hitpay",
     rateLimitExpress({ windowMs: 60_000, max: 60 }),
     handleHitPayWebhook
+  );
+
+  // Reference image uploads (Vercel Blob client-upload token issuance) —
+  // customer-facing, so rate-limited per IP against abuse.
+  app.post(
+    "/api/upload-reference-image",
+    rateLimitExpress({ windowMs: 60_000, max: 20 }),
+    handleReferenceImageUpload
   );
 
   // tRPC API

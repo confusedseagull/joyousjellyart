@@ -54,6 +54,7 @@ interface ConfirmationCustomItem {
   designDetails?: string;
   cakeText?: string;
   dietaryRequirements?: string;
+  referenceImages?: string[];
   price: number;
   quantity: number;
 }
@@ -300,6 +301,7 @@ export default function OrderConfirmation() {
       if (item.designDetails) orderMessageLines.push(field("Design Details", item.designDetails));
       if (item.cakeText) orderMessageLines.push(field("Personalized Text", item.cakeText));
       if (item.dietaryRequirements) orderMessageLines.push(field("Dietary Requirements", item.dietaryRequirements));
+      if (item.referenceImages?.length) orderMessageLines.push(field("Reference Images", item.referenceImages.join(', ')));
     }
     orderMessageLines.push("");
   });
@@ -398,6 +400,18 @@ export default function OrderConfirmation() {
                       <DetailLine label="Design Details" value={item.designDetails} />
                       <DetailLine label="Personalized Text" value={item.cakeText} />
                       <DetailLine label="Dietary Requirements" value={item.dietaryRequirements} />
+                      {item.referenceImages && item.referenceImages.length > 0 && (
+                        <div>
+                          <p className="text-[#6d726e] text-lg leading-[1.3] mb-1">Reference Images</p>
+                          <div className="flex flex-wrap gap-2">
+                            {item.referenceImages.map((url) => (
+                              <a key={url} href={url} target="_blank" rel="noreferrer" className="block size-16 rounded-xl overflow-hidden border border-[#e5e5e5] hover:border-primary/40 transition-colors">
+                                <img src={url} alt="Reference" className="w-full h-full object-cover" />
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                   <p className="font-display text-[24px] font-normal text-[#1c1e22] whitespace-nowrap">{formatPrice(item.price)}</p>
