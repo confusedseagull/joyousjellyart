@@ -94,6 +94,7 @@ function PhoneInput({
   value,
   onChange,
   placeholder,
+  disabled,
 }: {
   label: string;
   labelWidth?: string;
@@ -102,12 +103,13 @@ function PhoneInput({
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  disabled?: boolean;
 }) {
   const selected = COUNTRY_CODES.find((c) => c.code === country) ?? COUNTRY_CODES[0];
   return (
-    <div className="border border-[#e5e5e5] rounded-2xl h-[52px] flex items-center gap-2 pl-4 pr-2 w-full focus-within:border-primary/40 transition-colors">
+    <div className={`border border-[#e5e5e5] rounded-2xl h-[52px] flex items-center gap-2 pl-4 pr-2 w-full focus-within:border-primary/40 transition-colors ${disabled ? "bg-muted/50" : ""}`}>
       <label className={`shrink-0 text-sm text-foreground ${labelWidth || ""}`}>{label}</label>
-      <Select value={country} onValueChange={onCountryChange}>
+      <Select value={country} onValueChange={onCountryChange} disabled={disabled}>
         <SelectTrigger className="shrink-0 w-[88px] h-9 border-0 bg-transparent shadow-none px-2 gap-1 focus-visible:ring-0">
           <SelectValue>
             <span className="flex items-center gap-1.5 text-sm">
@@ -134,7 +136,8 @@ function PhoneInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="flex-1 min-w-0 text-sm bg-transparent outline-none placeholder:text-[#808582]"
+        disabled={disabled}
+        className="flex-1 min-w-0 text-sm bg-transparent outline-none placeholder:text-[#808582] disabled:cursor-not-allowed"
       />
     </div>
   );
@@ -176,6 +179,7 @@ function toOrderItemPayload(item: CartItem) {
       themeLabel: item.themeLabel,
       selectedFlowers: item.selectedFlowers,
       selectedColors: item.selectedColors,
+      backgroundColor: item.backgroundColor,
       cartoonCharacter: item.cartoonCharacter,
       themeCustomText: item.themeCustomText,
       fashionBrand: item.fashionBrand,
@@ -308,15 +312,20 @@ export default function Cart() {
     }
   }, [deliveryMethod]);
 
-  // Keep the delivery address mirrored to the billing address while "Same
-  // as Billing Address" is checked, so editing billing afterward still
-  // updates delivery instead of leaving it stale.
+  // Keep the delivery address, recipient name, and recipient number mirrored
+  // to the billing/customer details while "Same as Billing Address" is
+  // checked — if it's going to the billing address, the recipient is the
+  // customer themselves. Editing those fields afterward keeps delivery in
+  // sync instead of leaving it stale.
   useEffect(() => {
     if (!sameAsBilling) return;
     setAddressLine(billingAddressLine);
     setAptUnit(billingAptUnit);
     setPostalCode(billingPostalCode);
-  }, [sameAsBilling, billingAddressLine, billingAptUnit, billingPostalCode]);
+    setRecipientName(customerName);
+    setRecipientWhatsappCountry(customerPhoneCountry);
+    setRecipientWhatsappNumber(customerPhoneNumber);
+  }, [sameAsBilling, billingAddressLine, billingAptUnit, billingPostalCode, customerName, customerPhoneCountry, customerPhoneNumber]);
 
   // react-query silently clears `error` between retry attempts, so reading
   // deliveryFeeData/deliveryFeeError directly can flash "Calculating..." even
@@ -819,6 +828,7 @@ export default function Cart() {
                     onChange={(e) => setRecipientName(e.target.value)}
                     placeholder="Recipient Name"
                     className={inputClass}
+                    disabled={sameAsBilling}
                   />
                   <Input
                     value={addressLine}
@@ -849,6 +859,7 @@ export default function Cart() {
                     value={recipientWhatsappNumber}
                     onChange={setRecipientWhatsappNumber}
                     placeholder="8123 4567"
+                    disabled={sameAsBilling}
                   />
                   {deliveryDistance !== null && (
                     <p className="text-xs text-muted-foreground px-1">

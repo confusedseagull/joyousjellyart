@@ -46,6 +46,7 @@ interface ConfirmationCustomItem {
   platterShapes?: string[];
   flavours: string[];
   selectedColors?: string[];
+  backgroundColor?: string;
   selectedFlowers?: string[];
   cartoonCharacter?: string;
   themeCustomText?: string;
@@ -294,6 +295,7 @@ export default function OrderConfirmation() {
       orderMessageLines.push(field("Size", item.sizeLabel || item.size));
       orderMessageLines.push(field("Theme", themeValueFor(item)));
       orderMessageLines.push(field("Base Flavour", item.flavours.join(', ')));
+      if (item.backgroundColor) orderMessageLines.push(field("Background Color", item.backgroundColor));
       if (item.selectedColors?.length) orderMessageLines.push(field("Color Preferences", item.selectedColors.join(', ')));
       if (item.designDetails) orderMessageLines.push(field("Design Details", item.designDetails));
       if (item.cakeText) orderMessageLines.push(field("Personalized Text", item.cakeText));
@@ -391,6 +393,7 @@ export default function OrderConfirmation() {
                       <DetailLine label="Size" value={item.sizeLabel || item.size} />
                       <DetailLine label="Theme" value={themeValueFor(item)} />
                       <DetailLine label="Base Flavour" value={item.flavours.join(', ')} />
+                      <DetailLine label="Background Color" value={item.backgroundColor} />
                       <DetailLine label="Color Preferences" value={item.selectedColors?.join(', ')} />
                       <DetailLine label="Design Details" value={item.designDetails} />
                       <DetailLine label="Personalized Text" value={item.cakeText} />

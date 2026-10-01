@@ -28,6 +28,7 @@ const customOrderItemSchema = z.object({
   themeLabel: z.string().optional(),
   selectedFlowers: z.array(z.string()).optional(),
   selectedColors: z.array(z.string()).optional(),
+  backgroundColor: z.string().optional(),
   cartoonCharacter: z.string().optional(),
   themeCustomText: z.string().optional(),
   fashionBrand: z.string().optional(),

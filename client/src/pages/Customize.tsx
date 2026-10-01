@@ -280,6 +280,7 @@ export default function Customize() {
   const [selectedFlavors, setSelectedFlavors] = useState<string[]>([]);
 
   // Color preferences (optional, generic, all themes)
+  const [backgroundColor, setBackgroundColor] = useState("");
   const [color1, setColor1] = useState("");
   const [color2, setColor2] = useState("");
   const [color3, setColor3] = useState("");
@@ -548,6 +549,7 @@ export default function Customize() {
     setSpecialInstructions("");
     setReferenceImageNames([]);
     setSelectedFlavors([]);
+    setBackgroundColor("");
     setColor1("");
     setColor2("");
     setColor3("");
@@ -575,6 +577,7 @@ export default function Customize() {
       themeLabel,
       selectedFlowers: selectedFlowers.length > 0 ? selectedFlowers : undefined,
       selectedColors: selectedColors.length > 0 ? selectedColors : undefined,
+      backgroundColor: backgroundColor || undefined,
       cartoonCharacter: cartoonCharacter || undefined,
       themeCustomText: handDrawnDesign || nameAndInitialName || undefined,
       fashionBrand: coutureBrand || undefined,
@@ -660,6 +663,7 @@ export default function Customize() {
     { label: "Size", value: sizeLabel ?? "None" },
     { label: "Theme", value: themeLabel ? (themeDetail ? `${themeLabel} — ${themeDetail}` : themeLabel) : "None" },
     { label: "Base Flavour", value: selectedFlavors.length > 0 ? selectedFlavors.join(", ") : "None" },
+    { label: "Background Color", value: backgroundColor || "None" },
     { label: "Color Preferences", value: colorPreferences || "None" },
     { label: "Design Details", value: designDetails || "None" },
     { label: "Personalized Text", value: textOnCake || "None" },
@@ -1091,9 +1095,10 @@ export default function Customize() {
                 <StepHeader
                   number={5}
                   title="Let us know your color preferences (optional)"
-                  description="Specify up to three colors that you would like on your cake."
+                  description="Specify a background color and up to three accent colors that you would like on your cake."
                 />
                 <div className="max-w-2xl space-y-3">
+                  <Input value={backgroundColor} onChange={(e) => setBackgroundColor(e.target.value)} placeholder="Background Color" className={inputClass} />
                   <Input value={color1} onChange={(e) => setColor1(e.target.value)} placeholder="Color 1" className={inputClass} />
                   <Input value={color2} onChange={(e) => setColor2(e.target.value)} placeholder="Color 2" className={inputClass} />
                   <Input value={color3} onChange={(e) => setColor3(e.target.value)} placeholder="Color 3" className={inputClass} />

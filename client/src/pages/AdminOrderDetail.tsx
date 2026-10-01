@@ -117,7 +117,7 @@ function WhatsAppButton({ phone, label }: { phone: string | null | undefined; la
       href={link}
       target="_blank"
       rel="noreferrer"
-      className="inline-flex items-center gap-1.5 text-xs font-medium text-white bg-[#25D366] px-3 py-1.5 rounded-full hover:opacity-90 transition-opacity"
+      className="shrink-0 inline-flex items-center gap-1.5 h-[48px] text-xs font-medium text-white bg-[#25D366] px-4 rounded-full hover:opacity-90 transition-opacity"
     >
       <WhatsAppIcon className="h-3.5 w-3.5" />
       {label}
@@ -412,6 +412,16 @@ export default function AdminOrderDetail() {
                           <div>
                             <p className="text-xs uppercase tracking-wide text-muted-foreground">Numbers</p>
                             <p className="text-sm text-foreground">{item.numbers}</p>
+                          </div>
+                        )}
+
+                        {item.backgroundColor && (
+                          <div>
+                            <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Background Color</p>
+                            <span className="inline-flex items-center gap-1.5 text-sm text-foreground">
+                              <span className="w-4 h-4 rounded-full border border-[#e5e5e5] shrink-0" style={{ backgroundColor: item.backgroundColor }} />
+                              {item.backgroundColor}
+                            </span>
                           </div>
                         )}
 

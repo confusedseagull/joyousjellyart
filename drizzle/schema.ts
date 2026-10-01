@@ -52,6 +52,7 @@ export type CustomOrderItem = {
   themeLabel?: string;
   selectedFlowers?: string[];
   selectedColors?: string[];
+  backgroundColor?: string;
   cartoonCharacter?: string;
   themeCustomText?: string;
   fashionBrand?: string;

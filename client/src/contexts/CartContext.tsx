@@ -10,6 +10,7 @@ export interface CustomCartItem {
   themeLabel: string;
   selectedFlowers?: string[];
   selectedColors?: string[];
+  backgroundColor?: string;
   cartoonCharacter?: string;
   themeCustomText?: string;
   fashionBrand?: string;
