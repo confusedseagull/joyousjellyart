@@ -139,7 +139,7 @@ export const PLATTER_INDIVIDUAL_SHAPES = [
   { value: "heart", label: "Heart", image: "/customize/shape-platter-heart.webp" },
   { value: "square", label: "Square", image: "/customize/shape-platter-square.webp" },
   { value: "circle", label: "Round", image: "/customize/shape-platter-circle.webp" },
-  { value: "clover", label: "Clover" },
+  { value: "clover", label: "Clover", image: "/customize/shape-platter-clover.webp" },
 ];
 
 export const SHAPE_SIZES: { [key: string]: { value: string; label: string }[] } = {
@@ -227,7 +227,7 @@ export const BASE_FLAVORS = [
   { value: "Passionfruit", label: "Passionfruit", image: "/customize/flavour-passionfruit.webp" },
   { value: "Berries Delight", label: "Berries Delight", image: "/customize/flavour-berriesDelight.webp" },
   { value: "Cheesecake", label: "Cheesecake", image: "/customize/flavour-cheesecake.webp" },
-  { value: "Hawthorn", label: "Hawthorn" },
+  { value: "Hawthorn", label: "Hawthorn", image: "/customize/flavour-hawthorn.webp" },
 ];
 
 export const DIETARY_OPTIONS = [

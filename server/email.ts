@@ -225,11 +225,19 @@ export function buildOrderReceivedEmailHtml(order: Order): string {
 
   <div style="margin-top: 28px; padding: 20px; background: #faf7f3; border-radius: 16px; font-family: Arial, Helvetica, sans-serif;">
     <p style="margin: 0 0 12px; font-size: 15px; font-weight: 700;">Payment details</p>
-    <img src="${baseUrl}/paynow-qr.png" alt="PayNow QR code" width="160" style="display: block; border-radius: 12px; margin-bottom: 12px;" />
-    <p style="margin: 0; font-size: 13px; color: ${MUTED_TEXT};">PayNow &mdash; PROMETHEAN CONCEPT LLP &middot; UEN: T22LL0093A</p>
-    <p style="margin: 8px 0 0; font-size: 13px; color: ${MUTED_TEXT};">
-      Bank Transfer &mdash; PROMETHEAN CONCEPT LLP<br />
-      United Overseas Bank Limited &middot; 324-316261-9
+    <img src="${baseUrl}/paynow-qr-email.png" alt="PayNow QR code" width="160" style="display: block; border-radius: 12px; margin-bottom: 12px;" />
+    <p style="margin: 0 0 4px; font-size: 13px; font-weight: 700; color: #1a1e1b;">PayNow</p>
+    <p style="margin: 0 0 16px; font-size: 13px; color: ${MUTED_TEXT};">
+      PROMETHEAN CONCEPT LLP<br />
+      UEN: T22LL0093A
+    </p>
+    <p style="margin: 0 0 4px; font-size: 13px; font-weight: 700; color: #1a1e1b;">Bank Transfer</p>
+    <p style="margin: 0; font-size: 13px; color: ${MUTED_TEXT};">
+      Beneficiary Name: PROMETHEAN CONCEPT LLP<br />
+      Bank Account Number: 324-316261-9<br />
+      Bank Name: United Overseas Bank Limited<br />
+      Bank Address: 80 Raffles Place, Singapore 048624<br />
+      SWIFT: UOVBSGSG
     </p>
   </div>
 

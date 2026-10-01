@@ -457,11 +457,37 @@ export default function Customize() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [currentStep]);
 
+  // Add to Cart lives in the order summary, not next to the dietary pills, so
+  // once the first dietary requirement is picked (the last thing needed to
+  // enable it) bring it into view automatically instead of making the
+  // customer scroll to find it. The button is rendered twice (mobile panel +
+  // desktop sidebar); only one is ever actually on-screen at a time.
+  const addToCartMobileRef = useRef<HTMLButtonElement>(null);
+  const addToCartDesktopRef = useRef<HTMLButtonElement>(null);
+  const prevDietaryCountRef = useRef(dietaryRequirements.length);
+
   useEffect(() => {
     // Only auto-expand the mobile order bar once a dietary requirement has
     // actually been chosen on the final step, so the customer notices it's
     // where "Add to Cart" lives right when it becomes usable.
+    const justPicked =
+      currentStep === STEP_COUNT && dietaryRequirements.length > 0 && prevDietaryCountRef.current === 0;
     setMobileOrderOpen(currentStep === STEP_COUNT && dietaryRequirements.length > 0);
+
+    if (justPicked) {
+      // Double rAF: the mobile panel above may be mounting for the first time
+      // as part of this same update (it's only in the DOM once open), so wait
+      // a full extra paint for it to commit before measuring/scrolling to it.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const target = [addToCartMobileRef.current, addToCartDesktopRef.current].find(
+            (el) => el && el.getClientRects().length > 0
+          );
+          target?.scrollIntoView({ behavior: "smooth", block: "center" });
+        });
+      });
+    }
+    prevDietaryCountRef.current = dietaryRequirements.length;
   }, [currentStep, dietaryRequirements]);
 
   const isStepComplete = (step: number): boolean => {
@@ -640,7 +666,7 @@ export default function Customize() {
     { label: "Dietary Requirements", value: dietaryLabel || "None" },
   ];
 
-  const orderSummaryContent = (
+  const renderOrderSummary = (addToCartRef: React.RefObject<HTMLButtonElement | null>) => (
     <>
       <div className="flex flex-col shrink-0 border border-[#e4e6e8] divide-y divide-[#e4e6e8]">
         {summaryRows.map((row) => (
@@ -659,6 +685,7 @@ export default function Customize() {
 
       <div className="flex flex-col gap-3 shrink-0">
         <Button
+          ref={addToCartRef}
           type="button"
           size="lg"
           onClick={handleAddToCart}
@@ -699,7 +726,7 @@ export default function Customize() {
               </button>
               {mobileOrderOpen && (
                 <div className="flex flex-col gap-6 p-6 max-h-[calc(100dvh-176px)] overflow-y-auto">
-                  {orderSummaryContent}
+                  {renderOrderSummary(addToCartMobileRef)}
                 </div>
               )}
             </div>
@@ -1160,11 +1187,13 @@ export default function Customize() {
             </div>
           </div>
 
-          {/* Order summary sidebar (desktop only — mobile has its own tap-to-expand bar below the header) */}
+          {/* Order summary sidebar (desktop only — mobile has its own tap-to-expand bar below the header).
+              Capped to the viewport height and scrollable internally, since being sticky means its own
+              overflow can't be reached by scrolling the page once it's pinned in place. */}
           <div className="hidden lg:block lg:w-[380px] shrink-0 lg:sticky lg:top-6 lg:self-start">
-            <div className="bg-[#faf7f3] h-full p-10 flex flex-col gap-6">
+            <div className="bg-[#faf7f3] py-10 px-9 flex flex-col gap-6 lg:max-h-[calc(100vh-48px)] overflow-y-auto">
               <h2 className="text-2xl">My Order</h2>
-              {orderSummaryContent}
+              {renderOrderSummary(addToCartDesktopRef)}
             </div>
           </div>
         </div>

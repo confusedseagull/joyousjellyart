@@ -228,7 +228,8 @@ describe("buildOrderReceivedEmailHtml", () => {
     expect(html).toContain("$99.00");
     expect(html).toContain("PayNow");
     expect(html).toContain("324-316261-9");
-    expect(html).toContain("paynow-qr.png");
+    expect(html).toContain("UOVBSGSG");
+    expect(html).toContain("paynow-qr-email.png");
   });
 });
 

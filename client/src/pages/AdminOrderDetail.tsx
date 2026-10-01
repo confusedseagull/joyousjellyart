@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { useRoute, useLocation } from "wouter";
 import { AdminLayout } from "@/components/AdminLayout";
 import { trpc } from "@/lib/trpc";
-import { Loader2, ArrowLeft, MessageCircle, Pencil } from "lucide-react";
+import { Loader2, ArrowLeft, Pencil } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { formatPrice, toWhatsAppLink, shortSizeLabel } from "@/lib/utils";
@@ -98,6 +98,17 @@ interface FormValues {
   notes: string;
 }
 
+// lucide-react has no WhatsApp brand mark, so the glyph is inlined here —
+// this is the standard, publicly-published WhatsApp logo path (the same one
+// shipped by icon packs like Simple Icons/Font Awesome), not a custom design.
+function WhatsAppIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884M20.52 3.449C18.24 1.245 15.24 0 12.045 0 5.463 0 .104 5.36.101 11.943c0 2.105.549 4.16 1.595 5.976L0 24l6.335-1.652a11.882 11.882 0 005.71 1.454h.005c6.582 0 11.94-5.36 11.943-11.943a11.87 11.87 0 00-3.473-8.41" />
+    </svg>
+  );
+}
+
 function WhatsAppButton({ phone, label }: { phone: string | null | undefined; label: string }) {
   const link = toWhatsAppLink(phone);
   if (!link) return null;
@@ -106,9 +117,9 @@ function WhatsAppButton({ phone, label }: { phone: string | null | undefined; la
       href={link}
       target="_blank"
       rel="noreferrer"
-      className="inline-flex items-center gap-1.5 text-xs font-medium text-[#2f6b45] bg-[#e6f2ea] px-3 py-1.5 rounded-full hover:opacity-80 transition-opacity"
+      className="inline-flex items-center gap-1.5 text-xs font-medium text-white bg-[#25D366] px-3 py-1.5 rounded-full hover:opacity-90 transition-opacity"
     >
-      <MessageCircle className="h-3.5 w-3.5" />
+      <WhatsAppIcon className="h-3.5 w-3.5" />
       {label}
     </a>
   );
@@ -212,6 +223,21 @@ export default function AdminOrderDetail() {
   const recipientWhatsapp = toWhatsAppLink(order.recipientPhone);
   const showRecipientButton = recipientWhatsapp && order.recipientPhone !== order.customerPhone;
 
+  // Shown both next to "Edit" on desktop and, on mobile, next to the
+  // "Customer Details" heading instead — rendered from one place so the two
+  // spots can't drift out of sync.
+  const statusControl = isEditing ? (
+    <select {...register("status")} className="h-[46px] w-[200px] rounded-full border border-[#e5e5e5] px-4 text-sm bg-white outline-none focus:border-primary/40">
+      {STATUS_OPTIONS.map((s) => (
+        <option key={s.value} value={s.value}>{s.label}</option>
+      ))}
+    </select>
+  ) : (
+    <span className={`h-[46px] px-4 inline-flex items-center rounded-full text-sm font-medium ${STATUS_STYLES[order.status] || "bg-muted"}`}>
+      {STATUS_OPTIONS.find((s) => s.value === order.status)?.label || order.status}
+    </span>
+  );
+
   return (
     <AdminLayout>
       <form onSubmit={handleSubmit(onSubmit)} className="p-6 md:p-10 max-w-3xl">
@@ -224,41 +250,46 @@ export default function AdminOrderDetail() {
           Back to Orders
         </button>
 
-        <div className="flex items-start justify-between gap-4 mb-8">
-          <div>
-            <h1 className="mb-1">{order.orderNumber || `JJA${String(order.id).padStart(4, "0")}`}</h1>
-            <p className="text-muted-foreground text-sm">
-              {order.paymentStatus === "paid" ? "Paid" : order.paymentStatus === "failed" ? "Payment Failed" : order.paymentStatus === "refunded" ? "Refunded" : "Payment Pending"}
-            </p>
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-8">
+          <div className="flex items-start justify-between gap-4 md:block">
+            <div>
+              <h1 className="mb-1">{order.orderNumber || `JJA${String(order.id).padStart(4, "0")}`}</h1>
+              <p className="text-muted-foreground text-sm">
+                {order.paymentStatus === "paid" ? "Paid" : order.paymentStatus === "failed" ? "Payment Failed" : order.paymentStatus === "refunded" ? "Refunded" : "Payment Pending"}
+              </p>
+            </div>
+            {!isEditing && (
+              <button
+                type="button"
+                onClick={() => setIsEditing(true)}
+                className="shrink-0 h-[46px] px-5 rounded-full border border-[#e5e5e5] text-sm font-medium hover:border-primary/40 transition-colors flex items-center gap-2 md:hidden"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                Edit
+              </button>
+            )}
           </div>
-          <div className="flex items-center gap-3">
-            {isEditing ? (
-              <select {...register("status")} className="h-[46px] w-[200px] rounded-full border border-[#e5e5e5] px-4 text-sm bg-white outline-none focus:border-primary/40">
-                {STATUS_OPTIONS.map((s) => (
-                  <option key={s.value} value={s.value}>{s.label}</option>
-                ))}
-              </select>
-            ) : (
-              <>
-                <span className={`h-[46px] px-4 inline-flex items-center rounded-full text-sm font-medium ${STATUS_STYLES[order.status] || "bg-muted"}`}>
-                  {STATUS_OPTIONS.find((s) => s.value === order.status)?.label || order.status}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setIsEditing(true)}
-                  className="h-[46px] px-5 rounded-full border border-[#e5e5e5] text-sm font-medium hover:border-primary/40 transition-colors flex items-center gap-2"
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                  Edit
-                </button>
-              </>
+          <div className="hidden md:flex items-center gap-3">
+            {statusControl}
+            {!isEditing && (
+              <button
+                type="button"
+                onClick={() => setIsEditing(true)}
+                className="h-[46px] px-5 rounded-full border border-[#e5e5e5] text-sm font-medium hover:border-primary/40 transition-colors flex items-center gap-2"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                Edit
+              </button>
             )}
           </div>
         </div>
 
         {/* 1. Customer Details */}
         <section className="mb-8">
-          <h2 className="text-lg mb-4">Customer Details</h2>
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <h2 className="text-lg">Customer Details</h2>
+            <div className="md:hidden">{statusControl}</div>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <SectionLabel>Name</SectionLabel>
@@ -284,7 +315,7 @@ export default function AdminOrderDetail() {
                 ) : (
                   <div className={displayClass}>{order.customerPhone}</div>
                 )}
-                {customerWhatsapp && <WhatsAppButton phone={order.customerPhone} label="Message Customer" />}
+                {customerWhatsapp && <WhatsAppButton phone={order.customerPhone} label="Message" />}
               </div>
             </div>
             <div className="md:col-span-2">
