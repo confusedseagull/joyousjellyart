@@ -1,4 +1,6 @@
 import { getDistanceMatrix } from './_core/map';
+import { drivingDistance } from './_core/oneMap';
+import { ENV } from './_core/env';
 import { getOrCreateBusinessSettings } from './settings';
 
 interface DeliveryFeeResult {
@@ -7,8 +9,25 @@ interface DeliveryFeeResult {
   distanceTier: string;
 }
 
+// OneMap (free, Singapore addresses) first; Google Maps only if OneMap is
+// unreachable and a Google key happens to be configured.
+async function measureDistanceKm(shopAddress: string, customerAddress: string): Promise<number> {
+  try {
+    return (await drivingDistance(shopAddress, customerAddress)).km;
+  } catch (oneMapError) {
+    if (!ENV.googleMapsApiKey) throw oneMapError;
+    console.warn('OneMap failed, trying Google Maps:', (oneMapError as Error).message);
+    const response = await getDistanceMatrix(shopAddress, customerAddress);
+    const element = response.rows[0]?.elements[0];
+    if (response.status !== 'OK' || !element || element.status !== 'OK') {
+      throw new Error('Unable to calculate distance to the provided address');
+    }
+    return element.distance.value / 1000;
+  }
+}
+
 /**
- * Calculate delivery fee based on distance from shop
+ * Calculate delivery fee based on driving distance from shop
  * @param customerAddress Customer's delivery address
  * @returns Delivery fee details including distance and cost
  */
@@ -18,21 +37,7 @@ export async function calculateDeliveryFee(
   try {
     const settings = await getOrCreateBusinessSettings();
 
-    // Use Google Maps Distance Matrix API to calculate distance
-    const response = await getDistanceMatrix(settings.shopAddressForDistance, customerAddress);
-
-    if (response.status !== 'OK') {
-      throw new Error(`Distance Matrix API error: ${response.status}`);
-    }
-
-    const element = response.rows[0]?.elements[0];
-
-    if (!element || element.status !== 'OK') {
-      throw new Error('Unable to calculate distance to the provided address');
-    }
-
-    // Distance in meters, convert to kilometers
-    const distanceInKm = element.distance.value / 1000;
+    const distanceInKm = await measureDistanceKm(settings.shopAddressForDistance, customerAddress);
 
     // Calculate fee based on the admin-configured distance tiers, in
     // ascending maxKm order — the first tier the distance fits under wins.

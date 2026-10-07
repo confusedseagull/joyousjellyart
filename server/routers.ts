@@ -70,7 +70,7 @@ export const appRouter = router({
   settings: settingsRouter,
 
   // Delivery fee calculation — rate-limited since every call hits the
-  // (billed) Google Maps Distance Matrix API, not just abuse protection.
+  // OneMap lookup/routing APIs (shared quota), not just abuse protection.
   delivery: router({
     calculateFee: publicProcedure
       .use(rateLimited({ windowMs: 15 * 60_000, max: 20 }))
