@@ -4,6 +4,15 @@ import { useRoute, useLocation } from "wouter";
 import { AdminLayout } from "@/components/AdminLayout";
 import { trpc } from "@/lib/trpc";
 import { Loader2, ArrowLeft, Pencil, Download, Printer } from "lucide-react";
+import {
+  StatusBadge,
+  STATUS_OPTIONS,
+  adminCard,
+  adminInput,
+  adminButton,
+  adminButtonPrimary,
+  LoadingBlock,
+} from "@/components/admin/AdminUI";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { formatPrice, toWhatsAppLink, shortSizeLabel } from "@/lib/utils";
@@ -31,11 +40,10 @@ function OrderPdfActions({ order }: { order: Order }) {
     }
   };
 
-  const buttonClass =
-    "h-[38px] px-4 rounded-full border border-[#e5e5e5] text-sm font-medium hover:border-primary/40 transition-colors flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed";
+  const buttonClass = adminButton;
 
   return (
-    <div className="flex items-center gap-2 mt-3">
+    <>
       <button type="button" onClick={() => run("download")} disabled={busy !== null} className={buttonClass}>
         {busy === "download" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
         Download PDF
@@ -44,7 +52,7 @@ function OrderPdfActions({ order }: { order: Order }) {
         {busy === "print" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Printer className="h-3.5 w-3.5" />}
         Print
       </button>
-    </div>
+    </>
   );
 }
 
@@ -87,30 +95,14 @@ function sizeLabel(shape: string, size: string): string {
 
 function OptionThumb({ src, alt }: { src: string | undefined; alt: string }) {
   if (!src) return null;
-  return <img src={src} alt={alt} className="w-9 h-9 rounded-lg object-cover shrink-0 border border-[#e5e5e5]" />;
+  return <img src={src} alt={alt} className="w-9 h-9 rounded-md object-cover shrink-0 border border-neutral-200" />;
 }
 
-const inputClass = "h-[48px] rounded-2xl border border-[#e5e5e5] px-4 text-sm w-full outline-none focus:border-primary/40 bg-white";
+const inputClass = adminInput;
 // Read-only counterpart to inputClass — same box shape so the layout doesn't
 // jump when toggling edit mode, but a muted fill and no interactivity so
 // it's visually obvious these fields aren't clickable-to-edit right now.
-const displayClass = "h-[48px] rounded-2xl border border-[#e5e5e5] px-4 text-sm w-full flex items-center bg-[#faf7f3] text-foreground overflow-hidden whitespace-nowrap text-ellipsis";
-
-const STATUS_OPTIONS = [
-  { value: "pending_confirmation", label: "Pending Confirmation" },
-  { value: "in_progress", label: "In Progress" },
-  { value: "completed", label: "Completed" },
-  { value: "delivered", label: "Delivered" },
-];
-
-// Matches the status pill colors already used on the Orders list, for visual
-// consistency between the two admin views.
-const STATUS_STYLES: Record<string, string> = {
-  pending_confirmation: "bg-[#fdf3e0] text-[#8a5a13]",
-  in_progress: "bg-[#e3edf7] text-[#2c5a8a]",
-  completed: "bg-[#e6f2ea] text-[#2f6b45]",
-  delivered: "bg-[#efe6f7] text-[#6b3f9e]",
-};
+const displayClass = "text-sm text-neutral-900 break-words min-h-[24px]";
 
 const FORMAT_LABELS: Record<string, string> = {
   cake: "Cake",
@@ -152,7 +144,7 @@ function WhatsAppButton({ phone, label }: { phone: string | null | undefined; la
       href={link}
       target="_blank"
       rel="noreferrer"
-      className="shrink-0 inline-flex items-center gap-1.5 h-[48px] text-xs font-medium text-white bg-[#25D366] px-4 rounded-full hover:opacity-90 transition-opacity"
+      className="shrink-0 inline-flex items-center gap-1.5 h-8 text-xs font-medium text-white bg-[#25D366] px-3 rounded-md hover:opacity-90 transition-opacity"
     >
       <WhatsAppIcon className="h-3.5 w-3.5" />
       {label}
@@ -161,7 +153,7 @@ function WhatsAppButton({ phone, label }: { phone: string | null | undefined; la
 }
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
-  return <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">{children}</p>;
+  return <p className="text-xs font-medium text-neutral-500 mb-1">{children}</p>;
 }
 
 // Central source for the form's reset payload, used both on initial load
@@ -247,9 +239,7 @@ export default function AdminOrderDetail() {
   if (isLoading || !order) {
     return (
       <AdminLayout>
-        <div className="flex items-center justify-center py-24">
-          <Loader2 className="h-6 w-6 animate-spin text-primary" />
-        </div>
+        <LoadingBlock />
       </AdminLayout>
     );
   }
@@ -258,75 +248,69 @@ export default function AdminOrderDetail() {
   const recipientWhatsapp = toWhatsAppLink(order.recipientPhone);
   const showRecipientButton = recipientWhatsapp && order.recipientPhone !== order.customerPhone;
 
-  // Shown both next to "Edit" on desktop and, on mobile, next to the
-  // "Customer Details" heading instead — rendered from one place so the two
-  // spots can't drift out of sync.
+  const paymentLabel =
+    order.paymentStatus === "paid"
+      ? "Paid"
+      : order.paymentStatus === "failed"
+        ? "Payment failed"
+        : order.paymentStatus === "refunded"
+          ? "Refunded"
+          : "Payment pending";
+  const paymentTone =
+    order.paymentStatus === "paid"
+      ? "bg-emerald-50 text-emerald-800 ring-emerald-200"
+      : order.paymentStatus === "pending"
+        ? "bg-neutral-100 text-neutral-700 ring-neutral-200"
+        : "bg-red-50 text-red-800 ring-red-200";
+
   const statusControl = isEditing ? (
-    <select {...register("status")} className="h-[46px] w-[200px] rounded-full border border-[#e5e5e5] px-4 text-sm bg-white outline-none focus:border-primary/40">
+    <select {...register("status")} className={`${adminInput} !w-auto`}>
       {STATUS_OPTIONS.map((s) => (
         <option key={s.value} value={s.value}>{s.label}</option>
       ))}
     </select>
   ) : (
-    <span className={`h-[46px] px-4 inline-flex items-center rounded-full text-sm font-medium ${STATUS_STYLES[order.status] || "bg-muted"}`}>
-      {STATUS_OPTIONS.find((s) => s.value === order.status)?.label || order.status}
-    </span>
+    <StatusBadge status={order.status} />
   );
 
   return (
     <AdminLayout>
-      <form onSubmit={handleSubmit(onSubmit)} className="p-6 md:p-10 max-w-3xl">
+      <form onSubmit={handleSubmit(onSubmit)} className="max-w-3xl">
         <button
           type="button"
           onClick={() => navigate("/admin/orders")}
-          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
+          className="flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-900 mb-4 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to Orders
+          Orders
         </button>
 
-        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-8">
-          <div className="flex items-start justify-between gap-4 md:block">
-            <div>
-              <h1 className="mb-1">{order.orderNumber || `JJA${String(order.id).padStart(4, "0")}`}</h1>
-              <p className="text-muted-foreground text-sm">
-                {order.paymentStatus === "paid" ? "Paid" : order.paymentStatus === "failed" ? "Payment Failed" : order.paymentStatus === "refunded" ? "Refunded" : "Payment Pending"}
-              </p>
+        <div className="mb-5">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <h1>{order.orderNumber || `JJA${String(order.id).padStart(4, "0")}`}</h1>
+            {statusControl}
+            <span className={`inline-flex items-center h-6 px-2 rounded-md text-xs font-medium ring-1 ring-inset ${paymentTone}`}>
+              {paymentLabel}
+            </span>
+          </div>
+          <p className="text-sm text-neutral-500 mt-1.5">
+            Placed {format(new Date(order.createdAt), "d MMM yyyy, h:mm a")}
+          </p>
+          {!isEditing && (
+            <div className="flex flex-wrap items-center gap-2 mt-4">
+              <button type="button" onClick={() => setIsEditing(true)} className={adminButton}>
+                <Pencil className="h-3.5 w-3.5" />
+                Edit
+              </button>
               <OrderPdfActions order={order} />
             </div>
-            {!isEditing && (
-              <button
-                type="button"
-                onClick={() => setIsEditing(true)}
-                className="shrink-0 h-[46px] px-5 rounded-full border border-[#e5e5e5] text-sm font-medium hover:border-primary/40 transition-colors flex items-center gap-2 md:hidden"
-              >
-                <Pencil className="h-3.5 w-3.5" />
-                Edit
-              </button>
-            )}
-          </div>
-          <div className="hidden md:flex items-center gap-3">
-            {statusControl}
-            {!isEditing && (
-              <button
-                type="button"
-                onClick={() => setIsEditing(true)}
-                className="h-[46px] px-5 rounded-full border border-[#e5e5e5] text-sm font-medium hover:border-primary/40 transition-colors flex items-center gap-2"
-              >
-                <Pencil className="h-3.5 w-3.5" />
-                Edit
-              </button>
-            )}
-          </div>
+          )}
         </div>
 
         {/* 1. Customer Details */}
-        <section className="mb-8">
-          <div className="flex items-center justify-between gap-3 mb-4">
-            <h2 className="text-lg">Customer Details</h2>
-            <div className="md:hidden">{statusControl}</div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <section className={`${adminCard} p-4 md:p-5 mb-4`}>
+          <h2 className="mb-4">Customer</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
             <div>
               <SectionLabel>Name</SectionLabel>
               {isEditing ? (
@@ -340,7 +324,7 @@ export default function AdminOrderDetail() {
               {isEditing ? (
                 <input {...register("customerEmail")} type="email" className={inputClass} />
               ) : (
-                <div className={displayClass}>{order.customerEmail || <span className="text-muted-foreground">—</span>}</div>
+                <div className={displayClass}>{order.customerEmail || <span className="text-neutral-400">—</span>}</div>
               )}
             </div>
             <div className="md:col-span-2">
@@ -359,20 +343,18 @@ export default function AdminOrderDetail() {
               {isEditing ? (
                 <input {...register("billingAddress")} className={inputClass} />
               ) : (
-                <div className={displayClass}>{order.billingAddress || <span className="text-muted-foreground">—</span>}</div>
+                <div className={displayClass}>{order.billingAddress || <span className="text-neutral-400">—</span>}</div>
               )}
             </div>
           </div>
         </section>
 
-        <div className="h-px w-full bg-[#e5e5e5] mb-8" />
-
         {/* 2. Order Design Details (read-only) */}
-        <section className="mb-8">
-          <h2 className="text-lg mb-4">Order Design Details</h2>
-          <div className="flex flex-col gap-6">
+        <section className={`${adminCard} p-4 md:p-5 mb-4`}>
+          <h2 className="mb-4">Order details</h2>
+          <div className="flex flex-col gap-4">
             {order.items.map((item: any, idx: number) => (
-              <div key={item.id ?? idx} className="border border-[#e5e5e5] rounded-2xl p-5">
+              <div key={item.id ?? idx} className="rounded-md border border-neutral-200 p-4">
                 {item.collection === "cny" ? (
                   <div className="flex gap-4">
                     {item.image && (
@@ -408,10 +390,10 @@ export default function AdminOrderDetail() {
                           <img
                             src={THEME_IMAGE[item.theme]}
                             alt={THEME_LABEL[item.theme] || item.theme}
-                            className="w-48 max-w-full aspect-square rounded-xl object-cover border border-[#e5e5e5]"
+                            className="w-40 max-w-full aspect-square rounded-md object-cover border border-neutral-200"
                           />
                         )}
-                        <p className="text-xs uppercase tracking-wide text-muted-foreground mt-3">Theme</p>
+                        <p className="text-xs font-medium text-neutral-500 mt-3">Theme</p>
                         <p className="text-sm text-foreground">{THEME_LABEL[item.theme] || item.theme}</p>
                         {item.cartoonCharacter && (
                           <p className="text-sm text-foreground mt-2">Character: <span className="text-muted-foreground">{item.cartoonCharacter}</span></p>
@@ -432,7 +414,7 @@ export default function AdminOrderDetail() {
                       {/* Right column: every other selected option */}
                       <div className="flex flex-col gap-3">
                         <div>
-                          <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Shape</p>
+                          <p className="text-xs font-medium text-neutral-500 mb-1">Shape</p>
                           <div className="flex items-center gap-2 text-sm text-foreground">
                             <OptionThumb src={SHAPE_IMAGE[item.shape]} alt={SHAPE_LABEL[item.shape] || item.shape} />
                             <span>{SHAPE_LABEL[item.shape] || item.shape}</span>
@@ -440,22 +422,22 @@ export default function AdminOrderDetail() {
                         </div>
 
                         <div>
-                          <p className="text-xs uppercase tracking-wide text-muted-foreground">Size</p>
+                          <p className="text-xs font-medium text-neutral-500">Size</p>
                           <p className="text-sm text-foreground">{sizeLabel(item.shape, item.size)}</p>
                         </div>
 
                         {item.numbers && (
                           <div>
-                            <p className="text-xs uppercase tracking-wide text-muted-foreground">Numbers</p>
+                            <p className="text-xs font-medium text-neutral-500">Numbers</p>
                             <p className="text-sm text-foreground">{item.numbers}</p>
                           </div>
                         )}
 
                         {item.backgroundColor && (
                           <div>
-                            <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Background Color</p>
+                            <p className="text-xs font-medium text-neutral-500 mb-1">Background Color</p>
                             <span className="inline-flex items-center gap-1.5 text-sm text-foreground">
-                              <span className="w-4 h-4 rounded-full border border-[#e5e5e5] shrink-0" style={{ backgroundColor: item.backgroundColor }} />
+                              <span className="w-4 h-4 rounded-full border border-neutral-200 shrink-0" style={{ backgroundColor: item.backgroundColor }} />
                               {item.backgroundColor}
                             </span>
                           </div>
@@ -463,11 +445,11 @@ export default function AdminOrderDetail() {
 
                         {item.selectedColors?.length > 0 && (
                           <div>
-                            <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Colors</p>
+                            <p className="text-xs font-medium text-neutral-500 mb-1">Colors</p>
                             <div className="flex flex-wrap gap-2">
                               {item.selectedColors.map((color: string) => (
                                 <span key={color} className="inline-flex items-center gap-1.5 text-sm text-foreground">
-                                  <span className="w-4 h-4 rounded-full border border-[#e5e5e5] shrink-0" style={{ backgroundColor: color }} />
+                                  <span className="w-4 h-4 rounded-full border border-neutral-200 shrink-0" style={{ backgroundColor: color }} />
                                   {color}
                                 </span>
                               ))}
@@ -477,7 +459,7 @@ export default function AdminOrderDetail() {
 
                         {item.flavours?.length > 0 && (
                           <div>
-                            <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Flavour{item.flavours.length > 1 ? "s" : ""}</p>
+                            <p className="text-xs font-medium text-neutral-500 mb-1">Flavour{item.flavours.length > 1 ? "s" : ""}</p>
                             <div className="flex flex-wrap gap-3">
                               {item.flavours.map((flavor: string) => (
                                 <div key={flavor} className="flex items-center gap-2 text-sm text-foreground">
@@ -491,7 +473,7 @@ export default function AdminOrderDetail() {
 
                         {item.platterShapes?.length > 0 && (
                           <div>
-                            <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Platter Shapes</p>
+                            <p className="text-xs font-medium text-neutral-500 mb-1">Platter Shapes</p>
                             <div className="flex flex-wrap gap-3">
                               {item.platterShapes.map((shape: string) => (
                                 <div key={shape} className="flex items-center gap-2 text-sm text-foreground">
@@ -506,7 +488,7 @@ export default function AdminOrderDetail() {
                     </div>
 
                     {(item.cakeText || item.designDetails || item.dietaryRequirements || item.referenceImages?.length || item.specialInstructions) && (
-                      <div className="mt-4 pt-3 border-t border-[#e5e5e5] flex flex-col gap-2 text-sm">
+                      <div className="mt-4 pt-3 border-t border-neutral-200 flex flex-col gap-2 text-sm">
                         {item.cakeText && (
                           <p>
                             Cake Message: <span className="text-muted-foreground">{item.cakeText}</span>
@@ -522,7 +504,7 @@ export default function AdminOrderDetail() {
                             <p className="mb-1">Reference Images</p>
                             <div className="flex flex-wrap gap-2">
                               {item.referenceImages.map((url: string) => (
-                                <a key={url} href={url} target="_blank" rel="noreferrer" className="block size-16 rounded-xl overflow-hidden border border-[#e5e5e5] hover:border-primary/40 transition-colors">
+                                <a key={url} href={url} target="_blank" rel="noreferrer" className="block size-16 rounded-md overflow-hidden border border-neutral-200 hover:border-primary transition-colors">
                                   <img src={url} alt="Reference" className="w-full h-full object-cover" />
                                 </a>
                               ))}
@@ -538,60 +520,63 @@ export default function AdminOrderDetail() {
             ))}
           </div>
 
-          <div className="flex flex-col gap-1 mt-4 text-sm max-w-xs ml-auto">
-            <div className="flex justify-between text-muted-foreground">
+          <div className="flex flex-col gap-1 mt-5 text-sm max-w-xs ml-auto">
+            <div className="flex justify-between text-neutral-500">
               <span>Subtotal</span>
               <span>{formatPrice(order.subtotal)}</span>
             </div>
-            <div className="flex justify-between text-muted-foreground">
+            <div className="flex justify-between text-neutral-500">
               <span>Delivery Fee</span>
               <span>{formatPrice(order.deliveryFee)}</span>
             </div>
-            <div className="flex justify-between font-semibold text-base pt-1 border-t border-[#e5e5e5]">
+            <div className="flex justify-between font-semibold text-base pt-2 mt-1 border-t border-neutral-200">
               <span>Total</span>
               <span>{formatPrice(order.total)}</span>
             </div>
           </div>
 
-          <div className="mt-4">
+          <div className="mt-5 pt-4 border-t border-neutral-200">
             <SectionLabel>Additional Notes</SectionLabel>
             {isEditing ? (
-              <textarea {...register("notes")} rows={2} className="w-full rounded-2xl border border-[#e5e5e5] px-4 py-3 text-sm outline-none focus:border-primary/40 bg-white" />
+              <textarea {...register("notes")} rows={3} className={`${adminInput} h-auto py-2`} />
             ) : (
-              <div className="w-full min-h-[52px] rounded-2xl border border-[#e5e5e5] px-4 py-3 text-sm bg-[#faf7f3] text-foreground whitespace-pre-wrap">
-                {order.notes || <span className="text-muted-foreground">—</span>}
+              <div className="text-sm text-neutral-900 whitespace-pre-wrap">
+                {order.notes || <span className="text-neutral-400">—</span>}
               </div>
             )}
           </div>
         </section>
 
-        <div className="h-px w-full bg-[#e5e5e5] mb-8" />
-
         {/* 3. Delivery / Collection Details */}
-        <section className="mb-10">
-          <h2 className="text-lg mb-4">Delivery Details</h2>
+        <section className={`${adminCard} p-4 md:p-5 mb-4`}>
+          <h2 className="mb-4">Fulfilment</h2>
           <div className="flex flex-col gap-4">
-            <div className="flex gap-4">
-              {isEditing ? (
-                <select {...register("deliveryMethod")} className="h-[48px] w-[200px] rounded-2xl border border-[#e5e5e5] px-4 text-sm bg-white outline-none focus:border-primary/40">
-                  <option value="pickup">Pickup</option>
-                  <option value="delivery">Delivery</option>
-                </select>
-              ) : (
-                <div className={`${displayClass} w-[200px] capitalize`}>{order.deliveryMethod}</div>
-              )}
-              <div className="flex-1">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-4">
+              <div>
+                <SectionLabel>Method</SectionLabel>
+                {isEditing ? (
+                  <select {...register("deliveryMethod")} className={inputClass}>
+                    <option value="pickup">Pickup</option>
+                    <option value="delivery">Delivery</option>
+                  </select>
+                ) : (
+                  <div className={`${displayClass} capitalize`}>{order.deliveryMethod}</div>
+                )}
+              </div>
+              <div>
+                <SectionLabel>Date</SectionLabel>
                 {isEditing ? (
                   <input {...register("fulfillmentDate")} type="date" className={inputClass} />
                 ) : (
                   <div className={displayClass}>{format(new Date(order.fulfillmentDate), "d MMM yyyy")}</div>
                 )}
               </div>
-              <div className="flex-1">
+              <div>
+                <SectionLabel>Time</SectionLabel>
                 {isEditing ? (
                   <input {...register("timeRange")} placeholder="e.g. 11:00 AM - 1:00 PM" className={inputClass} />
                 ) : (
-                  <div className={displayClass}>{order.timeRange || <span className="text-muted-foreground">No time set</span>}</div>
+                  <div className={displayClass}>{order.timeRange || <span className="text-neutral-400">Not set</span>}</div>
                 )}
               </div>
             </div>
@@ -603,7 +588,7 @@ export default function AdminOrderDetail() {
                   {isEditing ? (
                     <input {...register("recipientName")} className={inputClass} />
                   ) : (
-                    <div className={displayClass}>{order.recipientName || <span className="text-muted-foreground">—</span>}</div>
+                    <div className={displayClass}>{order.recipientName || <span className="text-neutral-400">—</span>}</div>
                   )}
                 </div>
                 <div>
@@ -611,7 +596,7 @@ export default function AdminOrderDetail() {
                   {isEditing ? (
                     <input {...register("deliveryAddress")} className={inputClass} />
                   ) : (
-                    <div className={displayClass}>{order.deliveryAddress || <span className="text-muted-foreground">—</span>}</div>
+                    <div className={displayClass}>{order.deliveryAddress || <span className="text-neutral-400">—</span>}</div>
                   )}
                 </div>
                 <div>
@@ -620,7 +605,7 @@ export default function AdminOrderDetail() {
                     {isEditing ? (
                       <input {...register("recipientPhone")} className={inputClass} />
                     ) : (
-                      <div className={displayClass}>{order.recipientPhone || <span className="text-muted-foreground">—</span>}</div>
+                      <div className={displayClass}>{order.recipientPhone || <span className="text-neutral-400">—</span>}</div>
                     )}
                     {showRecipientButton && <WhatsAppButton phone={order.recipientPhone} label="Message Recipient" />}
                   </div>
@@ -641,21 +626,12 @@ export default function AdminOrderDetail() {
         </section>
 
         {isEditing && (
-          <div className="flex items-center gap-3">
-            <button
-              type="submit"
-              disabled={updateOrder.isPending}
-              className="h-[52px] px-8 rounded-full bg-primary text-primary-foreground font-medium hover:opacity-90 transition-opacity disabled:opacity-60"
-            >
-              {updateOrder.isPending ? "Saving..." : "Save Changes"}
-            </button>
-            <button
-              type="button"
-              onClick={handleCancel}
-              disabled={updateOrder.isPending}
-              className="h-[52px] px-8 rounded-full border border-[#e5e5e5] text-sm font-medium hover:border-primary/40 transition-colors disabled:opacity-60"
-            >
+          <div className="sticky bottom-20 md:bottom-4 z-20 flex items-center justify-end gap-2 rounded-lg border border-neutral-200 bg-white/95 p-3 shadow-lg backdrop-blur">
+            <button type="button" onClick={handleCancel} disabled={updateOrder.isPending} className={adminButton}>
               Cancel
+            </button>
+            <button type="submit" disabled={updateOrder.isPending} className={adminButtonPrimary}>
+              {updateOrder.isPending ? "Saving..." : "Save changes"}
             </button>
           </div>
         )}

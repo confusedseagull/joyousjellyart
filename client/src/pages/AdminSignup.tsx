@@ -51,7 +51,7 @@ export default function AdminSignup() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="admin-ui min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -62,10 +62,11 @@ export default function AdminSignup() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-md border-0 shadow-sm">
+    <div className="admin-ui min-h-screen bg-background flex flex-col items-center justify-center gap-6 p-4">
+      <img src="/logo.webp" alt="Joyous JellyArt" className="h-8 w-auto" />
+      <Card className="w-full max-w-sm rounded-lg border border-neutral-200 shadow-none">
         <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold">Add Admin Account</CardTitle>
+          <CardTitle className="text-xl font-semibold">Add Admin Account</CardTitle>
           <CardDescription>Create another admin login for the dashboard</CardDescription>
         </CardHeader>
         <CardContent>

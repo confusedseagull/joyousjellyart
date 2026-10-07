@@ -37,10 +37,11 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-md border-0 shadow-sm">
+    <div className="admin-ui min-h-screen bg-background flex flex-col items-center justify-center gap-6 p-4">
+      <img src="/logo.webp" alt="Joyous JellyArt" className="h-8 w-auto" />
+      <Card className="w-full max-w-sm rounded-lg border border-neutral-200 shadow-none">
         <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold">Admin Login</CardTitle>
+          <CardTitle className="text-xl font-semibold">Admin Login</CardTitle>
           <CardDescription>Sign in to access the admin dashboard</CardDescription>
         </CardHeader>
         <CardContent>

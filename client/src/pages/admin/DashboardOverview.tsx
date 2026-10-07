@@ -1,10 +1,12 @@
 import { useMemo, useState } from "react";
 import { Link } from "wouter";
 import { AdminLayout } from "@/components/AdminLayout";
+import { itemQuickSummary } from "@/lib/adminOrderSummary";
 import { trpc } from "@/lib/trpc";
 import { formatPrice } from "@/lib/utils";
 import { format } from "date-fns";
-import { Loader2, Package, Clock3, Truck, Store } from "lucide-react";
+import { Package, Clock3, Truck, Store, ChevronRight } from "lucide-react";
+import { PageHeader, SectionTitle, Segmented, EmptyState, LoadingBlock, adminCard } from "@/components/admin/AdminUI";
 import {
   ChartContainer,
   ChartTooltip,
@@ -18,23 +20,10 @@ import type { AppRouter } from "../../../../server/routers";
 type DayOrder = inferRouterOutputs<AppRouter>["orders"]["getOrdersForDay"][number];
 type OrderItem = DayOrder["items"][number];
 
-const FORMAT_LABELS: Record<string, string> = {
-  cake: "Cake",
-  jellyPlatter: "Jelly Platter",
-  miniGiftBox: "Mini Gift Box",
-};
-
 const DAYS = [
   { value: "today", label: "Today" },
   { value: "tomorrow", label: "Tomorrow" },
 ] as const;
-
-function itemQuickSummary(item: OrderItem): string {
-  if (item.collection === "custom") {
-    return `${FORMAT_LABELS[item.format] || item.format} · ${item.theme} · ${item.shape}, ${item.size}`;
-  }
-  return `${item.name} · ${item.size}`;
-}
 
 // Sorts time-range strings like "11:00 AM - 1:00 PM" chronologically by
 // extracting the start time, mirroring the parsing already written for
@@ -52,17 +41,13 @@ function scheduleSortKey(range: string): number {
 
 function StatTile({ label, value, icon: Icon, loading, href }: { label: string; value: number | undefined; icon: typeof Package; loading: boolean; href?: string }) {
   const content = (
-    <div className={`border border-[#e5e5e5] bg-[#faf7f3] rounded-2xl p-5 flex items-center gap-4 ${href ? "hover:border-primary/40 transition-colors" : ""}`}>
-      <div className="h-11 w-11 rounded-full bg-white flex items-center justify-center shrink-0">
-        <Icon className="h-5 w-5 text-[#603b17]" />
+    <div className={`${adminCard} p-4 flex items-center gap-3 ${href ? "hover:border-neutral-300 transition-colors" : ""}`}>
+      <div className="h-9 w-9 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+        <Icon className="h-[18px] w-[18px] text-primary" />
       </div>
-      <div>
-        <p className="text-sm text-muted-foreground">{label}</p>
-        {loading ? (
-          <Loader2 className="h-5 w-5 animate-spin text-primary mt-1" />
-        ) : (
-          <p className="font-display text-3xl leading-tight">{value ?? 0}</p>
-        )}
+      <div className="min-w-0">
+        <p className="text-xs text-neutral-500 leading-tight">{label}</p>
+        <p className="text-2xl font-semibold leading-tight tabular-nums">{loading ? "–" : (value ?? 0)}</p>
       </div>
     </div>
   );
@@ -70,7 +55,7 @@ function StatTile({ label, value, icon: Icon, loading, href }: { label: string; 
 }
 
 const chartConfig: ChartConfig = {
-  revenue: { label: "Revenue", color: "#6fa4a6" },
+  revenue: { label: "Revenue", color: "#4b8385" },
 };
 
 export default function DashboardOverview() {
@@ -100,131 +85,107 @@ export default function DashboardOverview() {
 
   return (
     <AdminLayout>
-      <div className="p-6 md:p-10 max-w-6xl">
-        <h1 className="mb-1">Dashboard</h1>
-        <p className="text-muted-foreground mb-8">A quick view of today's orders and business at a glance.</p>
+      <PageHeader title="Dashboard" description="Today's orders and business at a glance." />
 
-        <div className="grid grid-cols-2 gap-4 mb-8">
-          <StatTile label="New Orders Today" value={stats?.newOrdersToday} icon={Package} loading={statsLoading} href="/admin/orders" />
-          <StatTile label={`Upcoming Orders (${day === "today" ? "Today" : "Tomorrow"})`} value={upcomingCount} icon={Clock3} loading={statsLoading} href="/admin/orders" />
-        </div>
+      <div className="grid grid-cols-2 gap-3 md:gap-4 mb-6">
+        <StatTile label="New orders today" value={stats?.newOrdersToday} icon={Package} loading={statsLoading} href="/admin/orders" />
+        <StatTile label={`Upcoming (${day === "today" ? "today" : "tomorrow"})`} value={upcomingCount} icon={Clock3} loading={statsLoading} href="/admin/orders" />
+      </div>
 
-        <div className="bg-[#faf7f3] flex gap-1 h-[46px] items-center p-1 rounded-full w-fit mb-6">
-          {DAYS.map((d) => (
-            <button
-              key={d.value}
-              type="button"
-              onClick={() => setDay(d.value)}
-              className={`px-5 h-full rounded-full text-sm transition-colors ${
-                day === d.value ? "bg-white text-foreground font-semibold shadow-sm" : "text-muted-foreground font-medium"
-              }`}
-            >
-              {d.label}
-            </button>
-          ))}
-        </div>
+      <Segmented options={DAYS} value={day} onChange={setDay} className="w-full sm:w-56 mb-6" />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
-          <section>
-            <h2 className="font-display text-xl mb-4">Upcoming Orders</h2>
-            {dayLoading ? (
-              <div className="flex justify-center py-10">
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              </div>
-            ) : !dayOrders || dayOrders.length === 0 ? (
-              <div className="border border-[#e5e5e5] rounded-2xl py-10 text-center text-muted-foreground text-sm">
-                No orders scheduled for {day}.
-              </div>
-            ) : (
-              <div className="flex flex-col max-h-[420px] overflow-y-auto pr-1">
-                {dayOrders.map((order) => (
-                  <Link
-                    key={order.id}
-                    href={`/admin/orders/${order.id}`}
-                    className="border border-[#e5e5e5] -mt-px first:mt-0 px-4 py-3 block hover:bg-[#faf7f3]/60 transition-colors"
-                  >
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <section>
+          <SectionTitle>Orders</SectionTitle>
+          {dayLoading ? (
+            <LoadingBlock />
+          ) : !dayOrders || dayOrders.length === 0 ? (
+            <EmptyState>No orders scheduled for {day}.</EmptyState>
+          ) : (
+            <div className={`${adminCard} divide-y divide-neutral-200 max-h-[420px] overflow-y-auto`}>
+              {dayOrders.map((order) => (
+                <Link
+                  key={order.id}
+                  href={`/admin/orders/${order.id}`}
+                  className="flex items-start gap-3 px-4 py-3 hover:bg-neutral-50 transition-colors"
+                >
+                  <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-display text-base">{order.orderNumber || `JJA${String(order.id).padStart(4, "0")}`}</span>
-                      <span className="text-xs text-muted-foreground">{order.timeRange || "No time"}</span>
+                      <span className="text-sm font-semibold">{order.orderNumber || `JJA${String(order.id).padStart(4, "0")}`}</span>
+                      <span className="text-xs text-neutral-500">{order.timeRange || "No time"}</span>
                     </div>
-                    <p className="text-sm text-muted-foreground mb-1">{order.customerName}</p>
-                    <ul className="text-sm text-foreground space-y-0.5">
+                    <p className="text-sm text-neutral-600">{order.customerName}</p>
+                    <ul className="mt-1 text-xs text-neutral-500 space-y-0.5">
                       {order.items.map((item) => (
                         <li key={item.id}>{itemQuickSummary(item)}</li>
                       ))}
                     </ul>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </section>
-
-          <section>
-            <h2 className="font-display text-xl mb-4">Day's Schedule</h2>
-            {dayLoading ? (
-              <div className="flex justify-center py-10">
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              </div>
-            ) : scheduleGroups.length === 0 ? (
-              <div className="border border-[#e5e5e5] rounded-2xl py-10 text-center text-muted-foreground text-sm">
-                Nothing scheduled for {day}.
-              </div>
-            ) : (
-              <div className="flex flex-col gap-4">
-                {scheduleGroups.map(([timeRange, groupOrders]) => (
-                  <div key={timeRange} className="border border-[#e5e5e5] rounded-2xl p-4">
-                    <p className="font-display text-base mb-2">{timeRange}</p>
-                    <div className="flex flex-col gap-2">
-                      {groupOrders.map((order) => {
-                        const Icon = order.deliveryMethod === "delivery" ? Truck : Store;
-                        return (
-                          <div key={order.id} className="flex items-start gap-2 text-sm">
-                            <Icon className="h-4 w-4 text-[#603b17] mt-0.5 shrink-0" />
-                            <span>
-                              <span className="capitalize font-medium">{order.deliveryMethod}</span>
-                              {order.deliveryMethod === "delivery" && order.deliveryAddress ? ` at ${order.deliveryAddress}` : ""}
-                              {" — "}
-                              <span className="text-muted-foreground">{order.customerName}</span>
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </section>
-        </div>
+                  <ChevronRight className="h-4 w-4 text-neutral-300 mt-1 shrink-0" />
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
 
         <section>
-          <h2 className="font-display text-xl mb-4">Revenue — Last 30 Days</h2>
-          {revenueLoading ? (
-            <div className="flex justify-center py-10">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            </div>
+          <SectionTitle>Schedule</SectionTitle>
+          {dayLoading ? (
+            <LoadingBlock />
+          ) : scheduleGroups.length === 0 ? (
+            <EmptyState>Nothing scheduled for {day}.</EmptyState>
           ) : (
-            <div className="border border-[#e5e5e5] rounded-2xl p-5">
-              <ChartContainer config={chartConfig} className="h-[280px] w-full">
-                <LineChart data={chartData} margin={{ left: 8, right: 8, top: 8, bottom: 0 }}>
-                  <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                  <XAxis dataKey="label" tickLine={false} axisLine={false} interval={4} fontSize={12} />
-                  <YAxis tickLine={false} axisLine={false} width={56} fontSize={12} tickFormatter={(v) => formatPrice(v)} />
-                  <ChartTooltip
-                    content={
-                      <ChartTooltipContent
-                        formatter={(value) => formatPrice(Number(value))}
-                        labelKey="label"
-                      />
-                    }
-                  />
-                  <Line type="monotone" dataKey="revenue" stroke="var(--color-revenue)" strokeWidth={2} dot={false} />
-                </LineChart>
-              </ChartContainer>
+            <div className="flex flex-col gap-3">
+              {scheduleGroups.map(([timeRange, groupOrders]) => (
+                <div key={timeRange} className={`${adminCard} p-4`}>
+                  <p className="text-sm font-semibold mb-2">{timeRange}</p>
+                  <div className="flex flex-col gap-2">
+                    {groupOrders.map((order) => {
+                      const Icon = order.deliveryMethod === "delivery" ? Truck : Store;
+                      return (
+                        <div key={order.id} className="flex items-start gap-2 text-sm">
+                          <Icon className="h-4 w-4 text-neutral-400 mt-0.5 shrink-0" />
+                          <span className="min-w-0">
+                            <span className="capitalize font-medium">{order.deliveryMethod}</span>
+                            {order.deliveryMethod === "delivery" && order.deliveryAddress ? ` at ${order.deliveryAddress}` : ""}
+                            <span className="text-neutral-500"> · {order.customerName}</span>
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </section>
       </div>
+
+      <section>
+        <SectionTitle>Revenue · last 30 days</SectionTitle>
+        {revenueLoading ? (
+          <LoadingBlock />
+        ) : (
+          <div className={`${adminCard} p-4`}>
+            <ChartContainer config={chartConfig} className="h-[240px] w-full">
+              <LineChart data={chartData} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
+                <CartesianGrid vertical={false} stroke="#eeeeee" />
+                <XAxis dataKey="label" tickLine={false} axisLine={false} interval={4} fontSize={11} />
+                <YAxis tickLine={false} axisLine={false} width={52} fontSize={11} tickFormatter={(v) => `$${v}`} />
+                <ChartTooltip
+                  content={
+                    <ChartTooltipContent
+                      formatter={(value) => formatPrice(Number(value))}
+                      labelKey="label"
+                    />
+                  }
+                />
+                <Line type="monotone" dataKey="revenue" stroke="var(--color-revenue)" strokeWidth={2} dot={false} />
+              </LineChart>
+            </ChartContainer>
+          </div>
+        )}
+      </section>
     </AdminLayout>
   );
 }

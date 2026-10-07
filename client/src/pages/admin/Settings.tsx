@@ -6,11 +6,12 @@ import { trpc } from "@/lib/trpc";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Loader2, Plus, Trash2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
+import { PageHeader, SectionTitle, LoadingBlock, adminCard, adminInput, adminButtonPrimary } from "@/components/admin/AdminUI";
 
-const inputClass = "h-[48px] rounded-2xl border border-[#e5e5e5] px-4 text-sm w-full outline-none focus:border-primary/40 bg-white";
+const inputClass = adminInput;
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
-  return <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">{children}</p>;
+  return <p className="text-xs font-medium text-neutral-500 mb-1.5">{children}</p>;
 }
 
 interface ProfileFormValues {
@@ -39,9 +40,9 @@ function ProfileForm({ admin }: { admin: { name: string | null; email: string } 
   return (
     <form
       onSubmit={handleSubmit((values) => updateProfile.mutate(values))}
-      className="border border-[#e5e5e5] rounded-2xl p-5 flex flex-col gap-4"
+      className={`${adminCard} p-4 md:p-5 flex flex-col gap-4`}
     >
-      <h3 className="font-display text-lg">Profile</h3>
+      <h3>Profile</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <SectionLabel>Name</SectionLabel>
@@ -55,7 +56,7 @@ function ProfileForm({ admin }: { admin: { name: string | null; email: string } 
       <button
         type="submit"
         disabled={updateProfile.isPending}
-        className="h-[44px] px-6 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-60 self-start"
+        className={`${adminButtonPrimary} self-start`}
       >
         {updateProfile.isPending ? "Saving..." : "Save Profile"}
       </button>
@@ -82,9 +83,9 @@ function PasswordForm() {
   return (
     <form
       onSubmit={handleSubmit((values) => changePassword.mutate(values))}
-      className="border border-[#e5e5e5] rounded-2xl p-5 flex flex-col gap-4"
+      className={`${adminCard} p-4 md:p-5 flex flex-col gap-4`}
     >
-      <h3 className="font-display text-lg">Change Password</h3>
+      <h3>Change Password</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <SectionLabel>Current Password</SectionLabel>
@@ -98,7 +99,7 @@ function PasswordForm() {
       <button
         type="submit"
         disabled={changePassword.isPending}
-        className="h-[44px] px-6 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-60 self-start"
+        className={`${adminButtonPrimary} self-start`}
       >
         {changePassword.isPending ? "Saving..." : "Change Password"}
       </button>
@@ -153,15 +154,15 @@ function BusinessSettingsForm() {
 
   if (isLoading || !settings) {
     return (
-      <div className="border border-[#e5e5e5] rounded-2xl p-5 flex justify-center py-10">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      <div className={adminCard}>
+        <LoadingBlock />
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="border border-[#e5e5e5] rounded-2xl p-5 flex flex-col gap-6">
-      <h3 className="font-display text-lg">Business Settings</h3>
+    <form onSubmit={handleSubmit(onSubmit)} className={`${adminCard} p-4 md:p-5 flex flex-col gap-6`}>
+      <h3>Business Settings</h3>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
@@ -183,26 +184,27 @@ function BusinessSettingsForm() {
         <div className="flex flex-col gap-2">
           {fields.map((field, index) => (
             <div key={field.id} className="flex items-center gap-3">
-              <span className="text-sm text-muted-foreground shrink-0 w-16">Up to</span>
+              <span className="text-sm text-neutral-500 shrink-0">Up to</span>
               <input
                 {...register(`deliveryTiers.${index}.maxKm` as const, { valueAsNumber: true })}
                 type="number"
                 step="0.1"
-                className={inputClass}
+                className={`${inputClass} min-w-0`}
                 placeholder="km"
               />
-              <span className="text-sm text-muted-foreground shrink-0">km &rarr; $</span>
+              <span className="text-sm text-neutral-500 shrink-0">km &rarr; $</span>
               <input
                 {...register(`deliveryTiers.${index}.fee` as const, { valueAsNumber: true })}
                 type="number"
                 step="1"
-                className={inputClass}
+                className={`${inputClass} min-w-0`}
                 placeholder="fee"
               />
               <button
                 type="button"
                 onClick={() => remove(index)}
-                className="shrink-0 h-[48px] w-[48px] flex items-center justify-center rounded-2xl border border-[#e5e5e5] text-muted-foreground hover:text-destructive hover:border-destructive/40 transition-colors"
+                aria-label="Remove tier"
+                className="shrink-0 h-10 w-10 flex items-center justify-center rounded-md border border-neutral-300 bg-white text-neutral-500 hover:text-destructive hover:border-destructive/40 transition-colors"
               >
                 <Trash2 className="h-4 w-4" />
               </button>
@@ -212,7 +214,7 @@ function BusinessSettingsForm() {
         <button
           type="button"
           onClick={() => append({ maxKm: 0, fee: 0 })}
-          className="mt-3 flex items-center gap-1.5 text-sm font-medium text-[#603b17] hover:opacity-80 transition-opacity"
+          className="mt-3 flex items-center gap-1.5 text-sm font-medium text-primary hover:opacity-80 transition-opacity"
         >
           <Plus className="h-4 w-4" />
           Add Tier
@@ -227,7 +229,7 @@ function BusinessSettingsForm() {
       <button
         type="submit"
         disabled={updateSettings.isPending}
-        className="h-[44px] px-6 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-60 self-start"
+        className={`${adminButtonPrimary} self-start`}
       >
         {updateSettings.isPending ? "Saving..." : "Save Business Settings"}
       </button>
@@ -240,26 +242,26 @@ export default function Settings() {
 
   return (
     <AdminLayout>
-      <div className="p-6 md:p-10 max-w-3xl">
-        <h1 className="mb-1">Settings</h1>
-        <p className="text-muted-foreground mb-8">Manage your account and business details.</p>
+      <div className="max-w-3xl">
+        <PageHeader title="Settings" description="Manage your account and business details." />
 
-        <section className="mb-10">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg">Account</h2>
-            <Link
-              href="/admin/signup"
-              className="flex items-center gap-1.5 text-sm font-medium text-[#603b17] hover:opacity-80 transition-opacity"
-            >
-              <UserPlus className="h-4 w-4" />
-              Invite Admin
-            </Link>
-          </div>
+        <section className="mb-8">
+          <SectionTitle
+            aside={
+              <Link
+                href="/admin/signup"
+                className="flex items-center gap-1.5 text-sm font-medium text-primary hover:opacity-80 transition-opacity"
+              >
+                <UserPlus className="h-4 w-4" />
+                Invite admin
+              </Link>
+            }
+          >
+            Account
+          </SectionTitle>
           <div className="flex flex-col gap-4">
             {loading || !admin ? (
-              <div className="flex justify-center py-10">
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              </div>
+              <LoadingBlock />
             ) : (
               <>
                 <ProfileForm admin={admin} />
@@ -270,7 +272,7 @@ export default function Settings() {
         </section>
 
         <section>
-          <h2 className="text-lg mb-4">Business</h2>
+          <SectionTitle>Business</SectionTitle>
           <BusinessSettingsForm />
         </section>
       </div>

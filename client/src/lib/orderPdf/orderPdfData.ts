@@ -6,7 +6,7 @@ import {
   SHAPE_SIZES,
   DIETARY_OPTIONS,
 } from "@/lib/customizeOptions";
-import { shortSizeLabel } from "@/lib/utils";
+import { shortSizeLabel, formatTimeRange } from "@/lib/utils";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "../../../../server/routers";
 
@@ -83,18 +83,6 @@ function formatMoney(amount: number): string {
 
 function formatDate(value: Date | string): string {
   return format(new Date(value), "dd MMMM yyyy");
-}
-
-// "12:00 PM - 12:30 PM" -> "12pm to 12:30pm", matching the design's "3pm to 5pm".
-export function formatTimeRange(range: string | null | undefined): string {
-  if (!range) return "";
-  const parts = range.split(/\s*[-–]\s*/);
-  const compact = (part: string) => {
-    const m = part.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
-    if (!m) return part;
-    return `${parseInt(m[1], 10)}${m[2] === "00" ? "" : `:${m[2]}`}${m[3].toLowerCase()}`;
-  };
-  return parts.map(compact).join(" to ");
 }
 
 // Checkout composes addresses as "line, Unit X, Singapore 123456". Split off

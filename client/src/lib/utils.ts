@@ -34,3 +34,15 @@ export function toWhatsAppLink(phone: string | null | undefined): string | null 
   if (digits.length < 8) return null;
   return `https://wa.me/${digits}`;
 }
+
+// "12:00 PM - 12:30 PM" -> "12pm to 12:30pm", matching the design's "3pm to 5pm".
+export function formatTimeRange(range: string | null | undefined): string {
+  if (!range) return "";
+  const parts = range.split(/\s*[-–]\s*/);
+  const compact = (part: string) => {
+    const m = part.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+    if (!m) return part;
+    return `${parseInt(m[1], 10)}${m[2] === "00" ? "" : `:${m[2]}`}${m[3].toLowerCase()}`;
+  };
+  return parts.map(compact).join(" to ");
+}
