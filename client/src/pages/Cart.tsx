@@ -269,7 +269,7 @@ export default function Cart() {
 
   const getMinDate = () => {
     const minDate = new Date();
-    minDate.setDate(minDate.getDate() + (hasNameAndInitialItem ? 14 : 3));
+    minDate.setDate(minDate.getDate() + (hasNameAndInitialItem ? 14 : 2));
     minDate.setHours(0, 0, 0, 0);
     return minDate;
   };
@@ -490,7 +490,7 @@ export default function Cart() {
       toast.error(
         hasNameAndInitialItem
           ? "Minimum 2 weeks advance notice required for Name and Initial designs"
-          : "Minimum 3 days advance notice required"
+          : "Minimum 2 days advance notice required"
       );
       return false;
     }
@@ -904,7 +904,7 @@ export default function Cart() {
                 <p className="text-muted-foreground text-sm">
                   {hasNameAndInitialItem
                     ? "Minimum 2 weeks advance notice required for Name and Initial designs. For example, if you place an order today, the earliest fulfillment date you can select will be 2 weeks from today."
-                    : "Minimum 3 days advance notice required. For example, if you place an order today, the earliest fulfillment date you can select will be 3 days from today."}
+                    : "Minimum 2 days advance notice required. For example, if you place an order today, the earliest fulfillment date you can select will be 2 days from today."}
                 </p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
