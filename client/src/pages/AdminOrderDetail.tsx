@@ -185,7 +185,8 @@ export default function AdminOrderDetail() {
 
   const { data: order, isLoading } = trpc.orders.getById.useQuery(
     { id: orderId! },
-    { enabled: !!orderId, refetchOnWindowFocus: false }
+    // Live updates pause while editing so a refresh can't disturb what's being typed.
+    { enabled: !!orderId, refetchOnWindowFocus: false, refetchInterval: isEditing ? false : 20_000, refetchIntervalInBackground: false }
   );
   const { data: settings } = trpc.settings.get.useQuery();
 

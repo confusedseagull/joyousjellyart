@@ -18,6 +18,7 @@ import {
 import { format } from "date-fns";
 import { formatPrice, formatTimeRange, formatOrderCount } from "@/lib/utils";
 import { toast } from "sonner";
+import { ADMIN_LIVE } from "@/lib/adminLive";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "../../../../server/routers";
 
@@ -139,14 +140,25 @@ export default function OrdersList() {
 
   const utils = trpc.useUtils();
 
-  const { data: counts } = trpc.orders.getBucketCounts.useQuery({
-    search: search || undefined,
-    collection,
-  });
+  // Wait for a pause in typing before querying, so a search doesn't fire a
+  // request (plus the counts) on every keystroke.
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(timer);
+  }, [search]);
 
-  const { data, isLoading } = trpc.orders.listByBucket.useQuery({
-    bucket, search: search || undefined, collection, sortBy, sortDir, offset,
-  });
+  const { data: counts } = trpc.orders.getBucketCounts.useQuery(
+    { search: debouncedSearch || undefined, collection },
+    ADMIN_LIVE
+  );
+
+  // Once "Load more" has appended extra pages, refetching would re-append the
+  // same page, so live updates only run while showing the first page.
+  const { data, isLoading } = trpc.orders.listByBucket.useQuery(
+    { bucket, search: debouncedSearch || undefined, collection, sortBy, sortDir, offset },
+    { ...ADMIN_LIVE, refetchInterval: offset === 0 ? ADMIN_LIVE.refetchInterval : false }
+  );
 
   useEffect(() => {
     if (!data) return;

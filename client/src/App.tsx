@@ -1,6 +1,7 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
+import { lazy, Suspense } from "react";
 import { Route, Switch, useLocation } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
@@ -9,18 +10,21 @@ import Discover from "./pages/Discover";
 import About from "./pages/About";
 import Customize from "./pages/Customize";
 import OrderConfirmation from "./pages/OrderConfirmation";
-import AdminLogin from "./pages/AdminLogin";
-import AdminSignup from "./pages/AdminSignup";
-import AdminOrderDetail from "./pages/AdminOrderDetail";
-import AdminDashboardOverview from "./pages/admin/DashboardOverview";
-import AdminOrdersList from "./pages/admin/OrdersList";
-import AdminCalendar from "./pages/admin/Calendar";
-import AdminSettings from "./pages/admin/Settings";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import CNY2026 from "./pages/CNY2026";
 import Cart from "./pages/Cart";
 import { useAdminPwaMeta } from "./hooks/useAdminPwaMeta";
+
+// Admin screens (and heavy deps like the revenue chart) load on demand, so
+// the storefront never downloads them and the admin's first load is lighter.
+const AdminLogin = lazy(() => import("./pages/AdminLogin"));
+const AdminSignup = lazy(() => import("./pages/AdminSignup"));
+const AdminOrderDetail = lazy(() => import("./pages/AdminOrderDetail"));
+const AdminDashboardOverview = lazy(() => import("./pages/admin/DashboardOverview"));
+const AdminOrdersList = lazy(() => import("./pages/admin/OrdersList"));
+const AdminCalendar = lazy(() => import("./pages/admin/Calendar"));
+const AdminSettings = lazy(() => import("./pages/admin/Settings"));
 
 function AdminPwaMeta() {
   const [location] = useLocation();
@@ -46,6 +50,7 @@ function Router() {
     <>
       <AdminPwaMeta />
       <HeaderWrapper />
+      <Suspense fallback={<div className="min-h-screen bg-background" />}>
       <Switch>
         <Route path={"/"} component={Home} />
         <Route path="/discover" component={Discover} />
@@ -66,6 +71,7 @@ function Router() {
         {/* Final fallback route */}
         <Route component={NotFound} />
       </Switch>
+      </Suspense>
       <FooterWrapper />
     </>
   );

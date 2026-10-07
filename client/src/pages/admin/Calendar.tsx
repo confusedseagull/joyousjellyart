@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "wouter";
 import { AdminLayout } from "@/components/AdminLayout";
 import { itemQuickSummary } from "@/lib/adminOrderSummary";
+import { ADMIN_LIVE } from "@/lib/adminLive";
 import { trpc } from "@/lib/trpc";
 import {
   format,
@@ -61,10 +62,13 @@ export default function AdminCalendar() {
   const rangeEnd = view === "month" ? endOfWeek(endOfMonth(anchorDate)) : endOfWeek(anchorDate);
   const days = useMemo(() => eachDayOfInterval({ start: rangeStart, end: rangeEnd }), [rangeStart, rangeEnd]);
 
-  const { data: counts, isLoading: countsLoading } = trpc.orders.getOrderCountsForRange.useQuery({
-    start: format(rangeStart, "yyyy-MM-dd"),
-    end: format(rangeEnd, "yyyy-MM-dd"),
-  });
+  const { data: counts, isLoading: countsLoading } = trpc.orders.getOrderCountsForRange.useQuery(
+    {
+      start: format(rangeStart, "yyyy-MM-dd"),
+      end: format(rangeEnd, "yyyy-MM-dd"),
+    },
+    ADMIN_LIVE
+  );
   const countByDate = useMemo(() => {
     const map = new Map<string, number>();
     (counts || []).forEach((c) => map.set(c.date, c.count));
@@ -74,7 +78,7 @@ export default function AdminCalendar() {
   const selectedDateStr = selectedDate ? format(selectedDate, "yyyy-MM-dd") : undefined;
   const { data: dayOrders, isLoading: dayLoading } = trpc.orders.getOrdersByDate.useQuery(
     { date: selectedDateStr! },
-    { enabled: !!selectedDateStr }
+    { enabled: !!selectedDateStr, ...ADMIN_LIVE }
   );
 
   function goPrev() {

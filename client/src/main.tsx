@@ -18,7 +18,12 @@ if (typeof window !== "undefined" && "scrollRestoration" in window.history) {
   window.history.scrollRestoration = "manual";
 }
 
-const queryClient = new QueryClient();
+// A short staleTime lets screens revisited within a few seconds render from
+// cache instantly instead of flashing a spinner; admin screens that must stay
+// current also poll (see lib/adminLive.ts).
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { staleTime: 10_000 } },
+});
 
 const redirectToLoginIfUnauthorized = (error: unknown) => {
   if (!(error instanceof TRPCClientError)) return;

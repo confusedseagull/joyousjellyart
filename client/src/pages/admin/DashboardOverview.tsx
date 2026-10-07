@@ -1,19 +1,13 @@
-import { useMemo, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import { Link } from "wouter";
 import { AdminLayout } from "@/components/AdminLayout";
 import { itemQuickSummary } from "@/lib/adminOrderSummary";
+import { ADMIN_LIVE, ADMIN_LIVE_SLOW } from "@/lib/adminLive";
 import { trpc } from "@/lib/trpc";
 import { formatPrice, formatOrderCount } from "@/lib/utils";
 import { format } from "date-fns";
 import { Package, Truck, Store, ChevronRight } from "lucide-react";
 import { PageHeader, SectionTitle, Segmented, EmptyState, LoadingBlock, adminCard } from "@/components/admin/AdminUI";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
-} from "@/components/ui/chart";
-import { Line, LineChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "../../../../server/routers";
 
@@ -54,16 +48,14 @@ function StatTile({ label, value, icon: Icon, loading, href }: { label: string; 
   return href ? <Link href={href}>{content}</Link> : content;
 }
 
-const chartConfig: ChartConfig = {
-  revenue: { label: "Revenue", color: "#4b8385" },
-};
+const RevenueChart = lazy(() => import("./RevenueChart"));
 
 export default function DashboardOverview() {
   const [day, setDay] = useState<"today" | "tomorrow">("today");
 
-  const { data: stats, isLoading: statsLoading } = trpc.orders.getDashboardStats.useQuery();
-  const { data: dayOrders, isLoading: dayLoading } = trpc.orders.getOrdersForDay.useQuery({ day });
-  const { data: revenueTrend, isLoading: revenueLoading } = trpc.orders.getRevenueTrend.useQuery({ days: 30 });
+  const { data: stats, isLoading: statsLoading } = trpc.orders.getDashboardStats.useQuery(undefined, ADMIN_LIVE);
+  const { data: dayOrders, isLoading: dayLoading } = trpc.orders.getOrdersForDay.useQuery({ day }, ADMIN_LIVE);
+  const { data: revenueTrend, isLoading: revenueLoading } = trpc.orders.getRevenueTrend.useQuery({ days: 30 }, ADMIN_LIVE_SLOW);
 
   const dayOptions = DAYS.map((d) => ({
     ...d,
@@ -169,22 +161,9 @@ export default function DashboardOverview() {
           <LoadingBlock />
         ) : (
           <div className={`${adminCard} p-4`}>
-            <ChartContainer config={chartConfig} className="h-[240px] w-full">
-              <LineChart data={chartData} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
-                <CartesianGrid vertical={false} stroke="#eeeeee" />
-                <XAxis dataKey="label" tickLine={false} axisLine={false} interval={4} fontSize={11} />
-                <YAxis tickLine={false} axisLine={false} width={52} fontSize={11} tickFormatter={(v) => `$${v}`} />
-                <ChartTooltip
-                  content={
-                    <ChartTooltipContent
-                      formatter={(value) => formatPrice(Number(value))}
-                      labelKey="label"
-                    />
-                  }
-                />
-                <Line type="monotone" dataKey="revenue" stroke="var(--color-revenue)" strokeWidth={2} dot={false} />
-              </LineChart>
-            </ChartContainer>
+            <Suspense fallback={<div className="h-[240px]" />}>
+              <RevenueChart data={chartData} />
+            </Suspense>
           </div>
         )}
       </section>
