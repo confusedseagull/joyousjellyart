@@ -112,16 +112,28 @@
     --primary: #4b8385;
     --primary-foreground: #ffffff;
     --ring: #4b8385;
-    --background: #fafafa;
-    --border: #e5e5e5;
-    color: #171717;
+    --background: #f5f4ee;
+    --border: #e8e5da;
+    color: #1f1e1c;
+    /* Warm, paper-like greys in place of Tailwind's cool neutrals, so every
+       neutral-* class inside the admin picks up the warmer tone. */
+    --color-neutral-50: #faf9f5;
+    --color-neutral-100: #f0eee6;
+    --color-neutral-200: #e8e5da;
+    --color-neutral-300: #d6d2c4;
+    --color-neutral-400: #a9a597;
+    --color-neutral-500: #6f6c63;
+    --color-neutral-600: #5a5750;
+    --color-neutral-700: #45433d;
+    --color-neutral-800: #2e2d29;
+    --color-neutral-900: #1f1e1c;
   }
   .admin-ui h1, .admin-ui h2, .admin-ui h3, .admin-ui h4 {
     font-family: inherit;
     font-weight: 600;
     letter-spacing: -0.011em;
     line-height: 1.3;
-    color: #171717;
+    color: #1f1e1c;
   }
   .admin-ui h1 { font-size: 1.375rem; }
   .admin-ui h2 { font-size: 0.9375rem; }
