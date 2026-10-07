@@ -139,6 +139,11 @@ export default function OrdersList() {
 
   const utils = trpc.useUtils();
 
+  const { data: totals } = trpc.orders.getBucketTotals.useQuery({
+    search: search || undefined,
+    collection,
+  });
+
   const { data, isLoading } = trpc.orders.listByBucket.useQuery({
     bucket, search: search || undefined, collection, sortBy, sortDir, offset,
   });
@@ -169,7 +174,12 @@ export default function OrdersList() {
     <AdminLayout>
       <PageHeader title="Orders" description="Browse, search, and update every order." />
 
-      <Segmented options={BUCKETS} value={bucket} onChange={(v) => resetAndSet(setBucket, v)} className="w-full sm:w-72 mb-4" />
+      <Segmented
+        options={BUCKETS.map((b) => ({ ...b, hint: totals ? formatPrice(totals[b.value]) : undefined }))}
+        value={bucket}
+        onChange={(v) => resetAndSet(setBucket, v)}
+        className="w-full sm:w-96 mb-4"
+      />
 
       {/* Search / sort */}
       <div className="flex flex-col sm:flex-row gap-2 mb-4">

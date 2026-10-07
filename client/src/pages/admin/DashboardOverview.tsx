@@ -5,7 +5,7 @@ import { itemQuickSummary } from "@/lib/adminOrderSummary";
 import { trpc } from "@/lib/trpc";
 import { formatPrice } from "@/lib/utils";
 import { format } from "date-fns";
-import { Package, Clock3, Truck, Store, ChevronRight } from "lucide-react";
+import { Package, Truck, Store, ChevronRight } from "lucide-react";
 import { PageHeader, SectionTitle, Segmented, EmptyState, LoadingBlock, adminCard } from "@/components/admin/AdminUI";
 import {
   ChartContainer,
@@ -65,7 +65,10 @@ export default function DashboardOverview() {
   const { data: dayOrders, isLoading: dayLoading } = trpc.orders.getOrdersForDay.useQuery({ day });
   const { data: revenueTrend, isLoading: revenueLoading } = trpc.orders.getRevenueTrend.useQuery({ days: 30 });
 
-  const upcomingCount = day === "today" ? stats?.upcomingToday : stats?.upcomingTomorrow;
+  const dayOptions = DAYS.map((d) => ({
+    ...d,
+    hint: stats ? formatPrice(d.value === "today" ? stats.totalToday : stats.totalTomorrow) : undefined,
+  }));
 
   const scheduleGroups = useMemo(() => {
     if (!dayOrders) return [];
@@ -87,12 +90,11 @@ export default function DashboardOverview() {
     <AdminLayout>
       <PageHeader title="Dashboard" description="Today's orders and business at a glance." />
 
-      <div className="grid grid-cols-2 gap-3 md:gap-4 mb-6">
-        <StatTile label="New orders today" value={stats?.newOrdersToday} icon={Package} loading={statsLoading} href="/admin/orders" />
-        <StatTile label={`Upcoming (${day === "today" ? "today" : "tomorrow"})`} value={upcomingCount} icon={Clock3} loading={statsLoading} href="/admin/orders" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 mb-6">
+        <StatTile label="New Orders Received Today" value={stats?.newOrdersToday} icon={Package} loading={statsLoading} href="/admin/orders" />
       </div>
 
-      <Segmented options={DAYS} value={day} onChange={setDay} className="w-full sm:w-56 mb-6" />
+      <Segmented options={dayOptions} value={day} onChange={setDay} className="w-full sm:w-72 mb-6" />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <section>

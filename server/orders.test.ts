@@ -492,6 +492,42 @@ describe("orders.getDashboardStats", () => {
 
     expect(after.newOrdersToday).toBe(before.newOrdersToday + 1);
     expect(after.upcomingToday).toBe(before.upcomingToday + 1);
+    expect(after.totalToday).toBe(before.totalToday + 118);
+  });
+});
+
+describe("orders.getBucketTotals", () => {
+  it("requires admin authentication", async () => {
+    const caller = appRouter.createCaller(createPublicContext());
+
+    await expect(caller.orders.getBucketTotals({})).rejects.toThrow("Please login");
+  });
+
+  it("sums order totals per tab and honours the search filter", async () => {
+    const publicCaller = appRouter.createCaller(createPublicContext());
+    const adminCaller = appRouter.createCaller(createAdminContext());
+
+    const uniqueName = `Totals ${Date.now()}`;
+    const before = await adminCaller.orders.getBucketTotals({});
+    const beforeFiltered = await adminCaller.orders.getBucketTotals({ search: uniqueName });
+    expect(beforeFiltered).toEqual({ upcoming: 0, today: 0, past: 0 });
+
+    const inTenDays = new Date();
+    inTenDays.setDate(inTenDays.getDate() + 10);
+    inTenDays.setHours(12, 0, 0, 0);
+    await publicCaller.orders.create({
+      customerName: uniqueName, customerEmail: "totals@example.com", customerPhone: "+65 1000 0099",
+      deliveryMethod: "pickup", fulfillmentDate: inTenDays,
+      items: [makeItem({ id: "totals-item" })], subtotal: 118, deliveryFee: 0, total: 118,
+    });
+
+    const after = await adminCaller.orders.getBucketTotals({});
+    const afterFiltered = await adminCaller.orders.getBucketTotals({ search: uniqueName });
+
+    expect(after.upcoming).toBe(before.upcoming + 118);
+    expect(after.today).toBe(before.today);
+    expect(after.past).toBe(before.past);
+    expect(afterFiltered).toEqual({ upcoming: 118, today: 0, past: 0 });
   });
 });
 

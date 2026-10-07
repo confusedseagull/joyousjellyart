@@ -81,11 +81,12 @@ export function Segmented<T extends string>({
   onChange,
   className = "",
 }: {
-  options: readonly { value: T; label: string }[];
+  options: readonly { value: T; label: string; hint?: string }[];
   value: T;
   onChange: (value: T) => void;
   className?: string;
 }) {
+  const hasHints = options.some((o) => o.hint);
   return (
     <div className={`inline-flex rounded-lg bg-neutral-200/60 p-0.5 ${className}`} role="tablist">
       {options.map((o) => (
@@ -95,11 +96,16 @@ export function Segmented<T extends string>({
           role="tab"
           aria-selected={value === o.value}
           onClick={() => onChange(o.value)}
-          className={`h-8 min-w-0 flex-1 px-4 rounded-md text-sm transition-colors ${
-            value === o.value ? "bg-white text-neutral-900 font-medium shadow-sm" : "text-neutral-500 hover:text-neutral-800"
-          }`}
+          className={`min-w-0 flex-1 px-3 sm:px-4 rounded-md text-sm transition-colors flex flex-col items-center justify-center ${
+            hasHints ? "h-12" : "h-8"
+          } ${value === o.value ? "bg-white text-neutral-900 font-medium shadow-sm" : "text-neutral-500 hover:text-neutral-800"}`}
         >
-          {o.label}
+          <span className="leading-tight">{o.label}</span>
+          {o.hint && (
+            <span className={`text-[11px] leading-tight tabular-nums font-normal ${value === o.value ? "text-neutral-500" : "text-neutral-400"}`}>
+              {o.hint}
+            </span>
+          )}
         </button>
       ))}
     </div>
