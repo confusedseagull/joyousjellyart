@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { useRoute, useLocation } from "wouter";
 import { AdminLayout } from "@/components/AdminLayout";
 import { trpc } from "@/lib/trpc";
-import { Loader2, ArrowLeft, Pencil } from "lucide-react";
+import { Loader2, ArrowLeft, Pencil, Download, Printer } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { formatPrice, toWhatsAppLink, shortSizeLabel } from "@/lib/utils";
@@ -12,6 +12,41 @@ import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "../../../server/routers";
 
 type Order = inferRouterOutputs<AppRouter>["orders"]["getById"];
+
+// The PDF generator (and the large PDF library behind it) is loaded only when
+// one of these buttons is actually used.
+function OrderPdfActions({ order }: { order: Order }) {
+  const [busy, setBusy] = useState<"download" | "print" | null>(null);
+
+  const run = async (kind: "download" | "print") => {
+    setBusy(kind);
+    try {
+      const { downloadOrderPdf, printOrderPdf } = await import("@/lib/orderPdf");
+      await (kind === "download" ? downloadOrderPdf(order) : printOrderPdf(order));
+    } catch (error) {
+      console.error("Order PDF failed", error);
+      toast.error("Couldn't generate the PDF. Please try again.");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const buttonClass =
+    "h-[38px] px-4 rounded-full border border-[#e5e5e5] text-sm font-medium hover:border-primary/40 transition-colors flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed";
+
+  return (
+    <div className="flex items-center gap-2 mt-3">
+      <button type="button" onClick={() => run("download")} disabled={busy !== null} className={buttonClass}>
+        {busy === "download" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+        Download PDF
+      </button>
+      <button type="button" onClick={() => run("print")} disabled={busy !== null} className={buttonClass}>
+        {busy === "print" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Printer className="h-3.5 w-3.5" />}
+        Print
+      </button>
+    </div>
+  );
+}
 
 // Value -> reference photo, for showing a thumbnail next to each selected
 // option instead of just its raw value. Falls back to no image (not every
@@ -257,6 +292,7 @@ export default function AdminOrderDetail() {
               <p className="text-muted-foreground text-sm">
                 {order.paymentStatus === "paid" ? "Paid" : order.paymentStatus === "failed" ? "Payment Failed" : order.paymentStatus === "refunded" ? "Refunded" : "Payment Pending"}
               </p>
+              <OrderPdfActions order={order} />
             </div>
             {!isEditing && (
               <button
