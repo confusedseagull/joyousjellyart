@@ -46,3 +46,7 @@ export function formatTimeRange(range: string | null | undefined): string {
   };
   return parts.map(compact).join(" to ");
 }
+
+export function formatOrderCount(count: number): string {
+  return `${count} order${count === 1 ? "" : "s"}`;
+}

@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import { AdminLayout } from "@/components/AdminLayout";
 import { itemQuickSummary } from "@/lib/adminOrderSummary";
 import { trpc } from "@/lib/trpc";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, formatOrderCount } from "@/lib/utils";
 import { format } from "date-fns";
 import { Package, Truck, Store, ChevronRight } from "lucide-react";
 import { PageHeader, SectionTitle, Segmented, EmptyState, LoadingBlock, adminCard } from "@/components/admin/AdminUI";
@@ -67,7 +67,7 @@ export default function DashboardOverview() {
 
   const dayOptions = DAYS.map((d) => ({
     ...d,
-    hint: stats ? formatPrice(d.value === "today" ? stats.totalToday : stats.totalTomorrow) : undefined,
+    hint: stats ? formatOrderCount(d.value === "today" ? stats.upcomingToday : stats.upcomingTomorrow) : undefined,
   }));
 
   const scheduleGroups = useMemo(() => {

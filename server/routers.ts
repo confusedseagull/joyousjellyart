@@ -6,7 +6,7 @@ import {
   getOrderById,
   updateOrder,
   listOrdersByBucket,
-  getBucketTotals,
+  getBucketCounts,
   getDashboardStats,
   getOrdersForDay,
   getRevenueTrend,
@@ -213,13 +213,13 @@ export const appRouter = router({
         return await listOrdersByBucket(input);
       }),
 
-    getBucketTotals: adminProcedure
+    getBucketCounts: adminProcedure
       .input(z.object({
         search: z.string().optional(),
         collection: z.enum(["all", "cny", "custom"]).optional(),
       }))
       .query(async ({ input }) => {
-        return await getBucketTotals(input);
+        return await getBucketCounts(input);
       }),
 
     getById: adminProcedure

@@ -106,29 +106,29 @@ function bucketAndFilterConditions(options: BucketFilter & { bucket: ListOrdersB
   return conditions;
 }
 
-export interface BucketTotals {
+export interface BucketCounts {
   upcoming: number;
   today: number;
   past: number;
 }
 
-// Sum of order totals in each Orders-page tab, honouring the same search and
-// collection filters as the list so a tab's total always matches its rows.
-export async function getBucketTotals(filter: BucketFilter): Promise<BucketTotals> {
+// Number of orders in each Orders-page tab, honouring the same search and
+// collection filters as the list so a tab's count always matches its rows.
+export async function getBucketCounts(filter: BucketFilter): Promise<BucketCounts> {
   const db = await getDb();
   if (!db) {
     throw new Error("Database not available");
   }
 
-  const sumFor = async (bucket: ListOrdersByBucketOptions["bucket"]) => {
+  const countFor = async (bucket: ListOrdersByBucketOptions["bucket"]) => {
     const [row] = await db
-      .select({ total: sql<number>`COALESCE(SUM(${orders.total}), 0)` })
+      .select({ count: sql<number>`count(*)` })
       .from(orders)
       .where(and(...bucketAndFilterConditions({ ...filter, bucket })));
-    return Number(row.total);
+    return Number(row.count);
   };
 
-  const [upcoming, today, past] = await Promise.all([sumFor("upcoming"), sumFor("today"), sumFor("past")]);
+  const [upcoming, today, past] = await Promise.all([countFor("upcoming"), countFor("today"), countFor("past")]);
   return { upcoming, today, past };
 }
 
@@ -165,9 +165,6 @@ export interface DashboardStats {
   newOrdersToday: number;
   upcomingToday: number;
   upcomingTomorrow: number;
-  // Sum of order totals fulfilling on each day, for the Today/Tomorrow tabs.
-  totalToday: number;
-  totalTomorrow: number;
 }
 
 export async function getDashboardStats(): Promise<DashboardStats> {
@@ -178,16 +175,12 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 
   // See listOrdersByBucket for why these boundaries are computed in SQL
   // (CURDATE()) rather than passed in as JS Date objects.
-  const [[newOrdersToday], [upcomingToday], [upcomingTomorrow], [totalToday], [totalTomorrow]] = await Promise.all([
+  const [[newOrdersToday], [upcomingToday], [upcomingTomorrow]] = await Promise.all([
     db.select({ count: sql<number>`count(*)` }).from(orders)
       .where(sql`${orders.createdAt} >= CURDATE() AND ${orders.createdAt} < DATE_ADD(CURDATE(), INTERVAL 1 DAY)`),
     db.select({ count: sql<number>`count(*)` }).from(orders)
       .where(sql`${orders.fulfillmentDate} >= CURDATE() AND ${orders.fulfillmentDate} < DATE_ADD(CURDATE(), INTERVAL 1 DAY)`),
     db.select({ count: sql<number>`count(*)` }).from(orders)
-      .where(sql`${orders.fulfillmentDate} >= DATE_ADD(CURDATE(), INTERVAL 1 DAY) AND ${orders.fulfillmentDate} < DATE_ADD(CURDATE(), INTERVAL 2 DAY)`),
-    db.select({ total: sql<number>`COALESCE(SUM(${orders.total}), 0)` }).from(orders)
-      .where(sql`${orders.fulfillmentDate} >= CURDATE() AND ${orders.fulfillmentDate} < DATE_ADD(CURDATE(), INTERVAL 1 DAY)`),
-    db.select({ total: sql<number>`COALESCE(SUM(${orders.total}), 0)` }).from(orders)
       .where(sql`${orders.fulfillmentDate} >= DATE_ADD(CURDATE(), INTERVAL 1 DAY) AND ${orders.fulfillmentDate} < DATE_ADD(CURDATE(), INTERVAL 2 DAY)`),
   ]);
 
@@ -195,8 +188,6 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     newOrdersToday: Number(newOrdersToday.count),
     upcomingToday: Number(upcomingToday.count),
     upcomingTomorrow: Number(upcomingTomorrow.count),
-    totalToday: Number(totalToday.total),
-    totalTomorrow: Number(totalTomorrow.total),
   };
 }
 

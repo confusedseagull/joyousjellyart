@@ -16,7 +16,7 @@ import {
   normalizeStatus,
 } from "@/components/admin/AdminUI";
 import { format } from "date-fns";
-import { formatPrice, formatTimeRange } from "@/lib/utils";
+import { formatPrice, formatTimeRange, formatOrderCount } from "@/lib/utils";
 import { toast } from "sonner";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "../../../../server/routers";
@@ -139,7 +139,7 @@ export default function OrdersList() {
 
   const utils = trpc.useUtils();
 
-  const { data: totals } = trpc.orders.getBucketTotals.useQuery({
+  const { data: counts } = trpc.orders.getBucketCounts.useQuery({
     search: search || undefined,
     collection,
   });
@@ -175,7 +175,7 @@ export default function OrdersList() {
       <PageHeader title="Orders" description="Browse, search, and update every order." />
 
       <Segmented
-        options={BUCKETS.map((b) => ({ ...b, hint: totals ? formatPrice(totals[b.value]) : undefined }))}
+        options={BUCKETS.map((b) => ({ ...b, hint: counts ? formatOrderCount(counts[b.value]) : undefined }))}
         value={bucket}
         onChange={(v) => resetAndSet(setBucket, v)}
         className="w-full sm:w-96 mb-4"
