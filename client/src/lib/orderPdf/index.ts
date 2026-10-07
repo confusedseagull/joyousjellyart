@@ -1,5 +1,5 @@
 import { buildOrderPdfModel, type PdfOrder } from "./orderPdfData";
-import { fetchAsDataUrl, toCroppedPng } from "./images";
+import { fetchAsDataUrl, toCroppedPng, toFittedPng, REF_BOX } from "./images";
 
 async function safe<T>(promise: Promise<T>): Promise<T | undefined> {
   try {
@@ -29,10 +29,8 @@ export async function generateOrderPdf(order: PdfOrder): Promise<{ blob: Blob; f
     ),
     Promise.all(
       model.items.map(async (item) => {
-        const thumbs = await Promise.all(
-          item.referenceImages.map((url) => safe(toCroppedPng(url, { size: 240, shape: "rounded" })))
-        );
-        return thumbs.filter((t): t is string => !!t);
+        const thumbs = await Promise.all(item.referenceImages.map((url) => safe(toFittedPng(url, { maxSide: REF_BOX }))));
+        return thumbs.map((t) => t ?? null);
       })
     ),
   ]);

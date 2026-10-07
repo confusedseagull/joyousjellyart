@@ -94,6 +94,34 @@ function sizeLabel(shape: string, size: string): string {
   return shortSizeLabel(label);
 }
 
+// Customer-uploaded reference photo: large enough to actually read, opens the
+// original in a new tab, and falls back to a plain link if it can't be shown.
+function ReferenceImage({ url, index }: { url: string; index: number }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) {
+    return (
+      <a
+        href={url}
+        target="_blank"
+        rel="noreferrer"
+        className="flex size-28 items-center justify-center rounded-md border border-neutral-200 p-2 text-center text-xs text-primary underline"
+      >
+        Image {index + 1} can't be previewed - open original
+      </a>
+    );
+  }
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noreferrer"
+      className="block size-28 md:size-36 overflow-hidden rounded-md border border-neutral-200 hover:border-primary transition-colors"
+    >
+      <img src={url} alt={`Reference ${index + 1}`} className="h-full w-full object-cover" onError={() => setFailed(true)} />
+    </a>
+  );
+}
+
 function OptionThumb({ src, alt }: { src: string | undefined; alt: string }) {
   if (!src) return null;
   return <img src={src} alt={alt} className="w-9 h-9 rounded-md object-cover shrink-0 border border-neutral-200" />;
@@ -503,12 +531,10 @@ export default function AdminOrderDetail() {
                         {item.dietaryRequirements && <p>Dietary: <span className="text-muted-foreground">{item.dietaryRequirements}</span></p>}
                         {item.referenceImages && item.referenceImages.length > 0 && (
                           <div>
-                            <p className="mb-1">Reference Images</p>
-                            <div className="flex flex-wrap gap-2">
-                              {item.referenceImages.map((url: string) => (
-                                <a key={url} href={url} target="_blank" rel="noreferrer" className="block size-16 rounded-md overflow-hidden border border-neutral-200 hover:border-primary transition-colors">
-                                  <img src={url} alt="Reference" className="w-full h-full object-cover" />
-                                </a>
+                            <p className="mb-1.5">Reference Images <span className="text-muted-foreground">({item.referenceImages.length})</span></p>
+                            <div className="flex flex-wrap gap-3">
+                              {item.referenceImages.map((url: string, i: number) => (
+                                <ReferenceImage key={`${url}-${i}`} url={url} index={i} />
                               ))}
                             </div>
                           </div>

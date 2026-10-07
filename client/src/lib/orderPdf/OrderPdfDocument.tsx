@@ -1,7 +1,7 @@
 import { Document, Page, View, Text, Image, Svg, Path, StyleSheet, Font } from "@react-pdf/renderer";
 import instrumentSansRegular from "@fontsource/instrument-sans/files/instrument-sans-latin-400-normal.woff?url";
 import instrumentSansSemiBold from "@fontsource/instrument-sans/files/instrument-sans-latin-600-normal.woff?url";
-import { needsFallbackFont, rasterizeText } from "./images";
+import { needsFallbackFont, rasterizeText, REF_BOX, type FittedImage } from "./images";
 import { BUSINESS, type PdfContact, type PdfField, type PdfItem, type PdfOrderModel } from "./orderPdfData";
 
 Font.register({
@@ -14,13 +14,15 @@ Font.register({
 // Never hyphenate — a split word in an address or name reads as a typo.
 Font.registerHyphenationCallback((word) => [word]);
 
+export type PdfReferenceImage = FittedImage | null;
+
 export interface PdfAssets {
   logo: string;
   watermark: string;
   /** Pre-cropped circle photo for each item, same order as model.items. */
   itemImages: (string | undefined)[];
-  /** Pre-cropped thumbnails for each item's reference images. */
-  referenceImages: string[][];
+  /** Each item's reference images, scaled to fit (aspect ratio kept). A missing src means it couldn't be loaded. */
+  referenceImages: PdfReferenceImage[][];
 }
 
 type PdfStyle = Record<string, any>;
@@ -146,7 +148,7 @@ function ItemBlock({
   index: number;
   count: number;
   imageSrc?: string;
-  referenceImages: string[];
+  referenceImages: PdfReferenceImage[];
 }) {
   return (
     <View style={s.itemBlock} wrap={false}>
@@ -186,10 +188,19 @@ function ItemBlock({
       {referenceImages.length > 0 && (
         <View style={{ marginTop: 12, gap: 6 }}>
           <Text style={{ fontSize: 10, color: GREY }}>Reference Images</Text>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-            {referenceImages.map((src, i) => (
-              <Image key={i} src={src} style={{ width: 56, height: 56 }} />
-            ))}
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            {referenceImages.map((img, i) =>
+              img ? (
+                <Image key={i} src={img.src} style={{ width: img.width, height: img.height }} />
+              ) : (
+                <View
+                  key={i}
+                  style={{ width: REF_BOX, height: REF_BOX, borderWidth: 0.5, borderColor: GREY, borderRadius: 6, alignItems: "center", justifyContent: "center", padding: 6 }}
+                >
+                  <Text style={{ fontSize: 8, color: GREY, textAlign: "center" }}>{`Image ${i + 1} could not be loaded - open the order in the admin dashboard`}</Text>
+                </View>
+              )
+            )}
           </View>
         </View>
       )}
@@ -265,8 +276,9 @@ export function OrderPdfDocument({ model, assets }: { model: PdfOrderModel; asse
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
             <Text style={{ fontSize: 12 }}>Paid:</Text>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-              <CheckOption label="Yes" checked={model.paid} />
-              <CheckOption label="No" checked={!model.paid} />
+              {/* Left blank on purpose — ticked by hand on the printed copy. */}
+              <CheckOption label="Yes" checked={false} />
+              <CheckOption label="No" checked={false} />
             </View>
           </View>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 20 }}>

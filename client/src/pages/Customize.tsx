@@ -614,6 +614,25 @@ export default function Customize() {
     }
   }, [theme]);
 
+  // iPhone photos can arrive as HEIC, which most desktop browsers (and the PDF
+  // invoice) can't display. Safari decodes HEIC natively, so re-encode to JPEG
+  // here; if that fails the original is uploaded untouched.
+  const toBrowserSafeImage = async (file: File): Promise<File> => {
+    const isHeic = /image\/hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name);
+    if (!isHeic) return file;
+    try {
+      const bitmap = await createImageBitmap(file);
+      const canvas = document.createElement("canvas");
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+      canvas.getContext("2d")!.drawImage(bitmap, 0, 0);
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.9));
+      return blob ? new File([blob], file.name.replace(/\.hei[cf]$/i, ".jpg"), { type: "image/jpeg" }) : file;
+    } catch {
+      return file;
+    }
+  };
+
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     // Reset the input's own value so selecting the same file again (e.g.
@@ -624,12 +643,13 @@ export default function Customize() {
     setIsUploadingReferenceImages(true);
     try {
       const uploaded = await Promise.all(
-        files.map(async (file) => {
+        files.map(async (original) => {
+          const file = await toBrowserSafeImage(original);
           const blob = await upload(`reference-images/${Date.now()}-${file.name}`, file, {
             access: "public",
             handleUploadUrl: "/api/upload-reference-image",
           });
-          return { url: blob.url, name: file.name };
+          return { url: blob.url, name: original.name };
         })
       );
       setReferenceImages(uploaded);

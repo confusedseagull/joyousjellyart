@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { AdminLayout } from "@/components/AdminLayout";
 import { trpc } from "@/lib/trpc";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Truck, Store } from "lucide-react";
+import { Search, Truck, Store, Image as ImageIcon } from "lucide-react";
 import {
   PageHeader,
   Segmented,
@@ -69,8 +69,16 @@ function OrderRow({ order, onOpen, onStatus }: { order: Order; onOpen: () => voi
   const time = order.timeRange ? formatTimeRange(order.timeRange) : format(new Date(order.fulfillmentDate), "h:mm a");
   const DeliveryIcon = order.deliveryMethod === "delivery" ? Truck : Store;
 
+  const referenceCount = (order.items as any[]).reduce((n, item) => n + (item.referenceImages?.length ?? 0), 0);
+
   const tags = (
     <>
+      {referenceCount > 0 && (
+        <span className={`${collectionTag} gap-1`} title="Customer attached reference images">
+          <ImageIcon className="h-3 w-3" />
+          {referenceCount}
+        </span>
+      )}
       {collections.includes("custom") && <span className={collectionTag}>Custom</span>}
       {collections.includes("cny") && <span className={collectionTag}>CNY</span>}
     </>

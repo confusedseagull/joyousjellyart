@@ -38,7 +38,6 @@ export interface PdfOrderModel {
   orderDate: string;
   billTo: PdfContact;
   items: PdfItem[];
-  paid: boolean;
   subtotal: string;
   deliveryFee: string;
   total: string;
@@ -228,7 +227,6 @@ export function buildOrderPdfModel(order: PdfOrder): PdfOrderModel {
       email,
     },
     items: (order.items as any[]).map((item) => (item.collection === "cny" ? buildCnyItem(item) : buildCustomItem(item))),
-    paid: order.paymentStatus === "paid",
     subtotal: formatMoney(order.subtotal),
     deliveryFee: order.deliveryFee > 0 ? formatMoney(order.deliveryFee) : "Free",
     total: formatMoney(order.total),

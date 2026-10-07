@@ -5,6 +5,9 @@
 
 const PX_PER_PT = 4;
 
+/** Longest side of a reference image on the printed page, in points. */
+export const REF_BOX = 110;
+
 function loadImage(src: string, crossOrigin: boolean): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -13,6 +16,28 @@ function loadImage(src: string, crossOrigin: boolean): Promise<HTMLImageElement>
     img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
     img.src = src;
   });
+}
+
+// Direct cross-origin <img> loads can fail where a plain fetch succeeds (and
+// vice versa), so try both before giving up on a photo.
+async function loadImageAnyWay(src: string): Promise<HTMLImageElement> {
+  const crossOrigin = /^https?:\/\//.test(src) && new URL(src, window.location.href).origin !== window.location.origin;
+  try {
+    return await loadImage(src, crossOrigin);
+  } catch (firstError) {
+    try {
+      const res = await fetch(src);
+      if (!res.ok) throw firstError;
+      const url = URL.createObjectURL(await res.blob());
+      try {
+        return await loadImage(url, false);
+      } finally {
+        setTimeout(() => URL.revokeObjectURL(url), 10_000);
+      }
+    } catch {
+      throw firstError;
+    }
+  }
 }
 
 function drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement, size: number) {
@@ -39,8 +64,7 @@ export async function toCroppedPng(
   src: string,
   { size, shape }: { size: number; shape: "circle" | "rounded" }
 ): Promise<string> {
-  const crossOrigin = /^https?:\/\//.test(src) && new URL(src, window.location.href).origin !== window.location.origin;
-  const img = await loadImage(src, crossOrigin);
+  const img = await loadImageAnyWay(src);
   const canvas = document.createElement("canvas");
   canvas.width = size;
   canvas.height = size;
@@ -55,6 +79,30 @@ export async function toCroppedPng(
   ctx.clip();
   drawCover(ctx, img, size);
   return canvas.toDataURL("image/png");
+}
+
+export interface FittedImage {
+  src: string;
+  /** Size on the page, in PDF points. */
+  width: number;
+  height: number;
+}
+
+/** Whole image (nothing cropped) scaled so its longest side is maxSide points, with softly rounded corners. */
+export async function toFittedPng(src: string, { maxSide }: { maxSide: number }): Promise<FittedImage> {
+  const img = await loadImageAnyWay(src);
+  const scale = maxSide / Math.max(img.naturalWidth, img.naturalHeight);
+  const width = Math.max(1, Math.round(img.naturalWidth * scale));
+  const height = Math.max(1, Math.round(img.naturalHeight * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = width * PX_PER_PT;
+  canvas.height = height * PX_PER_PT;
+  const ctx = canvas.getContext("2d")!;
+  ctx.beginPath();
+  ctx.roundRect(0, 0, canvas.width, canvas.height, 6 * PX_PER_PT);
+  ctx.clip();
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  return { src: canvas.toDataURL("image/png"), width, height };
 }
 
 // Anything outside basic Latin / Latin-1 / Latin Extended-A/B and common
