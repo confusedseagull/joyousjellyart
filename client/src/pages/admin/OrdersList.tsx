@@ -13,6 +13,7 @@ import {
   adminButton,
   STATUS_OPTIONS,
   STATUS_STYLES,
+  normalizeStatus,
 } from "@/components/admin/AdminUI";
 import { format } from "date-fns";
 import { formatPrice, formatTimeRange } from "@/lib/utils";
@@ -40,10 +41,11 @@ function itemSummary(order: Order): string {
 const collectionTag = "inline-flex items-center h-5 px-1.5 rounded text-[11px] font-medium bg-neutral-100 text-neutral-600";
 
 function StatusSelect({ order, onChange }: { order: Order; onChange: (status: string) => void }) {
-  const style = STATUS_STYLES[order.status];
+  const status = normalizeStatus(order.status);
+  const style = STATUS_STYLES[status];
   return (
     <div onClick={(e) => e.stopPropagation()}>
-      <Select value={order.status} onValueChange={onChange}>
+      <Select value={status} onValueChange={onChange}>
         <SelectTrigger
           className={`!h-7 w-auto gap-1.5 rounded-md border-0 px-2 text-xs font-medium shadow-none ring-1 ring-inset focus-visible:ring-2 ${style?.badge ?? "bg-neutral-100 text-neutral-700 ring-neutral-200"}`}
         >

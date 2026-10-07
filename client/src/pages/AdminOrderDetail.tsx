@@ -7,6 +7,7 @@ import { Loader2, ArrowLeft, Pencil, Download, Printer } from "lucide-react";
 import {
   StatusBadge,
   STATUS_OPTIONS,
+  normalizeStatus,
   adminCard,
   adminInput,
   adminButton,
@@ -164,7 +165,7 @@ function orderToFormValues(order: Order): FormValues {
     customerEmail: order.customerEmail || "",
     customerPhone: order.customerPhone,
     billingAddress: order.billingAddress || "",
-    status: order.status,
+    status: normalizeStatus(order.status),
     fulfillmentDate: format(new Date(order.fulfillmentDate), "yyyy-MM-dd"),
     timeRange: order.timeRange || "",
     deliveryMethod: order.deliveryMethod,

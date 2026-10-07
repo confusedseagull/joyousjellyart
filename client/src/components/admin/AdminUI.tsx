@@ -6,26 +6,36 @@ import { Loader2 } from "lucide-react";
 
 export const adminCard = "rounded-lg border border-neutral-200 bg-white";
 
+// The stored status values predate the current wording, so they keep their
+// original names in the database (no migration needed) and only the labels
+// differ: pending_confirmation = Pending Payment, in_progress = Order
+// Confirmed, completed = Order Fulfilled. Legacy "pending" and "delivered"
+// rows fold into the nearest of the three.
 export const STATUS_OPTIONS = [
-  { value: "pending_confirmation", label: "Pending Confirmation" },
-  { value: "in_progress", label: "In Progress" },
-  { value: "completed", label: "Completed" },
-  { value: "delivered", label: "Delivered" },
+  { value: "pending_confirmation", label: "Pending Payment" },
+  { value: "in_progress", label: "Order Confirmed" },
+  { value: "completed", label: "Order Fulfilled" },
 ] as const;
+
+export function normalizeStatus(status: string): string {
+  if (status === "pending") return "pending_confirmation";
+  if (status === "delivered") return "completed";
+  return status;
+}
 
 export const STATUS_STYLES: Record<string, { badge: string; dot: string }> = {
   pending_confirmation: { badge: "bg-amber-50 text-amber-800 ring-amber-200", dot: "bg-amber-500" },
   in_progress: { badge: "bg-blue-50 text-blue-800 ring-blue-200", dot: "bg-blue-500" },
   completed: { badge: "bg-emerald-50 text-emerald-800 ring-emerald-200", dot: "bg-emerald-500" },
-  delivered: { badge: "bg-violet-50 text-violet-800 ring-violet-200", dot: "bg-violet-500" },
 };
 
 export function statusLabel(status: string): string {
-  return STATUS_OPTIONS.find((s) => s.value === status)?.label ?? status;
+  const normalized = normalizeStatus(status);
+  return STATUS_OPTIONS.find((s) => s.value === normalized)?.label ?? status;
 }
 
 export function StatusBadge({ status, className = "" }: { status: string; className?: string }) {
-  const style = STATUS_STYLES[status] ?? { badge: "bg-neutral-100 text-neutral-700 ring-neutral-200", dot: "bg-neutral-400" };
+  const style = STATUS_STYLES[normalizeStatus(status)] ?? { badge: "bg-neutral-100 text-neutral-700 ring-neutral-200", dot: "bg-neutral-400" };
   return (
     <span
       className={`inline-flex items-center gap-1.5 h-6 px-2 rounded-md text-xs font-medium ring-1 ring-inset whitespace-nowrap ${style.badge} ${className}`}
