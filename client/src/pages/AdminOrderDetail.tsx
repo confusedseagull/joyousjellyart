@@ -448,24 +448,14 @@ export default function AdminOrderDetail() {
                         {item.backgroundColor && (
                           <div>
                             <p className="text-xs font-medium text-neutral-500 mb-1">Background Color</p>
-                            <span className="inline-flex items-center gap-1.5 text-sm text-foreground">
-                              <span className="w-4 h-4 rounded-full border border-neutral-200 shrink-0" style={{ backgroundColor: item.backgroundColor }} />
-                              {item.backgroundColor}
-                            </span>
+                            <p className="text-sm text-foreground">{item.backgroundColor}</p>
                           </div>
                         )}
 
                         {item.selectedColors?.length > 0 && (
                           <div>
                             <p className="text-xs font-medium text-neutral-500 mb-1">Colors</p>
-                            <div className="flex flex-wrap gap-2">
-                              {item.selectedColors.map((color: string) => (
-                                <span key={color} className="inline-flex items-center gap-1.5 text-sm text-foreground">
-                                  <span className="w-4 h-4 rounded-full border border-neutral-200 shrink-0" style={{ backgroundColor: color }} />
-                                  {color}
-                                </span>
-                              ))}
-                            </div>
+                            <p className="text-sm text-foreground">{item.selectedColors.join(", ")}</p>
                           </div>
                         )}
 
