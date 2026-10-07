@@ -203,7 +203,7 @@ export function OrderPdfDocument({ model, assets }: { model: PdfOrderModel; asse
     <Document title={`Order ${model.orderNumber}`} author="Joyous JellyArt" creator="Joyous JellyArt">
       <Page size="A4" style={s.page}>
         {/* Faint brand mark behind the content, repeated on every page. */}
-        <Image src={assets.watermark} fixed style={{ position: "absolute", left: 66, top: 178, width: 453, height: 438, opacity: 0.03 }} />
+        <Image src={assets.watermark} fixed style={{ position: "absolute", left: 66, top: 178, width: 453, height: 438, opacity: 0.02 }} />
 
         <View style={s.headerRow}>
           <Image src={assets.logo} style={{ width: 96, height: 30 }} />
