@@ -106,21 +106,6 @@ export default function Discover() {
               </div>
             </div>
           ))}
-
-          {/* Custom / hand-drawn callout — same row format as the theme rows
-              above, but freeform rather than driven by THEMES data. TODO:
-              swap in a real photo of the alien spaceship + space theme cake
-              described below once available. */}
-          <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-10 py-8 border-b border-[#e5e5e5]">
-            <div className="md:w-64 shrink-0 flex flex-col gap-2">
-              <h3 className="font-normal">Can't find what you're looking for?</h3>
-              <p className="text-muted-foreground text-sm leading-relaxed">
-                Our hand drawn designs are what we use to create your dream cake. For example, we
-                illustrated this alien space ship by hand and combined it with our space theme to
-                make a little boy's wishes come through.
-              </p>
-            </div>
-          </div>
         </div>
 
         {/* Contact Us */}
