@@ -1,4 +1,4 @@
-import { eq, desc, asc, and, or, like, sql, type SQL } from "drizzle-orm";
+import { eq, desc, asc, and, or, like, inArray, sql, type SQL } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { orders, InsertOrder, Order } from "../drizzle/schema";
 
@@ -223,6 +223,11 @@ function shiftDateString(dateStr: string, days: number): string {
   return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
 }
 
+// Orders count as revenue once confirmed (payment is by manual PayNow/bank
+// transfer, so paymentStatus is never updated) and stop counting if cancelled.
+// "delivered" is the legacy value of "completed".
+const REVENUE_STATUSES = ["in_progress", "completed", "delivered"] as const;
+
 // Revenue tracks when sales happened (createdAt), not future fulfillment
 // dates. "Today" is read back from the DB itself (CURDATE()) rather than
 // computed via a JS Date — see listOrdersByBucket for why a JS Date boundary
@@ -242,7 +247,7 @@ export async function getRevenueTrend(days: number): Promise<RevenueTrendPoint[]
   const rows = await db
     .select({ date: dateExpr, revenue: sql<number>`COALESCE(SUM(${orders.total}), 0)` })
     .from(orders)
-    .where(and(eq(orders.paymentStatus, "paid"), sql`${dateExpr} >= ${rangeStartStr}`))
+    .where(and(inArray(orders.status, [...REVENUE_STATUSES]), sql`${dateExpr} >= ${rangeStartStr}`))
     .groupBy(dateExpr);
 
   const byDate = new Map(rows.map((r) => [r.date, Number(r.revenue)]));

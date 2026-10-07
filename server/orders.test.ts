@@ -588,24 +588,31 @@ describe("orders.getRevenueTrend", () => {
     await expect(caller.orders.getRevenueTrend({})).rejects.toThrow("Please login");
   });
 
-  it("includes revenue from a newly-paid order in the trend total", async () => {
+  it("counts an order once it is confirmed, and drops it again if cancelled", async () => {
     const publicCaller = appRouter.createCaller(createPublicContext());
     const adminCaller = appRouter.createCaller(createAdminContext());
+    const total = async () =>
+      (await adminCaller.orders.getRevenueTrend({ days: 7 })).reduce((sum, p) => sum + p.revenue, 0);
 
-    const before = await adminCaller.orders.getRevenueTrend({ days: 7 });
-    const totalBefore = before.reduce((sum, p) => sum + p.revenue, 0);
+    const base = await total();
 
     const order = await publicCaller.orders.create({
       customerName: "Revenue Trend Test", customerEmail: "revenue.trend@example.com", customerPhone: "+65 1000 0010",
       deliveryMethod: "pickup", fulfillmentDate: new Date(),
       items: [makeItem({ id: "revenue-item", price: 118 })], subtotal: 118, deliveryFee: 0, total: 118,
     });
-    await adminCaller.orders.update({ id: order.id, paymentStatus: "paid" });
 
-    const after = await adminCaller.orders.getRevenueTrend({ days: 7 });
-    const totalAfter = after.reduce((sum, p) => sum + p.revenue, 0);
+    // Awaiting payment: not revenue yet.
+    expect(await total()).toBe(base);
 
-    expect(totalAfter).toBeGreaterThanOrEqual(totalBefore + 118);
+    await adminCaller.orders.updateStatus({ id: order.id, status: "in_progress" });
+    expect(await total()).toBe(base + 118);
+
+    await adminCaller.orders.updateStatus({ id: order.id, status: "completed" });
+    expect(await total()).toBe(base + 118);
+
+    await adminCaller.orders.updateStatus({ id: order.id, status: "cancelled" });
+    expect(await total()).toBe(base);
   });
 });
 
