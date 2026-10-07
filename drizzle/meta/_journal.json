@@ -50,6 +50,13 @@
       "when": 1790782632512,
       "tag": "0006_lyrical_night_nurse",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1791391029871,
+      "tag": "0007_flowery_annihilus",
+      "breakpoints": true
     }
   ]
 }

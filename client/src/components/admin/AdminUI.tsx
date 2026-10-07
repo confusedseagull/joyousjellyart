@@ -9,12 +9,13 @@ export const adminCard = "rounded-lg border border-neutral-200 bg-white";
 // The stored status values predate the current wording, so they keep their
 // original names in the database (no migration needed) and only the labels
 // differ: pending_confirmation = Pending Payment, in_progress = Order
-// Confirmed, completed = Order Fulfilled. Legacy "pending" and "delivered"
+// Confirmed, completed = Order Fulfilled; cancelled is its own value. Legacy "pending" and "delivered"
 // rows fold into the nearest of the three.
 export const STATUS_OPTIONS = [
   { value: "pending_confirmation", label: "Pending Payment" },
   { value: "in_progress", label: "Order Confirmed" },
   { value: "completed", label: "Order Fulfilled" },
+  { value: "cancelled", label: "Order Cancelled" },
 ] as const;
 
 export function normalizeStatus(status: string): string {
@@ -27,6 +28,7 @@ export const STATUS_STYLES: Record<string, { badge: string; dot: string }> = {
   pending_confirmation: { badge: "bg-amber-50 text-amber-800 ring-amber-200", dot: "bg-amber-500" },
   in_progress: { badge: "bg-blue-50 text-blue-800 ring-blue-200", dot: "bg-blue-500" },
   completed: { badge: "bg-emerald-50 text-emerald-800 ring-emerald-200", dot: "bg-emerald-500" },
+  cancelled: { badge: "bg-red-50 text-red-700 ring-red-300", dot: "bg-red-500" },
 };
 
 export function statusLabel(status: string): string {

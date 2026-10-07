@@ -135,7 +135,7 @@ export const orders = mysqlTable("orders", {
   paymentId: varchar("paymentId", { length: 255 }),
 
   // Fulfillment status
-  status: mysqlEnum("status", ["pending", "pending_confirmation", "in_progress", "completed", "delivered"])
+  status: mysqlEnum("status", ["pending", "pending_confirmation", "in_progress", "completed", "delivered", "cancelled"])
     .default("pending_confirmation")
     .notNull(),
 

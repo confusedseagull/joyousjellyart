@@ -35,7 +35,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="admin-ui min-h-screen bg-background text-neutral-900">
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex fixed inset-y-0 left-0 w-60 flex-col border-r border-neutral-200 bg-neutral-50">
+      <aside className="hidden md:flex fixed inset-y-0 left-0 w-60 flex-col border-r border-neutral-200 bg-white">
         <div className="px-5 pt-5 pb-4">
           <Link href="/admin/dashboard" className="block">
             <img src="/logo.webp" alt="Joyous JellyArt" className="h-7 w-auto" />
@@ -82,7 +82,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Mobile top bar */}
-      <header className="md:hidden sticky top-0 z-30 flex h-14 items-center justify-between border-b border-neutral-200 bg-neutral-50/95 px-4 backdrop-blur">
+      <header className="md:hidden sticky top-0 z-30 flex h-14 items-center justify-between border-b border-neutral-200 bg-white/95 px-4 backdrop-blur">
         <Link href="/admin/dashboard">
           <img src="/logo.webp" alt="Joyous JellyArt" className="h-6 w-auto" />
         </Link>
@@ -103,7 +103,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
       {/* Mobile bottom tab bar */}
       <nav
-        className="md:hidden fixed bottom-0 inset-x-0 z-30 grid grid-cols-4 border-t border-neutral-200 bg-neutral-50/95 backdrop-blur"
+        className="md:hidden fixed bottom-0 inset-x-0 z-30 grid grid-cols-4 border-t border-neutral-200 bg-white/95 backdrop-blur"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         {NAV_ITEMS.map((item) => {

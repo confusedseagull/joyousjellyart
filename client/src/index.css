@@ -112,13 +112,13 @@
     --primary: #4b8385;
     --primary-foreground: #ffffff;
     --ring: #4b8385;
-    --background: #f5f4ee;
+    --background: #fbfaf6;
     --border: #e8e5da;
     color: #1f1e1c;
     /* Warm, paper-like greys in place of Tailwind's cool neutrals, so every
        neutral-* class inside the admin picks up the warmer tone. */
-    --color-neutral-50: #faf9f5;
-    --color-neutral-100: #f0eee6;
+    --color-neutral-50: #fbfaf6;
+    --color-neutral-100: #f3f1ea;
     --color-neutral-200: #e8e5da;
     --color-neutral-300: #d6d2c4;
     --color-neutral-400: #a9a597;

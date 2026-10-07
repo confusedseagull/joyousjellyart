@@ -254,7 +254,7 @@ export const appRouter = router({
         total: z.number().optional(),
         notes: z.string().optional(),
         paymentStatus: z.enum(["pending", "paid", "failed", "refunded"]).optional(),
-        status: z.enum(["pending", "pending_confirmation", "in_progress", "completed", "delivered"]).optional(),
+        status: z.enum(["pending", "pending_confirmation", "in_progress", "completed", "delivered", "cancelled"]).optional(),
       }))
       .mutation(async ({ input }) => {
         const { id, ...updates } = input;
@@ -271,7 +271,7 @@ export const appRouter = router({
     updateStatus: adminProcedure
       .input(z.object({
         id: z.number(),
-        status: z.enum(["pending", "pending_confirmation", "in_progress", "completed", "delivered"]),
+        status: z.enum(["pending", "pending_confirmation", "in_progress", "completed", "delivered", "cancelled"]),
       }))
       .mutation(async ({ input }) => {
         const order = await updateOrder(input.id, { status: input.status });

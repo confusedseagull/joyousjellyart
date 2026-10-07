@@ -316,6 +316,26 @@ describe("orders.updateStatus", () => {
     expect(updated).toBeDefined();
     expect(updated?.status).toBe("in_progress");
   });
+
+  it("allows admin to cancel an order", async () => {
+    const caller = appRouter.createCaller(createAdminContext());
+    const publicCaller = appRouter.createCaller(createPublicContext());
+    const order = await publicCaller.orders.create({
+      customerName: "Cancel User",
+      customerEmail: "cancel.user@example.com",
+      customerPhone: "+65 1111 2222",
+      deliveryMethod: "pickup" as const,
+      fulfillmentDate: new Date("2025-04-01T12:00:00"),
+      items: [makeItem({ theme: "space", shape: "round", size: "8inch" })],
+      subtotal: 118,
+      deliveryFee: 0,
+      total: 118,
+    });
+
+    const updated = await caller.orders.updateStatus({ id: order.id, status: "cancelled" });
+
+    expect(updated?.status).toBe("cancelled");
+  });
 });
 
 describe("orders.update", () => {
