@@ -278,21 +278,6 @@ export default function AdminOrderDetail() {
   const recipientWhatsapp = toWhatsAppLink(order.recipientPhone);
   const showRecipientButton = recipientWhatsapp && order.recipientPhone !== order.customerPhone;
 
-  const paymentLabel =
-    order.paymentStatus === "paid"
-      ? "Paid"
-      : order.paymentStatus === "failed"
-        ? "Payment failed"
-        : order.paymentStatus === "refunded"
-          ? "Refunded"
-          : "Payment pending";
-  const paymentTone =
-    order.paymentStatus === "paid"
-      ? "bg-emerald-50 text-emerald-800 ring-emerald-200"
-      : order.paymentStatus === "pending"
-        ? "bg-neutral-100 text-neutral-700 ring-neutral-200"
-        : "bg-red-50 text-red-800 ring-red-200";
-
   const statusControl = isEditing ? (
     <select {...register("status")} className={`${adminInput} !w-auto`}>
       {STATUS_OPTIONS.map((s) => (
@@ -319,9 +304,6 @@ export default function AdminOrderDetail() {
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
             <h1>{order.orderNumber || `JJA${String(order.id).padStart(4, "0")}`}</h1>
             {statusControl}
-            <span className={`inline-flex items-center h-6 px-2 rounded-md text-xs font-medium ring-1 ring-inset ${paymentTone}`}>
-              {paymentLabel}
-            </span>
           </div>
           <p className="text-sm text-neutral-500 mt-1.5">
             Placed {format(new Date(order.createdAt), "d MMM yyyy, h:mm a")}
