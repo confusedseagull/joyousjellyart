@@ -1,5 +1,13 @@
 import { ENV } from "./_core/env";
 import type { Order, OrderItem } from "../drizzle/schema";
+import {
+  formatLabel,
+  themeLabel,
+  sizeLabel,
+  flavourLabel,
+  dietaryLabels,
+  shapeDescription,
+} from "../shared/orderLabels";
 
 const RESEND_API_URL = "https://api.resend.com/emails";
 
@@ -12,27 +20,36 @@ function formatPrice(amount: number): string {
   return `$${amount.toFixed(2)}`;
 }
 
-const FORMAT_LABELS: Record<string, string> = {
-  cake: "Cake",
-  jellyPlatter: "Jelly Platter",
-  miniGiftBox: "Mini Gift Box",
-};
-
-// Turns a raw camelCase/underscore value (e.g. "cartoonCharacters") into
-// readable text ("Cartoon Characters") for older orders whose stored item
-// never had a themeLabel saved alongside the raw theme slug.
-function humanize(value: string): string {
-  const spaced = value.replace(/_/g, " ").replace(/([a-z])([A-Z])/g, "$1 $2");
-  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+// Free text from the customer goes into the email HTML, so escape it.
+function esc(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 // Item name shown in place of a generic "Custom Cake" label, e.g. "Floral
 // Bouquet Cake" or "Space Mini Gift Box" — the theme and format the
 // customer actually chose.
 function itemNameFor(item: Extract<OrderItem, { collection: "custom" }>): string {
-  const themeLabel = item.themeLabel || humanize(item.theme);
-  const formatLabel = FORMAT_LABELS[item.format] || humanize(item.format);
-  return `${themeLabel} ${formatLabel}`;
+  return `${themeLabel(item.theme, item.themeLabel)} ${formatLabel(item.format)}`;
+}
+
+// Anything else the customer picked or typed while customising, named as it
+// was in the builder.
+function extraOptionLines(item: Extract<OrderItem, { collection: "custom" }>): string[] {
+  const lines: string[] = [];
+  const colours = [...(item.backgroundColor ? [`${item.backgroundColor} (background)`] : []), ...(item.selectedColors ?? [])];
+  if (colours.length) lines.push(`Colours: ${colours.join(", ")}`);
+  if (item.selectedFlowers?.length) lines.push(`Flowers: ${item.selectedFlowers.join(", ")}`);
+  if (item.cartoonCharacter) lines.push(`Character: ${item.cartoonCharacter}`);
+  if (item.fashionBrand) lines.push(`Brand: ${item.fashionBrand}`);
+  if (item.themeCustomText) lines.push(`${item.theme === "nameAndInitial" ? "Name" : "Design"}: ${item.themeCustomText}`);
+  if (item.cakeText) lines.push(`Text: ${item.cakeText}`);
+  const dietary = dietaryLabels(item.dietaryRequirements);
+  if (dietary.length) lines.push(`Dietary: ${dietary.join(", ")}`);
+  return lines;
 }
 
 export interface SendEmailParams {
@@ -79,13 +96,14 @@ function renderItemRow(item: OrderItem): string {
       </tr>`;
   }
 
-  const formatLabel = FORMAT_LABELS[item.format] || item.format;
+  const extras = extraOptionLines(item);
   return `
     <tr>
       <td style="padding: 12px 0; border-bottom: 1px solid ${BORDER_COLOR};">
-        <p style="margin: 0 0 4px; font-weight: 600; color: #1a1e1b;">${itemNameFor(item)}</p>
-        <p style="margin: 0; font-size: 13px; color: ${MUTED_TEXT};">${formatLabel} &middot; ${item.shape} &middot; ${item.size}</p>
-        <p style="margin: 0; font-size: 13px; color: ${MUTED_TEXT};">Theme: ${item.themeLabel || humanize(item.theme)} &middot; Flavour: ${item.flavours.join(", ")}</p>
+        <p style="margin: 0 0 4px; font-weight: 600; color: #1a1e1b;">${esc(itemNameFor(item))}</p>
+        <p style="margin: 0; font-size: 13px; color: ${MUTED_TEXT};">${esc(formatLabel(item.format))} &middot; ${esc(shapeDescription(item))} &middot; ${esc(sizeLabel(item.shape, item.size))}</p>
+        <p style="margin: 0; font-size: 13px; color: ${MUTED_TEXT};">Theme: ${esc(themeLabel(item.theme, item.themeLabel))} &middot; Flavour: ${esc(item.flavours.map(flavourLabel).join(", "))}</p>
+        ${extras.length ? `<p style="margin: 0; font-size: 13px; color: ${MUTED_TEXT};">${extras.map(esc).join(" &middot; ")}</p>` : ""}
         <p style="margin: 4px 0 0; font-size: 13px; color: ${MUTED_TEXT};">Qty: ${item.quantity} &middot; ${formatPrice(item.price)} each</p>
       </td>
     </tr>`;

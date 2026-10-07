@@ -5,12 +5,14 @@ import { useCart } from "@/contexts/CartContext";
 import { trpc } from "@/lib/trpc";
 import { formatPrice } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-
-const FORMAT_LABELS: Record<string, string> = {
-  cake: "Cake",
-  jellyPlatter: "Jelly Platter",
-  miniGiftBox: "Mini Gift Box",
-};
+import {
+  formatLabel,
+  themeLabel as optionThemeLabel,
+  sizeLabel as optionSizeLabel,
+  flavourLabel,
+  dietaryLabels,
+  shapeDescription,
+} from "../../../shared/orderLabels";
 
 const WHATSAPP_NUMBER = "6582999559";
 
@@ -25,14 +27,6 @@ function WhatsAppIcon({ className }: { className?: string }) {
   );
 }
 
-// Turns a raw camelCase/underscore value (e.g. "cartoonCharacters") into
-// readable text ("Cartoon Characters") when a display label wasn't provided —
-// used for the backend-refetch fallback path, where items only carry raw values.
-function humanize(value: string): string {
-  const spaced = value.replace(/_/g, " ").replace(/([a-z])([A-Z])/g, "$1 $2");
-  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
-}
-
 interface ConfirmationCustomItem {
   collection: "custom";
   id: string;
@@ -44,6 +38,7 @@ interface ConfirmationCustomItem {
   size: string;
   sizeLabel?: string;
   platterShapes?: string[];
+  numbers?: string;
   flavours: string[];
   selectedColors?: string[];
   backgroundColor?: string;
@@ -72,7 +67,7 @@ function themeDetailFor(item: ConfirmationCustomItem): string | undefined {
 }
 
 function themeValueFor(item: ConfirmationCustomItem): string {
-  const label = item.themeLabel || humanize(item.theme);
+  const label = optionThemeLabel(item.theme, item.themeLabel);
   const detail = themeDetailFor(item);
   return detail ? `${label} — ${detail}` : label;
 }
@@ -81,9 +76,7 @@ function themeValueFor(item: ConfirmationCustomItem): string {
 // Bouquet Cake" or "Space Mini Gift Box" — the theme and format the
 // customer actually chose.
 function itemNameFor(item: ConfirmationCustomItem): string {
-  const themeLabel = item.themeLabel || humanize(item.theme);
-  const formatLabel = FORMAT_LABELS[item.format] || humanize(item.format);
-  return `${themeLabel} ${formatLabel}`;
+  return `${optionThemeLabel(item.theme, item.themeLabel)} ${formatLabel(item.format)}`;
 }
 
 interface ConfirmationCnyItem {
@@ -285,22 +278,21 @@ export default function OrderConfirmation() {
       orderMessageLines.push(field("Size", item.size));
       orderMessageLines.push(field("Flavour", item.flavors ? item.flavors.join(', ') : item.flavor || "None"));
       if (item.dietaryRequirements && item.dietaryRequirements.length > 0) {
-        orderMessageLines.push(field("Dietary Requirements", item.dietaryRequirements.join(', ')));
+        orderMessageLines.push(field("Dietary Requirements", dietaryLabels(item.dietaryRequirements).join(', ')));
       }
     } else {
-      const shapeText =
-        item.shapeLabel || (item.platterShapes?.length ? item.platterShapes.join(', ') : humanize(item.shape));
+      const shapeText = shapeDescription(item);
       orderMessageLines.push(`*${itemNameFor(item)}* - ${formatPrice(item.price)}`);
-      orderMessageLines.push(field("Format", FORMAT_LABELS[item.format] || humanize(item.format)));
+      orderMessageLines.push(field("Format", formatLabel(item.format)));
       orderMessageLines.push(field("Shape", shapeText));
-      orderMessageLines.push(field("Size", item.sizeLabel || item.size));
+      orderMessageLines.push(field("Size", item.sizeLabel || optionSizeLabel(item.shape, item.size)));
       orderMessageLines.push(field("Theme", themeValueFor(item)));
-      orderMessageLines.push(field("Base Flavour", item.flavours.join(', ')));
+      orderMessageLines.push(field("Base Flavour", item.flavours.map(flavourLabel).join(', ')));
       if (item.backgroundColor) orderMessageLines.push(field("Background Color", item.backgroundColor));
       if (item.selectedColors?.length) orderMessageLines.push(field("Color Preferences", item.selectedColors.join(', ')));
       if (item.designDetails) orderMessageLines.push(field("Design Details", item.designDetails));
       if (item.cakeText) orderMessageLines.push(field("Personalized Text", item.cakeText));
-      if (item.dietaryRequirements) orderMessageLines.push(field("Dietary Requirements", item.dietaryRequirements));
+      if (item.dietaryRequirements) orderMessageLines.push(field("Dietary Requirements", dietaryLabels(item.dietaryRequirements).join(', ')));
       if (item.referenceImages?.length) orderMessageLines.push(field("Reference Images", item.referenceImages.join(', ')));
     }
     orderMessageLines.push("");
@@ -373,7 +365,7 @@ export default function OrderConfirmation() {
                         <DetailLine label="Flavour" value={item.flavors ? item.flavors.join(', ') : item.flavor} />
                         <DetailLine
                           label="Dietary Requirements"
-                          value={item.dietaryRequirements && item.dietaryRequirements.length > 0 ? item.dietaryRequirements.join(', ') : undefined}
+                          value={item.dietaryRequirements && item.dietaryRequirements.length > 0 ? dietaryLabels(item.dietaryRequirements).join(', ') : undefined}
                         />
                       </div>
                     </div>
@@ -382,24 +374,23 @@ export default function OrderConfirmation() {
                 );
               }
 
-              const shapeText =
-                item.shapeLabel || (item.platterShapes?.length ? item.platterShapes.join(', ') : humanize(item.shape));
+              const shapeText = shapeDescription(item);
 
               return (
                 <div key={item.id ?? index} className="flex items-start justify-between gap-4 w-full">
                   <div className="flex flex-col gap-2.5">
                     <p className="font-display text-[24px] font-normal text-[#1c1e22] leading-[1.3]">{itemNameFor(item)}</p>
                     <div className="flex flex-col gap-2">
-                      <DetailLine label="Format" value={FORMAT_LABELS[item.format] || humanize(item.format)} />
+                      <DetailLine label="Format" value={formatLabel(item.format)} />
                       <DetailLine label="Shape" value={shapeText} />
-                      <DetailLine label="Size" value={item.sizeLabel || item.size} />
+                      <DetailLine label="Size" value={item.sizeLabel || optionSizeLabel(item.shape, item.size)} />
                       <DetailLine label="Theme" value={themeValueFor(item)} />
-                      <DetailLine label="Base Flavour" value={item.flavours.join(', ')} />
+                      <DetailLine label="Base Flavour" value={item.flavours.map(flavourLabel).join(', ')} />
                       <DetailLine label="Background Color" value={item.backgroundColor} />
                       <DetailLine label="Color Preferences" value={item.selectedColors?.join(', ')} />
                       <DetailLine label="Design Details" value={item.designDetails} />
                       <DetailLine label="Personalized Text" value={item.cakeText} />
-                      <DetailLine label="Dietary Requirements" value={item.dietaryRequirements} />
+                      <DetailLine label="Dietary Requirements" value={dietaryLabels(item.dietaryRequirements).join(', ') || undefined} />
                       {item.referenceImages && item.referenceImages.length > 0 && (
                         <div>
                           <p className="text-[#6d726e] text-lg leading-[1.3] mb-1">Reference Images</p>

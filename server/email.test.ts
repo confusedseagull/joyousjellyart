@@ -45,6 +45,57 @@ function makeOrder(overrides: Partial<Order> = {}): Order {
   } as Order;
 }
 
+describe("option names in order emails", () => {
+  const custom = {
+    collection: "custom" as const,
+    id: "item-2",
+    format: "cake" as const,
+    theme: "floralBouquet",
+    shape: "teddyBear",
+    size: "10inch",
+    flavours: ["Osmanthus Bloom"],
+    backgroundColor: "Pink",
+    selectedColors: ["Blue"],
+    selectedFlowers: ["Roses", "Sakura"],
+    cakeText: "Happy <3 Birthday",
+    dietaryRequirements: "noDairy, noNuts",
+    price: 128,
+    quantity: 1,
+  };
+
+  it("shows 2-tier sizes as named in the builder, not as stored values", () => {
+    const order = makeOrder({
+      items: [{ ...custom, shape: "round", size: "2tier_6_8" }],
+    });
+
+    for (const html of [buildOrderConfirmationEmailHtml(order), buildOrderReceivedEmailHtml(order)]) {
+      expect(html).toContain("Round");
+      expect(html).toContain("2 Tier: 6&quot; + 8&quot;");
+      expect(html).not.toContain("2tier_6_8");
+    }
+  });
+
+  it("uses builder names for shape, theme, dietary needs and other chosen options", () => {
+    const html = buildOrderConfirmationEmailHtml(makeOrder({ items: [custom] }));
+
+    expect(html).toContain("Floral Bouquet Cake");
+    expect(html).toContain("Teddy Bear");
+    expect(html).toContain("No Dairy, No Nuts");
+    expect(html).toContain("Pink (background), Blue");
+    expect(html).toContain("Roses, Sakura");
+    for (const raw of ["teddyBear", "floralBouquet", "10inch", "noDairy", "noNuts"]) {
+      expect(html).not.toContain(raw);
+    }
+  });
+
+  it("escapes customer-typed text", () => {
+    const html = buildOrderConfirmationEmailHtml(makeOrder({ items: [custom] }));
+
+    expect(html).toContain("Happy &lt;3 Birthday");
+    expect(html).not.toContain("Happy <3 Birthday");
+  });
+});
+
 describe("sendEmail", () => {
   const originalFetch = global.fetch;
 
