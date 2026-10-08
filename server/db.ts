@@ -52,12 +52,12 @@ export async function getAllOrders(): Promise<Order[]> {
 }
 
 export interface ListOrdersByBucketOptions {
-  bucket: "upcoming" | "today" | "past";
+  bucket: "upcoming" | "today" | "past" | "cancelled";
   search?: string;
   collection?: "all" | "cny" | "custom";
   sortBy?: "fulfillmentDate" | "total" | "customerName";
   sortDir?: "asc" | "desc";
-  // Only meaningful for the "past" bucket, the only one with unbounded growth.
+  // Only meaningful for the "past" and "cancelled" buckets, the ones with unbounded growth.
   // Plain offset pagination is fine at this app's real scale (a small
   // business's order history) — true keyset pagination would need a
   // composite cursor to stay correct across arbitrary sortBy fields, which
@@ -74,14 +74,23 @@ export interface ListOrdersByBucketOptions {
 // filtering for several hours around each day's edges).
 type BucketFilter = Pick<ListOrdersByBucketOptions, "search" | "collection">;
 
+// Cancelled orders live only in their own bucket: they drop out of Upcoming /
+// Today / Past (and the calendar and dashboard) the moment they're cancelled.
+const NOT_CANCELLED = sql`${orders.status} <> 'cancelled'`;
+
 function bucketAndFilterConditions(options: BucketFilter & { bucket: ListOrdersByBucketOptions["bucket"] }): SQL[] {
   const conditions: SQL[] = [];
-  if (options.bucket === "past") {
-    conditions.push(sql`${orders.fulfillmentDate} < CURDATE()`);
-  } else if (options.bucket === "today") {
-    conditions.push(sql`${orders.fulfillmentDate} >= CURDATE() AND ${orders.fulfillmentDate} < DATE_ADD(CURDATE(), INTERVAL 1 DAY)`);
+  if (options.bucket === "cancelled") {
+    conditions.push(sql`${orders.status} = 'cancelled'`);
   } else {
-    conditions.push(sql`${orders.fulfillmentDate} >= DATE_ADD(CURDATE(), INTERVAL 1 DAY)`);
+    conditions.push(NOT_CANCELLED);
+    if (options.bucket === "past") {
+      conditions.push(sql`${orders.fulfillmentDate} < CURDATE()`);
+    } else if (options.bucket === "today") {
+      conditions.push(sql`${orders.fulfillmentDate} >= CURDATE() AND ${orders.fulfillmentDate} < DATE_ADD(CURDATE(), INTERVAL 1 DAY)`);
+    } else {
+      conditions.push(sql`${orders.fulfillmentDate} >= DATE_ADD(CURDATE(), INTERVAL 1 DAY)`);
+    }
   }
 
   if (options.search?.trim()) {
@@ -110,6 +119,7 @@ export interface BucketCounts {
   upcoming: number;
   today: number;
   past: number;
+  cancelled: number;
 }
 
 // Number of orders in each Orders-page tab, honouring the same search and
@@ -128,8 +138,13 @@ export async function getBucketCounts(filter: BucketFilter): Promise<BucketCount
     return Number(row.count);
   };
 
-  const [upcoming, today, past] = await Promise.all([countFor("upcoming"), countFor("today"), countFor("past")]);
-  return { upcoming, today, past };
+  const [upcoming, today, past, cancelled] = await Promise.all([
+    countFor("upcoming"),
+    countFor("today"),
+    countFor("past"),
+    countFor("cancelled"),
+  ]);
+  return { upcoming, today, past, cancelled };
 }
 
 export async function listOrdersByBucket(options: ListOrdersByBucketOptions): Promise<{ items: Order[]; hasMore: boolean }> {
@@ -146,8 +161,9 @@ export async function listOrdersByBucket(options: ListOrdersByBucketOptions): Pr
     orders.fulfillmentDate;
   const orderByClause = options.sortDir === "asc" ? asc(sortColumn) : desc(sortColumn);
 
-  const limit = options.bucket === "past" ? (options.limit ?? 20) : 500;
-  const offset = options.bucket === "past" ? (options.offset ?? 0) : 0;
+  const paged = options.bucket === "past" || options.bucket === "cancelled";
+  const limit = paged ? (options.limit ?? 20) : 500;
+  const offset = paged ? (options.offset ?? 0) : 0;
 
   const rows = await db
     .select()
@@ -179,9 +195,9 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     db.select({ count: sql<number>`count(*)` }).from(orders)
       .where(sql`${orders.createdAt} >= CURDATE() AND ${orders.createdAt} < DATE_ADD(CURDATE(), INTERVAL 1 DAY)`),
     db.select({ count: sql<number>`count(*)` }).from(orders)
-      .where(sql`${orders.fulfillmentDate} >= CURDATE() AND ${orders.fulfillmentDate} < DATE_ADD(CURDATE(), INTERVAL 1 DAY)`),
+      .where(and(NOT_CANCELLED, sql`${orders.fulfillmentDate} >= CURDATE() AND ${orders.fulfillmentDate} < DATE_ADD(CURDATE(), INTERVAL 1 DAY)`)),
     db.select({ count: sql<number>`count(*)` }).from(orders)
-      .where(sql`${orders.fulfillmentDate} >= DATE_ADD(CURDATE(), INTERVAL 1 DAY) AND ${orders.fulfillmentDate} < DATE_ADD(CURDATE(), INTERVAL 2 DAY)`),
+      .where(and(NOT_CANCELLED, sql`${orders.fulfillmentDate} >= DATE_ADD(CURDATE(), INTERVAL 1 DAY) AND ${orders.fulfillmentDate} < DATE_ADD(CURDATE(), INTERVAL 2 DAY)`)),
   ]);
 
   return {
@@ -205,7 +221,10 @@ export async function getOrdersForDay(day: "today" | "tomorrow"): Promise<Order[
     .select()
     .from(orders)
     .where(
-      sql`${orders.fulfillmentDate} >= DATE_ADD(CURDATE(), INTERVAL ${dayOffset} DAY) AND ${orders.fulfillmentDate} < DATE_ADD(CURDATE(), INTERVAL ${dayOffset + 1} DAY)`
+      and(
+        NOT_CANCELLED,
+        sql`${orders.fulfillmentDate} >= DATE_ADD(CURDATE(), INTERVAL ${dayOffset} DAY) AND ${orders.fulfillmentDate} < DATE_ADD(CURDATE(), INTERVAL ${dayOffset + 1} DAY)`
+      )
     )
     .orderBy(asc(orders.fulfillmentDate));
 }
@@ -287,7 +306,7 @@ export async function getOrderCountsForRange(startDateStr: string, endDateStr: s
   const rows = await db
     .select({ date: dateExpr.as("date"), count: sql<number>`count(*)` })
     .from(orders)
-    .where(sql`${dateExpr} >= ${startDateStr} AND ${dateExpr} <= ${endDateStr}`)
+    .where(and(NOT_CANCELLED, sql`${dateExpr} >= ${startDateStr} AND ${dateExpr} <= ${endDateStr}`))
     .groupBy(GROUP_BY_DATE);
 
   return rows.map((r) => ({ date: r.date, count: Number(r.count) }));
@@ -307,7 +326,7 @@ export async function getOrdersByDate(dateStr: string): Promise<Order[]> {
   return await db
     .select()
     .from(orders)
-    .where(sql`${dateExpr} = ${dateStr}`)
+    .where(and(NOT_CANCELLED, sql`${dateExpr} = ${dateStr}`))
     .orderBy(asc(orders.fulfillmentDate));
 }
 

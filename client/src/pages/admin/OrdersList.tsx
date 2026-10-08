@@ -28,6 +28,7 @@ const BUCKETS = [
   { value: "upcoming", label: "Upcoming" },
   { value: "today", label: "Today" },
   { value: "past", label: "Past" },
+  { value: "cancelled", label: "Cancelled" },
 ] as const;
 
 function orderCollections(order: Order): string[] {
@@ -138,7 +139,7 @@ function OrderRow({ order, onOpen, onStatus }: { order: Order; onOpen: () => voi
 
 export default function OrdersList() {
   const [, navigate] = useLocation();
-  const [bucket, setBucket] = useState<"upcoming" | "today" | "past">("upcoming");
+  const [bucket, setBucket] = useState<(typeof BUCKETS)[number]["value"]>("upcoming");
   const [search, setSearch] = useState("");
   const [collection, setCollection] = useState<"all" | "cny" | "custom">("all");
   const [sortBy, setSortBy] = useState<"fulfillmentDate" | "total" | "customerName">("fulfillmentDate");
@@ -177,7 +178,9 @@ export default function OrdersList() {
   const updateStatus = trpc.orders.updateStatus.useMutation({
     onSuccess: () => {
       toast.success("Status updated");
-      utils.orders.listByBucket.invalidate();
+      // A status change can move the order to another tab and changes the
+      // counts, dashboard and calendar, so refresh everything order-related.
+      utils.orders.invalidate();
     },
     onError: (err) => toast.error(err.message),
   });
@@ -237,7 +240,7 @@ export default function OrdersList() {
       {isLoading && offset === 0 ? (
         <LoadingBlock />
       ) : orders.length === 0 ? (
-        <EmptyState>No orders in this view.</EmptyState>
+        <EmptyState>{bucket === "cancelled" ? "No cancelled orders." : "No orders in this view."}</EmptyState>
       ) : (
         <div className={`${adminCard} divide-y divide-neutral-200 overflow-hidden`}>
           {orders.map((order) => (
@@ -251,7 +254,7 @@ export default function OrdersList() {
         </div>
       )}
 
-      {bucket === "past" && data?.hasMore && (
+      {(bucket === "past" || bucket === "cancelled") && data?.hasMore && (
         <div className="flex justify-center mt-5">
           <button type="button" onClick={() => setOffset((prev) => prev + 20)} className={adminButton}>
             Load more

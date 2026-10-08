@@ -201,7 +201,7 @@ export const appRouter = router({
 
     listByBucket: adminProcedure
       .input(z.object({
-        bucket: z.enum(["upcoming", "today", "past"]),
+        bucket: z.enum(["upcoming", "today", "past", "cancelled"]),
         search: z.string().optional(),
         collection: z.enum(["all", "cny", "custom"]).optional(),
         sortBy: z.enum(["fulfillmentDate", "total", "customerName"]).optional(),

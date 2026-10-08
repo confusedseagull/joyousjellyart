@@ -246,8 +246,8 @@ export default function AdminOrderDetail() {
       toast.success("Order updated");
       setIsEditing(false);
       setEditItems(null);
-      utils.orders.getById.invalidate({ id: orderId });
-      utils.orders.listByBucket.invalidate();
+      // Status or date changes move the order between tabs and change counts everywhere.
+      utils.orders.invalidate();
     },
     onError: (err) => toast.error(err.message),
   });

@@ -529,7 +529,7 @@ describe("orders.getBucketCounts", () => {
     const uniqueName = `Counts ${Date.now()}`;
     const before = await adminCaller.orders.getBucketCounts({});
     const beforeFiltered = await adminCaller.orders.getBucketCounts({ search: uniqueName });
-    expect(beforeFiltered).toEqual({ upcoming: 0, today: 0, past: 0 });
+    expect(beforeFiltered).toEqual({ upcoming: 0, today: 0, past: 0, cancelled: 0 });
 
     const inTenDays = new Date();
     inTenDays.setDate(inTenDays.getDate() + 10);
@@ -546,7 +546,65 @@ describe("orders.getBucketCounts", () => {
     expect(after.upcoming).toBe(before.upcoming + 1);
     expect(after.today).toBe(before.today);
     expect(after.past).toBe(before.past);
-    expect(afterFiltered).toEqual({ upcoming: 1, today: 0, past: 0 });
+    expect(afterFiltered).toEqual({ upcoming: 1, today: 0, past: 0, cancelled: 0 });
+  });
+});
+
+describe("cancelled orders", () => {
+  it("move to the Cancelled tab and out of Upcoming, the calendar and the dashboard", async () => {
+    const publicCaller = appRouter.createCaller(createPublicContext());
+    const adminCaller = appRouter.createCaller(createAdminContext());
+
+    const uniqueName = `Cancel Move ${Date.now()}`;
+    const inTenDays = new Date();
+    inTenDays.setDate(inTenDays.getDate() + 10);
+    inTenDays.setHours(12, 0, 0, 0);
+    const dayStr = `${inTenDays.getFullYear()}-${String(inTenDays.getMonth() + 1).padStart(2, "0")}-${String(inTenDays.getDate()).padStart(2, "0")}`;
+
+    const order = await publicCaller.orders.create({
+      customerName: uniqueName, customerEmail: "cancel.move@example.com", customerPhone: "+65 1000 0098",
+      deliveryMethod: "pickup", fulfillmentDate: inTenDays,
+      items: [makeItem({ id: "cancel-move-item" })], subtotal: 118, deliveryFee: 0, total: 118,
+    });
+    const idsIn = async (bucket: "upcoming" | "cancelled") =>
+      (await adminCaller.orders.listByBucket({ bucket, search: uniqueName })).items.map((o) => o.id);
+    const calendarCount = async () =>
+      (await adminCaller.orders.getOrderCountsForRange({ start: dayStr, end: dayStr })).find((c) => c.date === dayStr)?.count ?? 0;
+
+    const calendarBefore = await calendarCount();
+    expect(await idsIn("upcoming")).toContain(order.id);
+    expect(await idsIn("cancelled")).not.toContain(order.id);
+
+    await adminCaller.orders.updateStatus({ id: order.id, status: "cancelled" });
+
+    expect(await idsIn("upcoming")).not.toContain(order.id);
+    expect(await idsIn("cancelled")).toContain(order.id);
+    expect(await adminCaller.orders.getBucketCounts({ search: uniqueName })).toEqual({ upcoming: 0, today: 0, past: 0, cancelled: 1 });
+    expect(await calendarCount()).toBe(calendarBefore - 1);
+    expect((await adminCaller.orders.getOrdersByDate({ date: dayStr })).map((o) => o.id)).not.toContain(order.id);
+
+    // Un-cancelling puts it back where it belongs.
+    await adminCaller.orders.updateStatus({ id: order.id, status: "in_progress" });
+    expect(await idsIn("upcoming")).toContain(order.id);
+    expect(await idsIn("cancelled")).not.toContain(order.id);
+  });
+
+  it("stay out of today's and tomorrow's dashboard lists", async () => {
+    const publicCaller = appRouter.createCaller(createPublicContext());
+    const adminCaller = appRouter.createCaller(createAdminContext());
+
+    const order = await publicCaller.orders.create({
+      customerName: `Cancel Today ${Date.now()}`, customerEmail: "cancel.today@example.com", customerPhone: "+65 1000 0097",
+      deliveryMethod: "pickup", fulfillmentDate: new Date(),
+      items: [makeItem({ id: "cancel-today-item" })], subtotal: 118, deliveryFee: 0, total: 118,
+    });
+    const statsBefore = await adminCaller.orders.getDashboardStats();
+    expect((await adminCaller.orders.getOrdersForDay({ day: "today" })).map((o) => o.id)).toContain(order.id);
+
+    await adminCaller.orders.updateStatus({ id: order.id, status: "cancelled" });
+
+    expect((await adminCaller.orders.getOrdersForDay({ day: "today" })).map((o) => o.id)).not.toContain(order.id);
+    expect((await adminCaller.orders.getDashboardStats()).upcomingToday).toBe(statsBefore.upcomingToday - 1);
   });
 });
 
