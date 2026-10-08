@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRoute, useLocation } from "wouter";
 import { AdminLayout } from "@/components/AdminLayout";
+import { OrderItemEditor } from "@/components/admin/OrderItemEditor";
 import { trpc } from "@/lib/trpc";
 import { Loader2, ArrowLeft, Pencil, Download, Printer } from "lucide-react";
 import {
@@ -27,6 +28,7 @@ import {
   flavourLabel,
   dietaryLabels,
 } from "../../../shared/orderLabels";
+import { validateCustomItem } from "../../../shared/orderItemRules";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "../../../server/routers";
 
@@ -116,6 +118,21 @@ function ReferenceImage({ url, index }: { url: string; index: number }) {
   );
 }
 
+function ReferenceImageList({ urls }: { urls: string[] }) {
+  return (
+    <div>
+      <p className="mb-1.5 text-sm">
+        Reference Images <span className="text-muted-foreground">({urls.length})</span>
+      </p>
+      <div className="flex flex-wrap gap-3">
+        {urls.map((url, i) => (
+          <ReferenceImage key={`${url}-${i}`} url={url} index={i} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function OptionThumb({ src, alt }: { src: string | undefined; alt: string }) {
   if (!src) return null;
   return <img src={src} alt={alt} className="w-9 h-9 rounded-md object-cover shrink-0 border border-neutral-200" />;
@@ -198,6 +215,10 @@ export default function AdminOrderDetail() {
   const orderId = params?.id ? parseInt(params.id) : undefined;
   const utils = trpc.useUtils();
   const [isEditing, setIsEditing] = useState(false);
+  // Working copy of the order's items and delivery fee while editing; nothing
+  // is saved until "Save changes".
+  const [editItems, setEditItems] = useState<any[] | null>(null);
+  const [editFee, setEditFee] = useState(0);
 
   const { data: order, isLoading } = trpc.orders.getById.useQuery(
     { id: orderId! },
@@ -224,6 +245,7 @@ export default function AdminOrderDetail() {
     onSuccess: () => {
       toast.success("Order updated");
       setIsEditing(false);
+      setEditItems(null);
       utils.orders.getById.invalidate({ id: orderId });
       utils.orders.listByBucket.invalidate();
     },
@@ -231,8 +253,44 @@ export default function AdminOrderDetail() {
   });
 
   const onSubmit = (values: FormValues) => {
-    if (!orderId) return;
+    if (!orderId || !order) return;
+
+    // Items and pricing are only sent when they actually changed.
+    const itemsChanged = !!editItems && JSON.stringify(editItems) !== JSON.stringify(order.items);
+    const feeChanged = editFee !== order.deliveryFee;
+    let pricing: { items?: any[]; subtotal?: number; deliveryFee?: number; total?: number } = {};
+    if (editItems && (itemsChanged || feeChanged)) {
+      for (let i = 0; i < editItems.length; i++) {
+        const item = editItems[i];
+        const problem =
+          item.collection === "cny"
+            ? Number(item.price) >= 0
+              ? null
+              : "Enter a valid price"
+            : validateCustomItem(item);
+        if (problem) {
+          toast.error(`Item ${i + 1}: ${problem}`);
+          return;
+        }
+      }
+      if (!(editFee >= 0)) {
+        toast.error("Enter a valid delivery fee");
+        return;
+      }
+      const items = editItems.map((item) =>
+        item.collection === "cny" ? item : { ...item, flavours: (item.flavours ?? []).filter(Boolean) }
+      );
+      const subtotal = Math.round(items.reduce((sum, item) => sum + item.price * item.quantity, 0) * 100) / 100;
+      pricing = {
+        ...(itemsChanged ? { items } : {}),
+        subtotal,
+        deliveryFee: editFee,
+        total: Math.round((subtotal + editFee) * 100) / 100,
+      };
+    }
+
     updateOrder.mutate({
+      ...pricing,
       id: orderId,
       customerName: values.customerName,
       customerEmail: values.customerEmail || undefined,
@@ -249,8 +307,17 @@ export default function AdminOrderDetail() {
     });
   };
 
+  const startEditing = () => {
+    if (order) {
+      setEditItems(JSON.parse(JSON.stringify(order.items)));
+      setEditFee(order.deliveryFee);
+    }
+    setIsEditing(true);
+  };
+
   const handleCancel = () => {
     if (order) reset(orderToFormValues(order));
+    setEditItems(null);
     setIsEditing(false);
   };
 
@@ -261,6 +328,14 @@ export default function AdminOrderDetail() {
       </AdminLayout>
     );
   }
+
+  // While editing, show the totals the edited items and fee will produce.
+  const editedSubtotal =
+    isEditing && editItems
+      ? Math.round(editItems.reduce((sum, item) => sum + (Number(item.price) || 0) * (item.quantity ?? 1), 0) * 100) / 100
+      : null;
+  const shownSubtotal = editedSubtotal ?? order.subtotal;
+  const shownTotal = editedSubtotal !== null ? Math.round((editedSubtotal + (Number(editFee) || 0)) * 100) / 100 : order.total;
 
   const customerWhatsapp = toWhatsAppLink(order.customerPhone);
   const recipientWhatsapp = toWhatsAppLink(order.recipientPhone);
@@ -298,7 +373,7 @@ export default function AdminOrderDetail() {
           </p>
           {!isEditing && (
             <div className="flex flex-wrap items-center gap-2 mt-4">
-              <button type="button" onClick={() => setIsEditing(true)} className={adminButton}>
+              <button type="button" onClick={startEditing} className={adminButton}>
                 <Pencil className="h-3.5 w-3.5" />
                 Edit
               </button>
@@ -353,9 +428,17 @@ export default function AdminOrderDetail() {
         <section className={`${adminCard} p-4 md:p-5 mb-4`}>
           <h2 className="mb-4">Order details</h2>
           <div className="flex flex-col gap-4">
-            {order.items.map((item: any, idx: number) => (
+            {(isEditing && editItems ? editItems : order.items).map((item: any, idx: number) => (
               <div key={item.id ?? idx} className="rounded-md border border-neutral-200 p-4">
-                {item.collection === "cny" ? (
+                {isEditing && editItems ? (
+                  <div className="flex flex-col gap-4">
+                    <OrderItemEditor
+                      item={item}
+                      onChange={(next) => setEditItems((prev) => (prev ? prev.map((it, i) => (i === idx ? next : it)) : prev))}
+                    />
+                    {item.referenceImages && item.referenceImages.length > 0 && <ReferenceImageList urls={item.referenceImages} />}
+                  </div>
+                ) : item.collection === "cny" ? (
                   <div className="flex gap-4">
                     {item.image && (
                       <img src={item.image} alt={item.name} className="w-20 h-20 object-cover rounded-xl shrink-0" />
@@ -489,16 +572,7 @@ export default function AdminOrderDetail() {
                         )}
                         {item.designDetails && <p>Design Details: <span className="text-muted-foreground">{item.designDetails}</span></p>}
                         {item.dietaryRequirements && <p>Dietary: <span className="text-muted-foreground">{dietaryLabels(item.dietaryRequirements).join(", ")}</span></p>}
-                        {item.referenceImages && item.referenceImages.length > 0 && (
-                          <div>
-                            <p className="mb-1.5">Reference Images <span className="text-muted-foreground">({item.referenceImages.length})</span></p>
-                            <div className="flex flex-wrap gap-3">
-                              {item.referenceImages.map((url: string, i: number) => (
-                                <ReferenceImage key={`${url}-${i}`} url={url} index={i} />
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                        {item.referenceImages && item.referenceImages.length > 0 && <ReferenceImageList urls={item.referenceImages} />}
                         {item.specialInstructions && <p>Additional Notes: <span className="text-muted-foreground">{item.specialInstructions}</span></p>}
                       </div>
                     )}
@@ -511,16 +585,31 @@ export default function AdminOrderDetail() {
           <div className="flex flex-col gap-1 mt-5 text-sm max-w-xs ml-auto">
             <div className="flex justify-between text-neutral-500">
               <span>Subtotal</span>
-              <span>{formatPrice(order.subtotal)}</span>
+              <span>{formatPrice(shownSubtotal)}</span>
             </div>
-            <div className="flex justify-between text-neutral-500">
+            <div className="flex items-center justify-between gap-3 text-neutral-500">
               <span>Delivery Fee</span>
-              <span>{formatPrice(order.deliveryFee)}</span>
+              {isEditing ? (
+                <input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={Number.isFinite(editFee) ? editFee : ""}
+                  onChange={(e) => setEditFee(e.target.value === "" ? NaN : Number(e.target.value))}
+                  aria-label="Delivery fee"
+                  className={`${adminInput} !h-8 !w-24 text-right`}
+                />
+              ) : (
+                <span>{formatPrice(order.deliveryFee)}</span>
+              )}
             </div>
             <div className="flex justify-between font-semibold text-base pt-2 mt-1 border-t border-neutral-200">
               <span>Total</span>
-              <span>{formatPrice(order.total)}</span>
+              <span>{formatPrice(shownTotal)}</span>
             </div>
+            {isEditing && (
+              <p className="text-xs text-neutral-500 mt-1">Totals update from the item prices and delivery fee when you save.</p>
+            )}
           </div>
 
           <div className="mt-5 pt-4 border-t border-neutral-200">
