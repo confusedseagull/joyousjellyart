@@ -9,7 +9,7 @@ const ADMIN_TAGS: Tag[] = [
   { tag: "meta", attrs: { name: "apple-mobile-web-app-status-bar-style", content: "default" } },
   { tag: "meta", attrs: { name: "apple-mobile-web-app-title", content: "JJA Admin" } },
   { tag: "meta", attrs: { name: "mobile-web-app-capable", content: "yes" } },
-  { tag: "meta", attrs: { name: "theme-color", content: "#6fa4a6" } },
+  { tag: "meta", attrs: { name: "theme-color", content: "#faf7f3" } },
 ];
 
 // Same "Add to Home Screen" support for the storefront, but pointed at the
@@ -23,7 +23,7 @@ const PUBLIC_TAGS: Tag[] = [
   { tag: "meta", attrs: { name: "apple-mobile-web-app-status-bar-style", content: "default" } },
   { tag: "meta", attrs: { name: "apple-mobile-web-app-title", content: "Joyous JellyArt" } },
   { tag: "meta", attrs: { name: "mobile-web-app-capable", content: "yes" } },
-  { tag: "meta", attrs: { name: "theme-color", content: "#6fa4a6" } },
+  { tag: "meta", attrs: { name: "theme-color", content: "#faf7f3" } },
 ];
 
 // Injects "Add to Home Screen" tags for whichever half of the app is active
