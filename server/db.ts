@@ -223,6 +223,12 @@ function shiftDateString(dateStr: string, days: number): string {
   return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
 }
 
+// Group by the selected "date" alias rather than repeating the DATE_FORMAT
+// expression: drizzle prints the select-list copy without the table name and
+// the GROUP BY copy with it, which TiDB (only_full_group_by) treats as two
+// different expressions and rejects, though local MySQL accepts it.
+const GROUP_BY_DATE = sql.raw("`date`");
+
 // Orders count as revenue once confirmed (payment is by manual PayNow/bank
 // transfer, so paymentStatus is never updated) and stop counting if cancelled.
 // "delivered" is the legacy value of "completed".
@@ -245,10 +251,10 @@ export async function getRevenueTrend(days: number): Promise<RevenueTrendPoint[]
   const dateExpr = sql<string>`DATE_FORMAT(${orders.createdAt}, '%Y-%m-%d')`;
 
   const rows = await db
-    .select({ date: dateExpr, revenue: sql<number>`COALESCE(SUM(${orders.total}), 0)` })
+    .select({ date: dateExpr.as("date"), revenue: sql<number>`COALESCE(SUM(${orders.total}), 0)` })
     .from(orders)
     .where(and(inArray(orders.status, [...REVENUE_STATUSES]), sql`${dateExpr} >= ${rangeStartStr}`))
-    .groupBy(dateExpr);
+    .groupBy(GROUP_BY_DATE);
 
   const byDate = new Map(rows.map((r) => [r.date, Number(r.revenue)]));
 
@@ -279,10 +285,10 @@ export async function getOrderCountsForRange(startDateStr: string, endDateStr: s
   const dateExpr = sql<string>`DATE_FORMAT(${orders.fulfillmentDate}, '%Y-%m-%d')`;
 
   const rows = await db
-    .select({ date: dateExpr, count: sql<number>`count(*)` })
+    .select({ date: dateExpr.as("date"), count: sql<number>`count(*)` })
     .from(orders)
     .where(sql`${dateExpr} >= ${startDateStr} AND ${dateExpr} <= ${endDateStr}`)
-    .groupBy(dateExpr);
+    .groupBy(GROUP_BY_DATE);
 
   return rows.map((r) => ({ date: r.date, count: Number(r.count) }));
 }
