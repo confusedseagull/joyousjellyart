@@ -16,8 +16,17 @@ import {
 } from "@/components/admin/AdminUI";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { formatPrice, toWhatsAppLink, shortSizeLabel } from "@/lib/utils";
-import { THEMES, SHAPES, BASE_FLAVORS, PLATTER_INDIVIDUAL_SHAPES, SHAPE_SIZES } from "@/lib/customizeOptions";
+import { formatPrice, toWhatsAppLink } from "@/lib/utils";
+import { THEMES, SHAPES, BASE_FLAVORS, PLATTER_INDIVIDUAL_SHAPES } from "@/lib/customizeOptions";
+import {
+  formatLabel,
+  themeLabel,
+  shapeLabel,
+  platterShapeLabel,
+  sizeLabel,
+  flavourLabel,
+  dietaryLabels,
+} from "../../../shared/orderLabels";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "../../../server/routers";
 
@@ -76,23 +85,8 @@ const PLATTER_SHAPE_IMAGE: Record<string, string | undefined> = Object.fromEntri
   PLATTER_INDIVIDUAL_SHAPES.map((s) => [s.value, s.image])
 );
 
-// Value -> the same customer-facing label shown on the Customize builder —
-// order design details should read the way a customer chose them, not as
-// the internal option values (e.g. "cartoonCharacters" -> "Cartoon
-// Characters", "platter9" -> "Platter of 9").
-const THEME_LABEL: Record<string, string> = Object.fromEntries(THEMES.map((t) => [t.value, t.label]));
-const SHAPE_LABEL: Record<string, string> = Object.fromEntries(SHAPES.map((s) => [s.value, s.label]));
-const PLATTER_SHAPE_LABEL: Record<string, string> = Object.fromEntries(
-  PLATTER_INDIVIDUAL_SHAPES.map((s) => [s.value, s.label])
-);
-
-// Size values are only unique within a given shape's own size list (e.g.
-// "8inch" means different real dimensions for different shapes), so the
-// label lookup has to be scoped to the item's shape.
-function sizeLabel(shape: string, size: string): string {
-  const label = SHAPE_SIZES[shape]?.find((s) => s.value === size)?.label ?? size;
-  return shortSizeLabel(label);
-}
+// Option names come from shared/orderLabels, the same lookup the customer emails and
+// confirmation page use, so admin always reads exactly as the customer chose.
 
 // Customer-uploaded reference photo: large enough to actually read, opens the
 // original in a new tab, and falls back to a plain link if it can't be shown.
@@ -132,12 +126,6 @@ const inputClass = adminInput;
 // jump when toggling edit mode, but a muted fill and no interactivity so
 // it's visually obvious these fields aren't clickable-to-edit right now.
 const displayClass = "text-sm text-neutral-900 break-words min-h-[24px]";
-
-const FORMAT_LABELS: Record<string, string> = {
-  cake: "Cake",
-  jellyPlatter: "Jelly Platter",
-  miniGiftBox: "Mini Gift Box",
-};
 
 interface FormValues {
   customerName: string;
@@ -377,7 +365,7 @@ export default function AdminOrderDetail() {
                       <p className="text-sm text-muted-foreground">{item.edition}</p>
                       <p className="text-sm text-muted-foreground">Size: {item.size} &middot; Flavour: {item.flavor}</p>
                       {item.dietaryRequirements?.length > 0 && (
-                        <p className="text-sm text-muted-foreground">Dietary: {item.dietaryRequirements.join(", ")}</p>
+                        <p className="text-sm text-muted-foreground">Dietary: {dietaryLabels(item.dietaryRequirements).join(", ")}</p>
                       )}
                     </div>
                     <p className="font-semibold shrink-0">{formatPrice(item.price)}</p>
@@ -386,7 +374,7 @@ export default function AdminOrderDetail() {
                   <div>
                     <div className="flex items-start justify-between gap-4 mb-4">
                       <p className="font-display text-lg">
-                        {item.themeLabel || THEME_LABEL[item.theme] || item.theme} {FORMAT_LABELS[item.format] || item.format}
+                        {themeLabel(item.theme, item.themeLabel)} {formatLabel(item.format)}
                       </p>
                       <div className="text-right shrink-0">
                         <p className="font-semibold">{formatPrice(item.price)}</p>
@@ -401,12 +389,12 @@ export default function AdminOrderDetail() {
                         {THEME_IMAGE[item.theme] && (
                           <img
                             src={THEME_IMAGE[item.theme]}
-                            alt={THEME_LABEL[item.theme] || item.theme}
+                            alt={themeLabel(item.theme, item.themeLabel)}
                             className="w-40 max-w-full aspect-square rounded-md object-cover border border-neutral-200"
                           />
                         )}
                         <p className="text-xs font-medium text-neutral-500 mt-3">Theme</p>
-                        <p className="text-sm text-foreground">{THEME_LABEL[item.theme] || item.theme}</p>
+                        <p className="text-sm text-foreground">{themeLabel(item.theme, item.themeLabel)}</p>
                         {item.cartoonCharacter && (
                           <p className="text-sm text-foreground mt-2">Character: <span className="text-muted-foreground">{item.cartoonCharacter}</span></p>
                         )}
@@ -428,8 +416,8 @@ export default function AdminOrderDetail() {
                         <div>
                           <p className="text-xs font-medium text-neutral-500 mb-1">Shape</p>
                           <div className="flex items-center gap-2 text-sm text-foreground">
-                            <OptionThumb src={SHAPE_IMAGE[item.shape]} alt={SHAPE_LABEL[item.shape] || item.shape} />
-                            <span>{SHAPE_LABEL[item.shape] || item.shape}</span>
+                            <OptionThumb src={SHAPE_IMAGE[item.shape]} alt={shapeLabel(item.shape)} />
+                            <span>{shapeLabel(item.shape)}</span>
                           </div>
                         </div>
 
@@ -441,7 +429,7 @@ export default function AdminOrderDetail() {
                         {item.numbers && (
                           <div>
                             <p className="text-xs font-medium text-neutral-500">Numbers</p>
-                            <p className="text-sm text-foreground">{item.numbers}</p>
+                            <p className="text-sm text-foreground">{String(item.numbers).replace(/,\s*/g, ", ")}</p>
                           </div>
                         )}
 
@@ -466,7 +454,7 @@ export default function AdminOrderDetail() {
                               {item.flavours.map((flavor: string) => (
                                 <div key={flavor} className="flex items-center gap-2 text-sm text-foreground">
                                   <OptionThumb src={FLAVOR_IMAGE[flavor]} alt={flavor} />
-                                  <span>{flavor}</span>
+                                  <span>{flavourLabel(flavor)}</span>
                                 </div>
                               ))}
                             </div>
@@ -479,8 +467,8 @@ export default function AdminOrderDetail() {
                             <div className="flex flex-wrap gap-3">
                               {item.platterShapes.map((shape: string) => (
                                 <div key={shape} className="flex items-center gap-2 text-sm text-foreground">
-                                  <OptionThumb src={PLATTER_SHAPE_IMAGE[shape]} alt={PLATTER_SHAPE_LABEL[shape] || shape} />
-                                  <span>{PLATTER_SHAPE_LABEL[shape] || shape}</span>
+                                  <OptionThumb src={PLATTER_SHAPE_IMAGE[shape]} alt={platterShapeLabel(shape)} />
+                                  <span>{platterShapeLabel(shape)}</span>
                                 </div>
                               ))}
                             </div>
@@ -500,7 +488,7 @@ export default function AdminOrderDetail() {
                           </p>
                         )}
                         {item.designDetails && <p>Design Details: <span className="text-muted-foreground">{item.designDetails}</span></p>}
-                        {item.dietaryRequirements && <p>Dietary: <span className="text-muted-foreground">{item.dietaryRequirements}</span></p>}
+                        {item.dietaryRequirements && <p>Dietary: <span className="text-muted-foreground">{dietaryLabels(item.dietaryRequirements).join(", ")}</span></p>}
                         {item.referenceImages && item.referenceImages.length > 0 && (
                           <div>
                             <p className="mb-1.5">Reference Images <span className="text-muted-foreground">({item.referenceImages.length})</span></p>

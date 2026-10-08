@@ -15,6 +15,7 @@ import { format } from "date-fns";
 import { formatPrice, shortSizeLabel } from "@/lib/utils";
 import { COUNTRY_CODES, DEFAULT_COUNTRY_DIAL_CODE } from "@/lib/countryCodes";
 import { toast } from "sonner";
+import { dietaryLabels } from "../../../shared/orderLabels";
 
 // Formats minutes-since-midnight as "H:MM AM/PM", matching the label style
 // already used throughout the app (e.g. "11:00 AM - 1:00 PM").
@@ -626,7 +627,7 @@ export default function Cart() {
                     Flavour: {item.flavors && item.flavors.length > 0 ? item.flavors.join(", ") : item.flavor}
                   </p>
                   {item.dietaryRequirements && item.dietaryRequirements.length > 0 && (
-                    <p className="text-xs text-muted-foreground">Dietary: {item.dietaryRequirements.join(", ")}</p>
+                    <p className="text-xs text-muted-foreground">Dietary: {dietaryLabels(item.dietaryRequirements).join(", ")}</p>
                   )}
                 </>
               )}

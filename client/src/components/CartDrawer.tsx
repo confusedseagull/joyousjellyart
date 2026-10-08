@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
 import { ShoppingBag, X, Trash2 } from "lucide-react";
 import { useLocation } from "wouter";
+import { dietaryLabels } from "../../../shared/orderLabels";
 
 interface CartDrawerProps {
   open: boolean;
@@ -42,8 +43,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
                   item.collection === "cny"
                     ? `${item.edition} • ${item.size} • ${item.flavors ? item.flavors.join(', ') : item.flavor}`
                     : `${item.shapeLabel} • ${item.sizeLabel} • ${item.flavours.join(', ')}`;
-                const dietary =
-                  item.collection === "cny" ? item.dietaryRequirements?.join(', ') : item.dietaryRequirements;
+                const dietary = dietaryLabels(item.dietaryRequirements).join(', ');
                 return (
                   <div key={item.id} className="flex gap-4 border-b pb-6 mb-4">
                     <img

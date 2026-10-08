@@ -1,12 +1,14 @@
 import { format } from "date-fns";
+import { THEMES } from "@/lib/customizeOptions";
+import { formatTimeRange } from "@/lib/utils";
 import {
-  THEMES,
-  SHAPES,
-  PLATTER_INDIVIDUAL_SHAPES,
-  SHAPE_SIZES,
-  DIETARY_OPTIONS,
-} from "@/lib/customizeOptions";
-import { shortSizeLabel, formatTimeRange } from "@/lib/utils";
+  formatLabel,
+  themeLabel,
+  shapeDescription,
+  sizeLabel,
+  flavourLabel,
+  dietaryLabels,
+} from "../../../../shared/orderLabels";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "../../../../server/routers";
 
@@ -59,20 +61,9 @@ export const BUSINESS = {
   storeAddress: "2 Jalan Lokam, #01-27 Singapore 537846",
 };
 
-const THEME_LABEL: Record<string, string> = Object.fromEntries(THEMES.map((t) => [t.value, t.label]));
 const THEME_IMAGE: Record<string, string | undefined> = Object.fromEntries(
   THEMES.map((t) => [t.value, t.image ?? t.images?.[0]])
 );
-const SHAPE_LABEL: Record<string, string> = Object.fromEntries(SHAPES.map((s) => [s.value, s.label]));
-const PLATTER_SHAPE_LABEL: Record<string, string> = Object.fromEntries(
-  PLATTER_INDIVIDUAL_SHAPES.map((s) => [s.value, s.label])
-);
-const DIETARY_LABEL: Record<string, string> = Object.fromEntries(DIETARY_OPTIONS.map((d) => [d.value, d.label]));
-const FORMAT_LABELS: Record<string, string> = {
-  cake: "Cake",
-  jellyPlatter: "Jelly Platter",
-  miniGiftBox: "Mini Gift Box",
-};
 
 const NONE = "None";
 
@@ -106,26 +97,13 @@ function deliveryLines(address: string | null | undefined): string[] {
   return [...parts, postal].filter((l): l is string => !!l);
 }
 
+// Option names come from shared/orderLabels, so the PDF reads exactly as the customer chose.
 function dietaryText(value: unknown): string {
-  const raw = Array.isArray(value) ? value : typeof value === "string" ? value.split(/,\s*/) : [];
-  const labels = raw.filter(Boolean).map((v: string) => DIETARY_LABEL[v] ?? v);
+  const labels = dietaryLabels(value);
   return labels.length > 0 ? labels.join(", ") : NONE;
 }
 
-function sizeText(shape: string, size: string): string {
-  const label = SHAPE_SIZES[shape]?.find((s) => s.value === size)?.label ?? size;
-  return shortSizeLabel(label);
-}
-
 function buildCustomItem(item: any): PdfItem {
-  const shapeLabel = SHAPE_LABEL[item.shape] || item.shape;
-  let shapeValue = shapeLabel;
-  if (item.platterShapes?.length) {
-    shapeValue = `${shapeLabel} (${item.platterShapes.map((s: string) => PLATTER_SHAPE_LABEL[s] || s).join(", ")})`;
-  } else if (item.numbers) {
-    shapeValue = `${shapeLabel} (${String(item.numbers).replace(/,\s*/g, ", ")})`;
-  }
-
   const colors = [
     ...(item.backgroundColor ? [`${item.backgroundColor} (Background)`] : []),
     ...(item.selectedColors ?? []),
@@ -145,7 +123,7 @@ function buildCustomItem(item: any): PdfItem {
     });
   }
 
-  const themeField: PdfField = { label: "Theme", value: THEME_LABEL[item.theme] || item.themeLabel || item.theme };
+  const themeField: PdfField = { label: "Theme", value: themeLabel(item.theme, item.themeLabel) };
   const designDetails: PdfField = { label: "Design Details", value: item.designDetails || NONE };
   const additionalNotes: PdfField = { label: "Additional Notes", value: item.specialInstructions || NONE };
 
@@ -161,13 +139,13 @@ function buildCustomItem(item: any): PdfItem {
   return {
     imageSrc: THEME_IMAGE[item.theme],
     columnA: [
-      { label: "Format", value: FORMAT_LABELS[item.format] || item.format },
-      { label: "Shape", value: shapeValue },
-      { label: "Size", value: sizeText(item.shape, item.size) },
+      { label: "Format", value: formatLabel(item.format) },
+      { label: "Shape", value: shapeDescription(item) },
+      { label: "Size", value: sizeLabel(item.shape, item.size) },
       { label: "Quantity", value: String(item.quantity ?? 1) },
     ],
     columnB: [
-      { label: "Base Flavour", value: item.flavours?.length ? item.flavours.join(", ") : NONE },
+      { label: "Base Flavour", value: item.flavours?.length ? item.flavours.map(flavourLabel).join(", ") : NONE },
       { label: "Colors", value: colors.length ? colors.join(", ") : NONE },
       { label: "Text", value: cakeText },
       { label: "Dietary Requirements", value: dietaryText(item.dietaryRequirements) },
