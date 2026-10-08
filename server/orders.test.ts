@@ -565,6 +565,9 @@ describe("multi-box Mini Gift Box orders", () => {
     const saved = await adminCaller.orders.getById({ id: order.id });
     expect(saved.items).toHaveLength(1);
     expect(saved.items[0]).toMatchObject({ boxes: 3, quantity: 1, price: 56.7 });
+    // The order's own totals keep the cents too (they used to round to whole dollars).
+    expect(saved.subtotal).toBe(56.7);
+    expect(saved.total).toBe(56.7);
   });
 });
 

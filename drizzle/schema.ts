@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, json } from "drizzle-orm/mysql-core";
+import { int, decimal, mysqlEnum, mysqlTable, text, timestamp, varchar, json } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -124,9 +124,10 @@ export const orders = mysqlTable("orders", {
   items: json("items").$type<OrderItem[]>().notNull(),
 
   // Order totals
-  subtotal: int("subtotal").notNull(),
-  deliveryFee: int("deliveryFee").notNull(),
-  total: int("total").notNull(),
+  // Dollars and cents: gift boxes and cupcakes are priced at $18.90 / $12.90, so whole-number columns rounded the totals.
+  subtotal: decimal("subtotal", { precision: 10, scale: 2, mode: "number" }).notNull(),
+  deliveryFee: decimal("deliveryFee", { precision: 10, scale: 2, mode: "number" }).notNull(),
+  total: decimal("total", { precision: 10, scale: 2, mode: "number" }).notNull(),
 
   // Order-level additional notes (distinct from each item's own specialInstructions)
   notes: text("notes"),

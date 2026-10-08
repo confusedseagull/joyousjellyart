@@ -57,6 +57,13 @@
       "when": 1791391029871,
       "tag": "0007_flowery_annihilus",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1791447816309,
+      "tag": "0008_lethal_scrambler",
+      "breakpoints": true
     }
   ]
 }
