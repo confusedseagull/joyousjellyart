@@ -81,9 +81,20 @@ describe("applyItemChange", () => {
     expect(applyItemChange(numbers, { numbers: "8" }).price).toBe(118);
   });
 
-  it("only mini gift boxes can have a quantity above one", () => {
+  it("prices a multi-box Mini Gift Box order as one item covering every box", () => {
+    const gift = { ...cake, format: "miniGiftBox", shape: "miniGiftBox", size: "10cm", theme: "space", themeLabel: "Space", boxes: 3, quantity: 3 };
+    const next = applyItemChange(gift, {});
+
+    expect(next.quantity).toBe(1);
+    expect(next.boxes).toBe(3);
+    expect(unitPrice(next)).toBe(56.7);
+    expect(applyItemChange(next, { boxes: 2 }).price).toBe(37.8);
+    expect(applyItemChange(next, { boxes: 1 }).boxes).toBeUndefined();
+  });
+
+  it("only mini gift boxes have a box count", () => {
+    expect(applyItemChange({ ...cake, boxes: 3 }, {}).boxes).toBeUndefined();
     expect(applyItemChange({ ...cake, quantity: 3 }, {}).quantity).toBe(1);
-    expect(applyItemChange({ ...cake, format: "miniGiftBox", shape: "miniGiftBox", size: "10cm", quantity: 3 }, {}).quantity).toBe(3);
   });
 });
 

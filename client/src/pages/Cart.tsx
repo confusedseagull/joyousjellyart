@@ -15,7 +15,7 @@ import { format } from "date-fns";
 import { formatPrice, shortSizeLabel } from "@/lib/utils";
 import { COUNTRY_CODES, DEFAULT_COUNTRY_DIAL_CODE } from "@/lib/countryCodes";
 import { toast } from "sonner";
-import { dietaryLabels } from "../../../shared/orderLabels";
+import { dietaryLabels, itemTitle, formatText } from "../../../shared/orderLabels";
 
 // Formats minutes-since-midnight as "H:MM AM/PM", matching the label style
 // already used throughout the app (e.g. "11:00 AM - 1:00 PM").
@@ -195,6 +195,7 @@ function toOrderItemPayload(item: CartItem) {
       dietaryRequirements: item.dietaryRequirements,
       referenceImages: item.referenceImages,
       specialInstructions: item.specialInstructions,
+      boxes: item.boxes,
       price: item.price,
       quantity: item.quantity,
     };
@@ -605,8 +606,8 @@ export default function Cart() {
             <div className="flex-1 min-w-0 flex flex-col gap-1.5">
               {item.collection === "custom" ? (
                 <>
-                  <p className="font-medium text-[15px]">{item.themeLabel} {FORMAT_LABELS[item.format]}</p>
-                  <p className="text-xs text-muted-foreground">Format: {FORMAT_LABELS[item.format]}</p>
+                  <p className="font-medium text-[15px]">{itemTitle(item)}</p>
+                  <p className="text-xs text-muted-foreground">Format: {formatText(item)}</p>
                   <p className="text-xs text-muted-foreground">Shape: {itemShapeDisplay(item)}</p>
                   <p className="text-xs text-muted-foreground">Size: {shortSizeLabel(item.sizeLabel)}</p>
                   <p className="text-xs text-muted-foreground">Design: {item.themeLabel}</p>
@@ -632,17 +633,7 @@ export default function Cart() {
                 </>
               )}
               <div className="flex items-center gap-3 mt-1.5">
-                {item.collection === "custom" && item.format === "miniGiftBox" ? (
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.id, item.quantity - 1)} disabled={item.quantity <= 1}>
-                      <Minus className="h-3 w-3" />
-                    </Button>
-                    <span className="text-sm font-medium w-4 text-center">{item.quantity}</span>
-                    <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.id, item.quantity + 1)}>
-                      <Plus className="h-3 w-3" />
-                    </Button>
-                  </div>
-                ) : item.collection === "cny" ? (
+                {item.collection === "cny" ? (
                   <div className="flex items-center gap-2">
                     <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.id, item.quantity - 1)} disabled={item.quantity <= 1}>
                       <Minus className="h-3 w-3" />

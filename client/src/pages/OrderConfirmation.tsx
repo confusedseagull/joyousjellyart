@@ -6,7 +6,8 @@ import { trpc } from "@/lib/trpc";
 import { formatPrice } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
-  formatLabel,
+  formatText,
+  itemTitle,
   themeLabel as optionThemeLabel,
   sizeLabel as optionSizeLabel,
   flavourLabel,
@@ -76,7 +77,7 @@ function themeValueFor(item: ConfirmationCustomItem): string {
 // Bouquet Cake" or "Space Mini Gift Box" — the theme and format the
 // customer actually chose.
 function itemNameFor(item: ConfirmationCustomItem): string {
-  return `${optionThemeLabel(item.theme, item.themeLabel)} ${formatLabel(item.format)}`;
+  return itemTitle(item);
 }
 
 interface ConfirmationCnyItem {
@@ -273,7 +274,7 @@ export default function OrderConfirmation() {
   const orderMessageLines: string[] = [];
   orderData.items.forEach((item) => {
     if (item.collection === "cny") {
-      orderMessageLines.push(`*${item.name}* - ${formatPrice(item.price)}`);
+      orderMessageLines.push(`*${item.name}* - ${formatPrice(item.price * item.quantity)}`);
       orderMessageLines.push(field("Edition", item.edition));
       orderMessageLines.push(field("Size", item.size));
       orderMessageLines.push(field("Flavour", item.flavors ? item.flavors.join(', ') : item.flavor || "None"));
@@ -282,8 +283,8 @@ export default function OrderConfirmation() {
       }
     } else {
       const shapeText = shapeDescription(item);
-      orderMessageLines.push(`*${itemNameFor(item)}* - ${formatPrice(item.price)}`);
-      orderMessageLines.push(field("Format", formatLabel(item.format)));
+      orderMessageLines.push(`*${itemNameFor(item)}* - ${formatPrice(item.price * item.quantity)}`);
+      orderMessageLines.push(field("Format", formatText(item)));
       orderMessageLines.push(field("Shape", shapeText));
       orderMessageLines.push(field("Size", item.sizeLabel || optionSizeLabel(item.shape, item.size)));
       orderMessageLines.push(field("Theme", themeValueFor(item)));
@@ -369,7 +370,7 @@ export default function OrderConfirmation() {
                         />
                       </div>
                     </div>
-                    <p className="font-display text-[24px] font-normal text-[#1c1e22] whitespace-nowrap">{formatPrice(item.price)}</p>
+                    <p className="font-display text-[24px] font-normal text-[#1c1e22] whitespace-nowrap">{formatPrice(item.price * item.quantity)}</p>
                   </div>
                 );
               }
@@ -381,7 +382,7 @@ export default function OrderConfirmation() {
                   <div className="flex flex-col gap-2.5">
                     <p className="font-display text-[24px] font-normal text-[#1c1e22] leading-[1.3]">{itemNameFor(item)}</p>
                     <div className="flex flex-col gap-2">
-                      <DetailLine label="Format" value={formatLabel(item.format)} />
+                      <DetailLine label="Format" value={formatText(item)} />
                       <DetailLine label="Shape" value={shapeText} />
                       <DetailLine label="Size" value={item.sizeLabel || optionSizeLabel(item.shape, item.size)} />
                       <DetailLine label="Theme" value={themeValueFor(item)} />
@@ -405,7 +406,7 @@ export default function OrderConfirmation() {
                       )}
                     </div>
                   </div>
-                  <p className="font-display text-[24px] font-normal text-[#1c1e22] whitespace-nowrap">{formatPrice(item.price)}</p>
+                  <p className="font-display text-[24px] font-normal text-[#1c1e22] whitespace-nowrap">{formatPrice(item.price * item.quantity)}</p>
                 </div>
               );
             })}

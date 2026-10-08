@@ -67,6 +67,7 @@ export type CustomOrderItem = {
   dietaryRequirements?: string;
   referenceImages?: string[];
   specialInstructions?: string;
+  boxes?: number; // Mini Gift Boxes: boxes covered by this one item (price is for all of them)
   price: number;
   quantity: number;
 };

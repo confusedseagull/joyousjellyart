@@ -550,6 +550,24 @@ describe("orders.getBucketCounts", () => {
   });
 });
 
+describe("multi-box Mini Gift Box orders", () => {
+  it("are stored as one item, with the box count kept and the price covering every box", async () => {
+    const publicCaller = appRouter.createCaller(createPublicContext());
+    const adminCaller = appRouter.createCaller(createAdminContext());
+
+    const order = await publicCaller.orders.create({
+      customerName: `Boxes ${Date.now()}`, customerEmail: "boxes@example.com", customerPhone: "+65 1000 0096",
+      deliveryMethod: "pickup", fulfillmentDate: new Date(),
+      items: [{ ...makeItem({ id: "gift-box", format: "miniGiftBox", shape: "miniGiftBox", size: "10cm", price: 56.7, quantity: 1 }), boxes: 3 }],
+      subtotal: 56.7, deliveryFee: 0, total: 56.7,
+    });
+
+    const saved = await adminCaller.orders.getById({ id: order.id });
+    expect(saved.items).toHaveLength(1);
+    expect(saved.items[0]).toMatchObject({ boxes: 3, quantity: 1, price: 56.7 });
+  });
+});
+
 describe("cancelled orders", () => {
   it("move to the Cancelled tab and out of Upcoming, the calendar and the dashboard", async () => {
     const publicCaller = appRouter.createCaller(createPublicContext());

@@ -2,7 +2,8 @@ import { format } from "date-fns";
 import { THEMES } from "@/lib/customizeOptions";
 import { formatTimeRange } from "@/lib/utils";
 import {
-  formatLabel,
+  formatText,
+  boxCount,
   themeLabel,
   shapeDescription,
   sizeLabel,
@@ -139,10 +140,10 @@ function buildCustomItem(item: any): PdfItem {
   return {
     imageSrc: THEME_IMAGE[item.theme],
     columnA: [
-      { label: "Format", value: formatLabel(item.format) },
+      { label: "Format", value: formatText(item) },
       { label: "Shape", value: shapeDescription(item) },
       { label: "Size", value: sizeLabel(item.shape, item.size) },
-      { label: "Quantity", value: String(item.quantity ?? 1) },
+      { label: "Quantity", value: String((item.quantity ?? 1) * boxCount(item)) },
     ],
     columnB: [
       { label: "Base Flavour", value: item.flavours?.length ? item.flavours.map(flavourLabel).join(", ") : NONE },

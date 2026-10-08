@@ -27,6 +27,7 @@ export interface CustomCartItem {
   dietaryRequirements?: string;
   referenceImages?: string[];
   specialInstructions?: string;
+  boxes?: number; // Mini Gift Boxes: boxes covered by this one item (price is for all of them)
   image: string;
   price: number;
   quantity: number;
@@ -64,12 +65,22 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 const CART_STORAGE_KEY = "jja_cart";
 
+// Carts saved before multi-box orders became a single item store the box count
+// as the quantity (with the price already covering every box). Convert those.
+function withBoxCounts(items: CartItem[]): CartItem[] {
+  return items.map((item) =>
+    item.collection === "custom" && item.format === "miniGiftBox" && item.quantity > 1 && !item.boxes
+      ? { ...item, boxes: item.quantity, quantity: 1 }
+      : item
+  );
+}
+
 // One-time migration from the two separate carts this app used to have, so
 // items a user already added don't silently disappear on upgrade.
 function loadInitialItems(): CartItem[] {
   try {
     const stored = localStorage.getItem(CART_STORAGE_KEY);
-    if (stored) return JSON.parse(stored);
+    if (stored) return withBoxCounts(JSON.parse(stored));
 
     const migrated: CartItem[] = [];
 

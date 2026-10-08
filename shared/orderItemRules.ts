@@ -12,6 +12,7 @@ import {
   FLOWERS,
 } from "../client/src/lib/customizeOptions";
 import { getCustomOrderPrice } from "./customOrderPricing";
+import { boxCount } from "./orderLabels";
 
 // Stored custom items are loose JSON; the admin edits them field by field.
 export type EditableCustomItem = Record<string, any>;
@@ -75,13 +76,15 @@ export function buildNumbers(count: 1 | 2, first: string, second: string): strin
   return count === 2 ? `${first},${second}` : first;
 }
 
-/** The price list's unit price for this item's theme + shape + size, or null if it has none. */
+/** The price list's price for this item (all its boxes, for a multi-box order), or null if it has none. */
 export function unitPrice(item: EditableCustomItem): number | null {
   const price = getCustomOrderPrice(item.theme, item.shape, item.size, item.shape === "numbers" ? numberCountOf(item) : undefined);
-  return price === null ? null : Number(price.toFixed(2));
+  if (price === null) return null;
+  // A multi-box Mini Gift Box order is one item priced for all its boxes.
+  return Number((price * boxCount(item)).toFixed(2));
 }
 
-const PRICE_FIELDS = ["format", "theme", "shape", "size", "numbers"] as const;
+const PRICE_FIELDS = ["format", "theme", "shape", "size", "numbers", "boxes"] as const;
 
 function pricingChanged(before: EditableCustomItem, after: EditableCustomItem): boolean {
   return PRICE_FIELDS.some((field) => before[field] !== after[field]);
@@ -125,7 +128,9 @@ export function applyItemChange(item: EditableCustomItem, changes: EditableCusto
     return flavour && allowed.has(flavour) ? flavour : "";
   });
 
-  if (next.format !== "miniGiftBox") next.quantity = 1;
+  // Only Mini Gift Boxes come in several boxes, and that is still ONE item (quantity 1).
+  next.quantity = 1;
+  next.boxes = next.format === "miniGiftBox" && Number(next.boxes) > 1 ? Math.floor(Number(next.boxes)) : undefined;
 
   if (next.theme !== "floralBouquet") next.selectedFlowers = undefined;
   if (next.theme !== "cartoonCharacters") next.cartoonCharacter = undefined;

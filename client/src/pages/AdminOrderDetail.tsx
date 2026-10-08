@@ -20,7 +20,7 @@ import { toast } from "sonner";
 import { formatPrice, toWhatsAppLink } from "@/lib/utils";
 import { THEMES, SHAPES, BASE_FLAVORS, PLATTER_INDIVIDUAL_SHAPES } from "@/lib/customizeOptions";
 import {
-  formatLabel,
+  itemTitle,
   themeLabel,
   shapeLabel,
   platterShapeLabel,
@@ -451,17 +451,21 @@ export default function AdminOrderDetail() {
                         <p className="text-sm text-muted-foreground">Dietary: {dietaryLabels(item.dietaryRequirements).join(", ")}</p>
                       )}
                     </div>
-                    <p className="font-semibold shrink-0">{formatPrice(item.price)}</p>
+                    <p className="font-semibold shrink-0">{formatPrice(item.price * item.quantity)}</p>
                   </div>
                 ) : (
                   <div>
                     <div className="flex items-start justify-between gap-4 mb-4">
                       <p className="font-display text-lg">
-                        {themeLabel(item.theme, item.themeLabel)} {formatLabel(item.format)}
+                        {itemTitle(item)}
                       </p>
                       <div className="text-right shrink-0">
-                        <p className="font-semibold">{formatPrice(item.price)}</p>
-                        {item.quantity > 1 && <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>}
+                        <p className="font-semibold">{formatPrice(item.price * item.quantity)}</p>
+                        {item.quantity > 1 && (
+                          <p className="text-xs text-muted-foreground">
+                            Qty: {item.quantity} &middot; {formatPrice(item.price)} each
+                          </p>
+                        )}
                       </div>
                     </div>
 

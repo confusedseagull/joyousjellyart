@@ -88,6 +88,35 @@ describe("option names in order emails", () => {
     }
   });
 
+  it("shows a multi-box Mini Gift Box order as one item priced for all its boxes", () => {
+    const order = makeOrder({
+      subtotal: 56.7,
+      total: 56.7,
+      items: [
+        {
+          collection: "custom",
+          id: "box-1",
+          format: "miniGiftBox",
+          theme: "space",
+          themeLabel: "Space",
+          shape: "miniGiftBox",
+          size: "10cm",
+          flavours: ["Longan"],
+          boxes: 3,
+          price: 56.7,
+          quantity: 1,
+        },
+      ],
+    });
+
+    for (const html of [buildOrderConfirmationEmailHtml(order), buildOrderReceivedEmailHtml(order)]) {
+      expect(html).toContain("3 Mini Gift Boxes - Space");
+      expect(html).toContain("Mini Gift Box (3 boxes)");
+      expect(html).toContain("Qty: 1");
+      expect(html).toContain("$56.70");
+    }
+  });
+
   it("escapes customer-typed text", () => {
     const html = buildOrderConfirmationEmailHtml(makeOrder({ items: [custom] }));
 

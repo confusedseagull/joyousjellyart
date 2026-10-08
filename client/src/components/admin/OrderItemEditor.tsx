@@ -66,10 +66,10 @@ function dietaryList(value: unknown): string[] {
 }
 
 function PriceFields({ item, onChange, note }: { item: Item; onChange: (next: Item) => void; note?: ReactNode }) {
-  const showQuantity = item.collection === "cny" || item.format === "miniGiftBox";
+  const isCny = item.collection === "cny";
   return (
     <div className="grid grid-cols-2 gap-4 pt-4 mt-1 border-t border-neutral-200">
-      <Field label="Price each ($)">
+      <Field label={isCny ? "Price each ($)" : item.format === "miniGiftBox" && item.boxes > 1 ? "Price for all boxes ($)" : "Price ($)"}>
         <input
           type="number"
           min={0}
@@ -79,7 +79,7 @@ function PriceFields({ item, onChange, note }: { item: Item; onChange: (next: It
           className={adminInput}
         />
       </Field>
-      {showQuantity && (
+      {isCny && (
         <Field label="Quantity">
           <input
             type="number"
@@ -247,6 +247,19 @@ export function OrderItemEditor({ item, onChange }: { item: Item; onChange: (nex
           </select>
         </Field>
       </div>
+
+      {item.format === "miniGiftBox" && (
+        <Field label="Number of boxes" hint="one item, priced for all the boxes">
+          <input
+            type="number"
+            min={1}
+            step={1}
+            value={item.boxes ?? 1}
+            onChange={(e) => update({ boxes: Math.max(1, Math.floor(Number(e.target.value) || 1)) })}
+            className={adminInput}
+          />
+        </Field>
+      )}
 
       {item.shape === "numbers" && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

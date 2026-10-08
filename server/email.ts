@@ -1,7 +1,8 @@
 import { ENV } from "./_core/env";
 import type { Order, OrderItem } from "../drizzle/schema";
 import {
-  formatLabel,
+  formatText,
+  itemTitle,
   themeLabel,
   sizeLabel,
   flavourLabel,
@@ -33,7 +34,7 @@ function esc(value: string): string {
 // Bouquet Cake" or "Space Mini Gift Box" — the theme and format the
 // customer actually chose.
 function itemNameFor(item: Extract<OrderItem, { collection: "custom" }>): string {
-  return `${themeLabel(item.theme, item.themeLabel)} ${formatLabel(item.format)}`;
+  return itemTitle(item);
 }
 
 // Anything else the customer picked or typed while customising, named as it
@@ -101,7 +102,7 @@ function renderItemRow(item: OrderItem): string {
     <tr>
       <td style="padding: 12px 0; border-bottom: 1px solid ${BORDER_COLOR};">
         <p style="margin: 0 0 4px; font-weight: 600; color: #1a1e1b;">${esc(itemNameFor(item))}</p>
-        <p style="margin: 0; font-size: 13px; color: ${MUTED_TEXT};">${esc(formatLabel(item.format))} &middot; ${esc(shapeDescription(item))} &middot; ${esc(sizeLabel(item.shape, item.size))}</p>
+        <p style="margin: 0; font-size: 13px; color: ${MUTED_TEXT};">${esc(formatText(item))} &middot; ${esc(shapeDescription(item))} &middot; ${esc(sizeLabel(item.shape, item.size))}</p>
         <p style="margin: 0; font-size: 13px; color: ${MUTED_TEXT};">Theme: ${esc(themeLabel(item.theme, item.themeLabel))} &middot; Flavour: ${esc(item.flavours.map(flavourLabel).join(", "))}</p>
         ${extras.length ? `<p style="margin: 0; font-size: 13px; color: ${MUTED_TEXT};">${extras.map(esc).join(" &middot; ")}</p>` : ""}
         <p style="margin: 4px 0 0; font-size: 13px; color: ${MUTED_TEXT};">Qty: ${item.quantity} &middot; ${formatPrice(item.price)} each</p>

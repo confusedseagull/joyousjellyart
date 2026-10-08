@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
 import { ShoppingBag, X, Trash2 } from "lucide-react";
 import { useLocation } from "wouter";
-import { dietaryLabels } from "../../../shared/orderLabels";
+import { dietaryLabels, itemTitle } from "../../../shared/orderLabels";
 
 interface CartDrawerProps {
   open: boolean;
@@ -38,7 +38,7 @@ export function CartDrawer({ open, onOpenChange }: CartDrawerProps) {
           ) : (
             <div className="space-y-4">
               {items.map((item) => {
-                const title = item.collection === "cny" ? item.name : item.themeLabel;
+                const title = item.collection === "cny" ? item.name : itemTitle(item);
                 const subtitle =
                   item.collection === "cny"
                     ? `${item.edition} • ${item.size} • ${item.flavors ? item.flavors.join(', ') : item.flavor}`

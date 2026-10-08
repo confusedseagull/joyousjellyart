@@ -44,6 +44,8 @@ const customOrderItemSchema = z.object({
   dietaryRequirements: z.string().optional(),
   referenceImages: z.array(z.string()).optional(),
   specialInstructions: z.string().optional(),
+  // Mini Gift Boxes: how many boxes this single item covers (price is for all of them).
+  boxes: z.number().int().positive().optional(),
   price: z.number(),
   quantity: z.number(),
 });

@@ -596,8 +596,10 @@ export default function Customize() {
       referenceImages: referenceImages.length > 0 ? referenceImages.map((r) => r.url) : undefined,
       specialInstructions: specialInstructions || undefined,
       image,
+      // One item for the whole set: the price covers every box, the cart count stays 1.
       price: totalPrice,
-      quantity: format === "miniGiftBox" ? quantity : 1,
+      quantity: 1,
+      boxes: format === "miniGiftBox" && quantity > 1 ? quantity : undefined,
     };
   };
 

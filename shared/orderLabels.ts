@@ -34,6 +34,28 @@ export function themeLabel(theme: string, storedLabel?: string): string {
   return THEMES.find((t) => t.value === theme)?.label ?? storedLabel ?? humanize(theme);
 }
 
+/**
+ * A Mini Gift Box order for several boxes is ONE order item: its price is the
+ * price of all the boxes together, its quantity stays 1, and `boxes` records
+ * how many boxes to make.
+ */
+export function boxCount(item: { format?: string; boxes?: number }): number {
+  return item.format === "miniGiftBox" && Number(item.boxes) > 1 ? Math.floor(Number(item.boxes)) : 1;
+}
+
+/** "Mini Gift Box", or "Mini Gift Box (3 boxes)" for a multi-box order. */
+export function formatText(item: { format: string; boxes?: number }): string {
+  const boxes = boxCount(item);
+  return boxes > 1 ? `${formatLabel(item.format)} (${boxes} boxes)` : formatLabel(item.format);
+}
+
+/** The item's headline: "Space Cake", or "3 Mini Gift Boxes - Space" for a multi-box order. */
+export function itemTitle(item: { format: string; theme: string; themeLabel?: string; boxes?: number }): string {
+  const boxes = boxCount(item);
+  const theme = themeLabel(item.theme, item.themeLabel);
+  return boxes > 1 ? `${boxes} Mini Gift Boxes - ${theme}` : `${theme} ${formatLabel(item.format)}`;
+}
+
 export function shapeLabel(shape: string): string {
   return SHAPES.find((s) => s.value === shape)?.label ?? humanize(shape);
 }
