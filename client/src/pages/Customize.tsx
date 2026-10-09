@@ -405,6 +405,7 @@ export default function Customize() {
     } else {
       setSize("");
     }
+    scrollToSection(format === "miniGiftBox" ? "quantity" : value === "numbers" ? "numbers" : "size");
   };
 
   const handleFlavorToggle = (flavor: string) => {
@@ -414,6 +415,7 @@ export default function Customize() {
       setSelectedFlavors(prev => prev.filter(f => f !== flavor));
     } else if (selectedFlavors.length < maxFlavors) {
       setSelectedFlavors(prev => [...prev, flavor]);
+      if (maxFlavors > 1 && selectedFlavors.length + 1 >= maxFlavors) scrollToNextBar();
     } else {
       // Already at capacity: swap out the oldest pick for the new one
       setSelectedFlavors(prev => [...prev.slice(1), flavor]);
@@ -427,6 +429,7 @@ export default function Customize() {
       setPlatterShapes(prev => prev.filter(s => s !== shapeValue));
     } else if (platterShapes.length < maxShapes) {
       setPlatterShapes(prev => [...prev, shapeValue]);
+      if (platterShapes.length + 1 >= maxShapes) scrollToNextBar();
     }
   };
 
@@ -521,12 +524,57 @@ export default function Customize() {
   // not when the step itself just changed — that's handled by the
   // scroll-to-top effect above).
   const navRef = useRef<HTMLDivElement>(null);
+
+  // On mobile, finishing a choice scrolls to the next sub-section of the same
+  // step (e.g. theme -> flower picker, shape -> sizes) instead of straight to
+  // the Next bar. Sub-sections register themselves in sectionRefs; the scroll
+  // waits two frames because the sub-section often mounts in the same update
+  // as the choice that reveals it.
+  const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
+  const section = (key: string) => (el: HTMLElement | null) => {
+    sectionRefs.current[key] = el;
+  };
+  const isMobileViewport = () => typeof window !== "undefined" && window.matchMedia("(max-width: 1023px)").matches;
+  const subsectionScrollAtRef = useRef(0);
+  const afterPaint = (fn: () => void) => requestAnimationFrame(() => requestAnimationFrame(fn));
+
+  const scrollToSection = (key: string) => {
+    if (!isMobileViewport()) return;
+    subsectionScrollAtRef.current = Date.now(); // tells the Next-bar scroll below to stand down
+    const go = () => sectionRefs.current[key]?.scrollIntoView({ behavior: "smooth", block: "start" });
+    afterPaint(go);
+    // The page can still be growing (images, newly mounted blocks) when the scroll starts, which
+    // leaves it short of the target — check again shortly after and nudge it the rest of the way.
+    [450, 1000].forEach((delay) =>
+      window.setTimeout(() => {
+        const el = sectionRefs.current[key];
+        if (!el) return;
+        const wanted = parseFloat(getComputedStyle(el).scrollMarginTop) || 0;
+        const canScrollMore = window.scrollY < document.documentElement.scrollHeight - window.innerHeight - 2;
+        if (Math.abs(el.getBoundingClientRect().top - wanted) > 24 && canScrollMore) go();
+      }, delay)
+    );
+  };
+  const scrollToNextBar = () => {
+    if (!isMobileViewport()) return;
+    afterPaint(() => navRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }));
+  };
+
   const prevStepRef = useRef(currentStep);
   const prevStepCompleteRef = useRef(isStepComplete(currentStep));
   const stepComplete = isStepComplete(currentStep);
 
   useEffect(() => {
-    if (currentStep === prevStepRef.current && stepComplete && !prevStepCompleteRef.current) {
+    const justScrolledToSubsection = Date.now() - subsectionScrollAtRef.current < 800;
+    // For themes that need typed text, the step completes on the first keystroke; don't scroll away mid-typing.
+    const typingTheme = currentStep === 3 && (theme === "handDrawn" || theme === "coutureFashion" || theme === "nameAndInitial");
+    // Multi-picks that are "complete" at one choice but expect more (platter flavours / piece shapes), and
+    // number digits, scroll to Next themselves once the last pick or digit is in.
+    const partialMultiPick =
+      (currentStep === 4 && selectedFlavors.length < getRequiredFlavorCount()) ||
+      (currentStep === 2 && shouldShowPlatterShapeSelection() && platterShapes.length < getMaxShapeSelection()) ||
+      (currentStep === 2 && shape === "numbers");
+    if (currentStep === prevStepRef.current && stepComplete && !prevStepCompleteRef.current && !justScrolledToSubsection && !typingTheme && !partialMultiPick) {
       navRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
     prevStepRef.current = currentStep;
@@ -840,7 +888,7 @@ export default function Customize() {
                 {format === "cake" && shape && shape !== "numbers" && SHAPE_SIZES[shape] && (
                   <>
                     <div className="h-px w-full bg-[#e5e5e5]" />
-                    <div className="flex flex-wrap gap-6">
+                    <div ref={section("size")} className="flex flex-wrap gap-6 scroll-mt-44">
                       {SHAPE_SIZES[shape].map((sizeOption) => {
                         const price = getCustomOrderPrice(theme, shape, sizeOption.value);
                         return (
@@ -860,7 +908,7 @@ export default function Customize() {
                 {format === "cake" && shape === "numbers" && (
                   <>
                     <div className="h-px w-full bg-[#e5e5e5]" />
-                    <div className="flex flex-wrap gap-6">
+                    <div ref={section("numbers")} className="flex flex-wrap gap-6 scroll-mt-44">
                       <NumberCountOption
                         count={1}
                         dimension={'8" / 20.3 cm'}
@@ -871,6 +919,7 @@ export default function Customize() {
                           setNumberCount(1);
                           setSize("8x8");
                           setNumber2("");
+                          scrollToSection("numberDigits");
                         }}
                       />
                       <NumberCountOption
@@ -882,10 +931,11 @@ export default function Customize() {
                         onClick={() => {
                           setNumberCount(2);
                           setSize("8x8");
+                          scrollToSection("numberDigits");
                         }}
                       />
                     </div>
-                    <div className="flex flex-col sm:flex-row gap-4">
+                    <div ref={section("numberDigits")} className="flex flex-col sm:flex-row gap-4 scroll-mt-44">
                       <div className="flex-1 sm:max-w-[380px] border border-[#e5e5e5] rounded-2xl h-[52px] flex items-center gap-7 px-4 focus-within:border-primary/40 transition-colors">
                         <label className="shrink-0 text-sm text-foreground">First Number</label>
                         <input
@@ -893,7 +943,10 @@ export default function Customize() {
                           min="0"
                           max="9"
                           value={number1}
-                          onChange={(e) => setNumber1(e.target.value)}
+                          onChange={(e) => {
+                            setNumber1(e.target.value);
+                            if (e.target.value !== "" && (numberCount === 1 || number2 !== "")) scrollToNextBar();
+                          }}
                           placeholder="0-9"
                           className="flex-1 min-w-0 text-sm bg-transparent outline-none placeholder:text-[#808582]"
                         />
@@ -906,7 +959,10 @@ export default function Customize() {
                             min="0"
                             max="9"
                             value={number2}
-                            onChange={(e) => setNumber2(e.target.value)}
+                            onChange={(e) => {
+                              setNumber2(e.target.value);
+                              if (e.target.value !== "" && number1 !== "") scrollToNextBar();
+                            }}
                             placeholder="0-9"
                             className="flex-1 min-w-0 text-sm bg-transparent outline-none placeholder:text-[#808582]"
                           />
@@ -920,7 +976,7 @@ export default function Customize() {
                 {format === "jellyPlatter" && shape && SHAPE_SIZES[shape] && (
                   <>
                     <div className="h-px w-full bg-[#e5e5e5]" />
-                    <div className="flex flex-wrap gap-6">
+                    <div ref={section("size")} className="flex flex-wrap gap-6 scroll-mt-44">
                       {SHAPE_SIZES[shape].map((sizeOption) => {
                         const price = getCustomOrderPrice(theme, shape, sizeOption.value);
                         return (
@@ -932,6 +988,8 @@ export default function Customize() {
                             onClick={() => {
                               setSize(sizeOption.value);
                               setPlatterShapes([]);
+                              // Only the 6cm sizes have individual piece shapes to choose next.
+                              if (sizeOption.value === "6cm") scrollToSection("platterShapes");
                             }}
                           />
                         );
@@ -943,7 +1001,7 @@ export default function Customize() {
                 {format === "jellyPlatter" && shouldShowPlatterShapeSelection() && (
                   <>
                     <div className="h-px w-full bg-[#e5e5e5]" />
-                    <p className="text-muted-foreground text-[15px]">
+                    <p ref={section("platterShapes")} className="text-muted-foreground text-[15px] scroll-mt-44">
                       Select up to {getMaxShapeSelection()} different shapes for your {shape === "platter9" ? "9" : shape === "platter6" ? "6" : "4"} pieces
                     </p>
                     <div className="flex flex-wrap gap-6">
@@ -968,7 +1026,7 @@ export default function Customize() {
                 {format === "miniGiftBox" && shape && (
                   <>
                     <div className="h-px w-full bg-[#e5e5e5]" />
-                    <div>
+                    <div ref={section("quantity")} className="scroll-mt-44">
                       <Label className="mb-2 block">Quantity</Label>
                       <QuantityStepper value={quantity} onChange={setQuantity} />
                     </div>
@@ -987,13 +1045,18 @@ export default function Customize() {
                       key={themeOption.value}
                       option={themeOption}
                       isSelected={theme === themeOption.value}
-                      onClick={() => setTheme(themeOption.value)}
+                      onClick={() => {
+                        setTheme(themeOption.value);
+                        // Themes with a follow-up choice or text field go there next; the rest go to Additional Notes.
+                        const hasExtras = ["floralBouquet", "cartoonCharacters", "handDrawn", "coutureFashion", "nameAndInitial"].includes(themeOption.value);
+                        scrollToSection(hasExtras ? "themeExtras" : "notes");
+                      }}
                     />
                   ))}
                 </div>
 
                 {theme === "floralBouquet" && (
-                  <div className="flex flex-col gap-4">
+                  <div ref={section("themeExtras")} className="flex flex-col gap-4 scroll-mt-44">
                     <div className="h-px w-full max-w-2xl bg-[#e5e5e5]" />
                     <p className="text-sm text-muted-foreground">
                       Choose up to 5 flower types. Flower colors will be customised based on the color preferences indicated. Images provided are for reference only.
@@ -1012,6 +1075,8 @@ export default function Customize() {
                               setSelectedFlowers(prev =>
                                 isSelected ? prev.filter(f => f !== flower.value) : [...prev, flower.value]
                               );
+                              // Five is the most allowed, so that pick finishes the flowers.
+                              if (!isSelected && selectedFlowers.length + 1 >= 5) scrollToSection("notes");
                             }}
                           />
                         );
@@ -1021,12 +1086,15 @@ export default function Customize() {
                 )}
 
                 {theme === "cartoonCharacters" && (
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-4xl">
+                  <div ref={section("themeExtras")} className="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-4xl scroll-mt-44">
                     {CARTOON_CHARACTERS.map((character) => (
                       <SelectablePill
                         key={character}
                         selected={cartoonCharacter === character}
-                        onClick={() => setCartoonCharacter(character)}
+                        onClick={() => {
+                          setCartoonCharacter(character);
+                          scrollToSection("notes");
+                        }}
                         className="flex items-center justify-between px-4 py-3"
                       >
                         <span>{character}</span>
@@ -1037,34 +1105,40 @@ export default function Customize() {
                 )}
 
                 {theme === "handDrawn" && (
-                  <Textarea
-                    value={handDrawnDesign}
-                    onChange={(e) => setHandDrawnDesign(e.target.value)}
-                    placeholder="Describe your custom hand-drawn design..."
-                    className="min-h-[120px] rounded-2xl border-[#e5e5e5] w-full"
-                  />
+                  <div ref={section("themeExtras")} className="scroll-mt-44">
+                    <Textarea
+                      value={handDrawnDesign}
+                      onChange={(e) => setHandDrawnDesign(e.target.value)}
+                      placeholder="Describe your custom hand-drawn design..."
+                      className="min-h-[120px] rounded-2xl border-[#e5e5e5] w-full"
+                    />
+                  </div>
                 )}
 
                 {theme === "coutureFashion" && (
-                  <Input
-                    value={coutureBrand}
-                    onChange={(e) => setCoutureBrand(e.target.value)}
-                    placeholder="Enter brand name (e.g., Chanel, Dior)..."
-                    className={inputClass}
-                  />
+                  <div ref={section("themeExtras")} className="scroll-mt-44">
+                    <Input
+                      value={coutureBrand}
+                      onChange={(e) => setCoutureBrand(e.target.value)}
+                      placeholder="Enter brand name (e.g., Chanel, Dior)..."
+                      className={inputClass}
+                    />
+                  </div>
                 )}
 
                 {theme === "nameAndInitial" && (
-                  <Input
-                    value={nameAndInitialName}
-                    onChange={(e) => setNameAndInitialName(e.target.value)}
-                    placeholder="Enter the name to be carved (e.g., Doreen)..."
-                    className={inputClass}
-                  />
+                  <div ref={section("themeExtras")} className="scroll-mt-44">
+                    <Input
+                      value={nameAndInitialName}
+                      onChange={(e) => setNameAndInitialName(e.target.value)}
+                      placeholder="Enter the name to be carved (e.g., Doreen)..."
+                      className={inputClass}
+                    />
+                  </div>
                 )}
 
                 {theme && (
-                  <div className="flex flex-col gap-3">
+                  <div ref={section("notes")} className="flex flex-col gap-3 scroll-mt-44">
                     <div className="border border-[#e5e5e5] rounded-2xl min-h-[52px] flex items-start gap-7 px-4 py-4 focus-within:border-primary/40 transition-colors">
                       <label className="shrink-0 text-sm text-foreground">Additional Notes</label>
                       <textarea
