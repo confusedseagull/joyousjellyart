@@ -24,6 +24,8 @@ import {
   SHAPE_SIZES,
   BASE_FLAVORS,
   DIETARY_OPTIONS,
+  SERVES_INFO,
+  NUMBER_CAKE_SIZES,
 } from "@/lib/customizeOptions";
 
 const inputClass = "h-[52px] rounded-2xl border-[#e5e5e5]";
@@ -152,17 +154,6 @@ function QuantityStepper({ value, onChange }: { value: number; onChange: (value:
     </div>
   );
 }
-
-// "Serves X pax" copy from the Figma size-options frame, keyed by SHAPE_SIZES value.
-// Only round/square share this exact size set with real servings data from Figma.
-const SERVES_INFO: Record<string, string> = {
-  "6inch": "serves 4-8 pax",
-  "8inch": "serves 8-16 pax",
-  "10inch": "serves 12-20 pax",
-  "2tier_6_8": "serves 12-24 pax",
-  "2tier_6_10": "serves 16-28 pax",
-  "2tier_8_10": "serves 24-36 pax",
-};
 
 function getSizeBadge(value: string): string {
   const tierMatch = value.match(/^2tier_(\d+)_(\d+)$/);
@@ -911,8 +902,8 @@ export default function Customize() {
                     <div ref={section("numbers")} className="flex flex-wrap gap-6 scroll-mt-44">
                       <NumberCountOption
                         count={1}
-                        dimension={'8" / 20.3 cm'}
-                        serves="serves 12-16 pax"
+                        dimension={NUMBER_CAKE_SIZES[0].dimension}
+                        serves={NUMBER_CAKE_SIZES[0].serves}
                         price={getCustomOrderPrice(theme, "numbers", "8x8", 1) || 0}
                         isSelected={numberCount === 1}
                         onClick={() => {
@@ -924,8 +915,8 @@ export default function Customize() {
                       />
                       <NumberCountOption
                         count={2}
-                        dimension={'8+8" / 20.3 cm'}
-                        serves="serves 24-30 pax"
+                        dimension={NUMBER_CAKE_SIZES[1].dimension}
+                        serves={NUMBER_CAKE_SIZES[1].serves}
                         price={getCustomOrderPrice(theme, "numbers", "8x8", 2) || 0}
                         isSelected={numberCount === 2}
                         onClick={() => {

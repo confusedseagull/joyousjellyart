@@ -1,5 +1,7 @@
+import { useLocation, useSearch } from "wouter";
 import { Button } from "@/components/ui/button";
 import { THEMES, FLOWERS, CARTOON_CHARACTERS } from "@/lib/customizeOptions";
+import { FormatsGuide } from "@/components/discover/FormatsGuide";
 
 const WHATSAPP_NUMBER = "6582999559";
 const WHATSAPP_MESSAGE = encodeURIComponent("Hi! I'm interested in a custom jelly cake design.");
@@ -62,51 +64,94 @@ const gallery = THEMES.map((theme) => ({
   images: [...(theme.images ?? (theme.image ? [theme.image] : [])), ...(THEME_EXTRA_IMAGES[theme.value] ?? [])],
 }));
 
+const VIEWS = [
+  { value: "themes", label: "Themes" },
+  { value: "formats", label: "Formats" },
+] as const;
+
+const INTRO: Record<(typeof VIEWS)[number]["value"], string> = {
+  themes:
+    "Every theme we can bring to life on a jelly cake — pick one as inspiration, or use it as a starting point. Customise the format, shape, size, colors, details, wording and flavour and let us bring it to life!",
+  formats:
+    "Cakes, jelly platters and mini gift boxes: what each one is, the shapes it comes in, and the sizes you can choose.",
+};
+
+function ThemesView() {
+  return (
+    <div className="flex flex-col">
+      {gallery.map((theme) => (
+        <div
+          key={theme.name}
+          className="flex flex-col md:flex-row md:items-center gap-4 md:gap-10 py-8 border-b border-[#e5e5e5] first:pt-0"
+        >
+          {/* Name + description */}
+          <div className="md:w-64 shrink-0 flex flex-col gap-2">
+            <h3 className="font-normal">{theme.name}</h3>
+            {theme.description && (
+              <p className="text-muted-foreground text-sm leading-relaxed">{theme.description}</p>
+            )}
+            {theme.options && (
+              <p className="text-muted-foreground text-sm leading-relaxed mt-3">{theme.options}</p>
+            )}
+            {theme.note && (
+              <p className="text-muted-foreground text-sm leading-relaxed mt-3">{theme.note}</p>
+            )}
+          </div>
+
+          {/* All reference photos for this theme */}
+          <div className="flex gap-3 md:gap-4 overflow-x-auto pb-1 -mx-1 px-1">
+            {theme.images.map((image, i) => (
+              <img
+                key={image + i}
+                src={image}
+                alt={theme.name}
+                className="w-48 h-48 md:w-56 md:h-56 rounded-full object-cover shrink-0"
+              />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function Discover() {
+  // The chosen tab lives in the address (?view=formats) so it can be linked to and survives a refresh.
+  const search = useSearch();
+  const [, navigate] = useLocation();
+  const view = new URLSearchParams(search).get("view") === "formats" ? "formats" : "themes";
+  const setView = (next: (typeof VIEWS)[number]["value"]) =>
+    navigate(next === "formats" ? "/discover?view=formats" : "/discover", { replace: true });
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container pt-10 md:pt-16 pb-20 md:pb-28">
-        <div className="flex flex-col gap-3 mb-10 md:mb-14 max-w-2xl">
-          <h1 className="font-normal text-[28px] md:text-[44px]">Discover our designs</h1>
-          <p className="text-muted-foreground text-base md:text-lg">
-            Every theme we can bring to life on a jelly cake — pick one as inspiration, or use it as a starting point. Customise the format, shape, size, colors, details, wording and flavour and let us bring it to life!
-          </p>
+        <div className="flex flex-col gap-3 mb-8 md:mb-10 max-w-2xl">
+          <h1 className="font-normal text-[28px] md:text-[44px]">Discover</h1>
+          <p className="text-muted-foreground text-base md:text-lg">{INTRO[view]}</p>
         </div>
 
-        <div className="flex flex-col">
-          {gallery.map((theme) => (
-            <div
-              key={theme.name}
-              className="flex flex-col md:flex-row md:items-center gap-4 md:gap-10 py-8 border-b border-[#e5e5e5] first:pt-0"
+        {/* Sub-sections */}
+        <div role="tablist" aria-label="Discover" className="flex gap-2 mb-10 md:mb-14">
+          {VIEWS.map((v) => (
+            <button
+              key={v.value}
+              type="button"
+              role="tab"
+              aria-selected={view === v.value}
+              onClick={() => setView(v.value)}
+              className={`rounded-full border px-6 py-2.5 text-base transition-colors ${
+                view === v.value
+                  ? "border-primary bg-primary text-primary-foreground font-medium"
+                  : "border-[#e5e5e5] bg-white text-muted-foreground hover:border-primary/40"
+              }`}
             >
-              {/* Name + description */}
-              <div className="md:w-64 shrink-0 flex flex-col gap-2">
-                <h3 className="font-normal">{theme.name}</h3>
-                {theme.description && (
-                  <p className="text-muted-foreground text-sm leading-relaxed">{theme.description}</p>
-                )}
-                {theme.options && (
-                  <p className="text-muted-foreground text-sm leading-relaxed mt-3">{theme.options}</p>
-                )}
-                {theme.note && (
-                  <p className="text-muted-foreground text-sm leading-relaxed mt-3">{theme.note}</p>
-                )}
-              </div>
-
-              {/* All reference photos for this theme */}
-              <div className="flex gap-3 md:gap-4 overflow-x-auto pb-1 -mx-1 px-1">
-                {theme.images.map((image, i) => (
-                  <img
-                    key={image + i}
-                    src={image}
-                    alt={theme.name}
-                    className="w-48 h-48 md:w-56 md:h-56 rounded-full object-cover shrink-0"
-                  />
-                ))}
-              </div>
-            </div>
+              {v.label}
+            </button>
           ))}
         </div>
+
+        {view === "themes" ? <ThemesView /> : <FormatsGuide />}
 
         {/* Contact Us */}
         <div className="flex flex-col items-center text-center gap-5 pt-16 md:pt-24">

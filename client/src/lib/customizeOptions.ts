@@ -238,3 +238,22 @@ export const DIETARY_OPTIONS = [
   { value: "vegan", label: "Vegan" },
   { value: "noCoconutMilk", label: "No Coconut Milk" },
 ];
+
+// "Serves X pax" copy from the Figma size-options frame, keyed by SHAPE_SIZES
+// value. Only the sizes listed here have real servings data, so anywhere
+// servings are shown they are shown only when present.
+export const SERVES_INFO: Record<string, string> = {
+  "6inch": "serves 4-8 pax",
+  "8inch": "serves 8-16 pax",
+  "10inch": "serves 12-20 pax",
+  "2tier_6_8": "serves 12-24 pax",
+  "2tier_6_10": "serves 16-28 pax",
+  "2tier_8_10": "serves 24-36 pax",
+};
+
+// The Numbers cake: one or two 8" numbers.
+export const NUMBER_CAKE_SIZES = [
+  { count: 1 as const, dimension: '8" / 20.3 cm', serves: "serves 12-16 pax" },
+  { count: 2 as const, dimension: '8+8" / 20.3 cm', serves: "serves 24-30 pax" },
+];
+
