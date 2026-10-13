@@ -74,7 +74,7 @@ export const THEMES = [
   { value: "cactus", label: "Cactus/Foliage", image: "/customize/cactus.webp" },
   { value: "butterflies", label: "Butterflies", image: "/customize/butterflies.webp" },
   { value: "mermaid", label: "Mermaid", image: "/customize/mermaid.webp" },
-  { value: "nameAndInitial", label: "Name and Initial", images: [
+  { value: "nameAndInitial", label: "Bespoke Signature", images: [
     "/customize/nameAndInitial-1.webp",
     "/customize/nameAndInitial-2.webp"
   ] },

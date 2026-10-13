@@ -300,7 +300,7 @@ export default function Customize() {
   const shapeOptionsForFormat =
     format === "cake" ? CAKE_SHAPES : format === "jellyPlatter" ? PLATTER_FORMAT_SHAPES : GIFT_BOX_FORMAT_SHAPES;
 
-  // Hand Drawn and Name and Initial only make sense on a full cake — a
+  // Hand Drawn and Bespoke Signature only make sense on a full cake — a
   // platter or a box of individually-packaged jellies doesn't have a single
   // canvas large enough for either.
   const themeOptionsForFormat =
@@ -390,7 +390,7 @@ export default function Customize() {
     setQuantity(1);
     setNumber1("");
     setNumber2("");
-    // Hand Drawn and Name and Initial aren't offered for platters/gift boxes —
+    // Hand Drawn and Bespoke Signature aren't offered for platters/gift boxes —
     // drop a stale selection (and what was typed for it) if the customer
     // switches into one; a valid second theme moves up to be the first.
     if (value === "jellyPlatter" || value === "miniGiftBox") {
@@ -639,7 +639,7 @@ export default function Customize() {
     const themeLabel = THEMES.find(t => t.value === theme)?.label || theme;
     const chosenThemes = combineThemes && theme2 ? [theme, theme2] : [theme];
     const has = (t: string) => chosenThemes.includes(t);
-    // What was typed for a text theme (the description for Hand Drawn, the name for Name and Initial).
+    // What was typed for a text theme (the description for Hand Drawn, the name for Bespoke Signature).
     const textFor = (t: string) => (t === "handDrawn" ? handDrawnDesign : t === "nameAndInitial" ? nameAndInitialName : "");
     const shapeLabel = SHAPES.find(s => s.value === shape)?.label || shape;
     const sizeLabel =

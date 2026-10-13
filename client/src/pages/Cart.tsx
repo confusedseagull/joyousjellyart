@@ -266,7 +266,7 @@ export default function Cart() {
     window.scrollTo(0, 0);
   }, []);
 
-  // Name and Initial designs are fully hand-carved and need a longer lead
+  // Bespoke Signature designs are fully hand-carved and need a longer lead
   // time — if any item in the cart uses that theme, the whole order (one
   // shared fulfillment date) is held to the longer minimum.
   const hasNameAndInitialItem = items.some(
@@ -495,7 +495,7 @@ export default function Cart() {
     if (fulfillmentDate < getMinDate()) {
       toast.error(
         hasNameAndInitialItem
-          ? "Minimum 2 weeks advance notice required for Name and Initial designs"
+          ? "Minimum 2 weeks advance notice required for Bespoke Signature designs"
           : "Minimum 2 days advance notice required"
       );
       return false;
@@ -899,7 +899,7 @@ export default function Cart() {
                 <h2 className="text-base font-medium">Fulfillment Date and Time</h2>
                 <p className="text-muted-foreground text-sm">
                   {hasNameAndInitialItem
-                    ? "Minimum 2 weeks advance notice required for Name and Initial designs. For example, if you place an order today, the earliest fulfillment date you can select will be 2 weeks from today."
+                    ? "Minimum 2 weeks advance notice required for Bespoke Signature designs. For example, if you place an order today, the earliest fulfillment date you can select will be 2 weeks from today."
                     : "Minimum 2 days advance notice required. For example, if you place an order today, the earliest fulfillment date you can select will be 2 days from today."}
                 </p>
               </div>

@@ -29,7 +29,7 @@ const THEME_DESCRIPTIONS: Record<string, string> = {
   cactus: "A lush, botanical arrangement of jelly cacti and greenery for an earthy, modern finish.",
   butterflies: "Delicate jelly butterflies in flight, in colours and patterns of your choosing.",
   mermaid: "An enchanting underwater mermaid scene with shimmering scales and ocean details.",
-  nameAndInitial: "The first alphabet of your loved one's name with their name carved into the side, surrounded by sweet blooms. A fully customised name and initial creation that requires a minimum of two weeks advance ordering.",
+  nameAndInitial: "The first alphabet of your loved one's name with their name carved into the side, surrounded by sweet blooms. A fully customised, bespoke signature creation that requires a minimum of two weeks advance ordering.",
 };
 
 // Optional "available options" line per theme, listing out the relevant

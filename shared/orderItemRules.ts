@@ -27,7 +27,7 @@ export function shapesForFormat(format: string) {
   return format === "cake" ? CAKE_SHAPES : format === "jellyPlatter" ? PLATTER_FORMAT_SHAPES : GIFT_BOX_FORMAT_SHAPES;
 }
 
-/** Hand Drawn and Name and Initial are cake-only; platters and gift boxes don't offer them. */
+/** Hand Drawn and Bespoke Signature are cake-only; platters and gift boxes don't offer them. */
 export function themesForFormat(format: string) {
   return format === "cake" ? THEMES : THEMES.filter((t) => !CAKE_ONLY_THEMES.includes(t.value));
 }
@@ -155,7 +155,7 @@ export function applyItemChange(item: EditableCustomItem, changes: EditableCusto
   if (!hasTheme("cartoonCharacters")) next.cartoonCharacter = undefined;
   if (!hasTheme(SPORTS_THEME)) next.sport = undefined;
   if (!hasTheme("coutureFashion")) next.fashionBrand = undefined;
-  // Typed text belongs to a theme slot (a design may combine Hand Drawn with Name and Initial).
+  // Typed text belongs to a theme slot (a design may combine Hand Drawn with Bespoke Signature).
   if (!TEXT_THEMES.includes(next.theme)) next.themeCustomText = undefined;
   if (!next.secondTheme || !TEXT_THEMES.includes(next.secondTheme)) next.secondThemeCustomText = undefined;
 

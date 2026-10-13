@@ -109,7 +109,7 @@ describe("applyItemChange", () => {
     expect(onlyCartoon.cartoonCharacter).toBe("Pikachu");
   });
 
-  it("keeps typed text per theme slot, so Hand Drawn and Name and Initial can be combined", () => {
+  it("keeps typed text per theme slot, so Hand Drawn and Bespoke Signature can be combined", () => {
     const item = applyItemChange(
       { ...cake, theme: "handDrawn", themeCustomText: "A dragon" },
       { secondTheme: "nameAndInitial", secondThemeCustomText: "Doreen" }
