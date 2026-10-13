@@ -30,6 +30,13 @@ const GIFT_BOX_PHOTOS: Record<string, string[]> = {
   cupcake: ["/discover/minigiftbox-6cm.webp"],
 };
 
+// Photos for the platters: the 4 Platter has a 6cm and a 10cm photo.
+const PLATTER_PHOTOS: Record<string, string[]> = {
+  platter4: ["/discover/platter4-6cm.webp", "/discover/platter4-10cm.webp"],
+  platter6: ["/discover/platter6-6cm.webp"],
+  platter9: ["/discover/platter9-6cm.webp"],
+};
+
 const CAKE_PHOTOS: Record<string, string[]> = {
   round: ["/discover/cake-round.webp"],
   square: ["/discover/cake-square.webp"],
@@ -178,8 +185,26 @@ export function FormatsGuide() {
               <SizeList shape={shape.value} />
             </ShapeCard>
           ))}
-          <ShapeCard shape={TWO_TIER_CARD} images={TWO_TIER_PHOTOS}>
-            <ul className="flex flex-col gap-1.5">
+        </div>
+
+        {/* 2 Tier: its own subsection under Cakes */}
+        <div className="mt-12 md:mt-14 pt-8 border-t border-[#e5e5e5]">
+          <h3 className="text-2xl md:text-3xl font-normal">{TWO_TIER_CARD.label}</h3>
+          <p className="text-muted-foreground leading-relaxed mt-2 max-w-2xl">
+            Two sizes stacked, the larger below, made in the shapes listed under each combination.
+          </p>
+          <div className="flex flex-col md:flex-row md:items-start gap-6 md:gap-10 mt-6">
+            <div className="flex shrink-0 -space-x-10">
+              {TWO_TIER_PHOTOS.map((src) => (
+                <img
+                  key={src}
+                  src={src}
+                  alt={TWO_TIER_CARD.label}
+                  className="size-32 md:size-40 rounded-full object-cover border-2 border-background"
+                />
+              ))}
+            </div>
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-4 text-sm text-muted-foreground leading-relaxed">
               {twoTierOptions(cakeShapes).map((option) => (
                 <li key={option.value}>
                   {option.label}
@@ -188,7 +213,7 @@ export function FormatsGuide() {
                 </li>
               ))}
             </ul>
-          </ShapeCard>
+          </div>
         </div>
       </FormatSection>
 
@@ -205,7 +230,7 @@ export function FormatsGuide() {
             const flavours = requiredFlavourCount(shape.value);
             const pieces = maxPlatterShapes(shape.value, "6cm");
             return (
-              <ShapeCard key={shape.value} shape={shape}>
+              <ShapeCard key={shape.value} shape={shape} images={PLATTER_PHOTOS[shape.value]}>
                 <SizeList shape={shape.value} />
                 <p className="mt-2">
                   {shape.value === "platter4"
