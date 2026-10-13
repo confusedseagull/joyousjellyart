@@ -23,9 +23,15 @@ import { sizeLabel } from "../../../../shared/orderLabels";
 type Shape = { value: string; label: string; image: string };
 
 // Finished-cake photos for the Cakes section (from the Figma "Discover" frame).
-// The builder's mould pictures are kept for the platters and gift boxes. Round
+// The builder's mould pictures are kept for the platters. Round
 // has no photo of its own, so it shows the round two-tier cake; Numbers has a
 // one-number and a two-number cake.
+// Photos for the two Mini Gift Box styles (10cm square box, 6cm round cupcake).
+const GIFT_BOX_PHOTOS: Record<string, string[]> = {
+  miniGiftBox: ["/discover/minigiftbox-10cm.webp"],
+  cupcake: ["/discover/minigiftbox-6cm.webp"],
+};
+
 const CAKE_PHOTOS: Record<string, string[]> = {
   round: ["/discover/cake-twotier.webp"],
   square: ["/discover/cake-square.webp"],
@@ -222,7 +228,7 @@ export function FormatsGuide() {
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
           {GIFT_BOX_FORMAT_SHAPES.map((shape) => (
-            <ShapeCard key={shape.value} shape={shape}>
+            <ShapeCard key={shape.value} shape={shape} images={GIFT_BOX_PHOTOS[shape.value]}>
               {shape.value === "miniGiftBox" ? "Square · 10cm" : "Round · 6cm"}
             </ShapeCard>
           ))}
