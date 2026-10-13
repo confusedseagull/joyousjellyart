@@ -27,5 +27,9 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["server/**/*.test.ts", "server/**/*.spec.ts"],
+    // Several files create orders in the one shared test database, and some tests
+    // count orders before/after (dashboard, tab counts), so files must not run at
+    // the same time or one file's orders land inside another's count.
+    fileParallelism: false,
   },
 });

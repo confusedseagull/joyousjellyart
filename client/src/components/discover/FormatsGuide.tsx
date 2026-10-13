@@ -23,8 +23,7 @@ import { sizeLabel } from "../../../../shared/orderLabels";
 type Shape = { value: string; label: string; image: string };
 
 // Finished-cake photos for the Cakes section (from the Figma "Discover" frame).
-// The builder's mould pictures are kept for the platters. Round
-// has no photo of its own, so it keeps the builder's mould picture; Numbers
+// The builder's mould pictures are kept for the platters. Numbers
 // has a one-number and a two-number cake. Two-tier cakes get a card of their own.
 // Photos for the two Mini Gift Box styles (10cm square box, 6cm round cupcake).
 const GIFT_BOX_PHOTOS: Record<string, string[]> = {
@@ -33,6 +32,7 @@ const GIFT_BOX_PHOTOS: Record<string, string[]> = {
 };
 
 const CAKE_PHOTOS: Record<string, string[]> = {
+  round: ["/discover/cake-round.webp"],
   square: ["/discover/cake-square.webp"],
   octagon: ["/discover/cake-octagon.webp"],
   heart: ["/discover/cake-heart.webp"],
@@ -213,10 +213,6 @@ export function FormatsGuide() {
             </ul>
           </ShapeCard>
         </div>
-        <p className="text-sm text-muted-foreground mt-8 max-w-2xl leading-relaxed">
-          A 2 Tier cake stacks the two sizes shown, larger below, in one of the shapes listed under it. The Numbers cake is made from one
-          or two numbers you choose. Servings are a guide, shown where we have them.
-        </p>
       </FormatSection>
 
       {/* Jelly platters */}
