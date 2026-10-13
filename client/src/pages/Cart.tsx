@@ -15,7 +15,7 @@ import { format } from "date-fns";
 import { formatPrice, shortSizeLabel } from "@/lib/utils";
 import { COUNTRY_CODES, DEFAULT_COUNTRY_DIAL_CODE } from "@/lib/countryCodes";
 import { toast } from "sonner";
-import { dietaryLabels, itemTitle, formatText, sportLabel } from "../../../shared/orderLabels";
+import { dietaryLabels, itemTitle, formatText, sportLabel, themeNames } from "../../../shared/orderLabels";
 
 // Formats minutes-since-midnight as "H:MM AM/PM", matching the label style
 // already used throughout the app (e.g. "11:00 AM - 1:00 PM").
@@ -178,6 +178,9 @@ function toOrderItemPayload(item: CartItem) {
       format: item.format,
       theme: item.theme,
       themeLabel: item.themeLabel,
+      secondTheme: item.secondTheme,
+      secondThemeLabel: item.secondThemeLabel,
+      secondThemeCustomText: item.secondThemeCustomText,
       selectedFlowers: item.selectedFlowers,
       selectedColors: item.selectedColors,
       backgroundColor: item.backgroundColor,
@@ -267,7 +270,7 @@ export default function Cart() {
   // time — if any item in the cart uses that theme, the whole order (one
   // shared fulfillment date) is held to the longer minimum.
   const hasNameAndInitialItem = items.some(
-    (item) => item.collection === "custom" && item.theme === "nameAndInitial"
+    (item) => item.collection === "custom" && (item.theme === "nameAndInitial" || item.secondTheme === "nameAndInitial")
   );
 
   const getMinDate = () => {
@@ -611,7 +614,7 @@ export default function Cart() {
                   <p className="text-xs text-muted-foreground">Format: {formatText(item)}</p>
                   <p className="text-xs text-muted-foreground">Shape: {itemShapeDisplay(item)}</p>
                   <p className="text-xs text-muted-foreground">Size: {shortSizeLabel(item.sizeLabel)}</p>
-                  <p className="text-xs text-muted-foreground">Design: {item.themeLabel}{item.sport ? ` — ${sportLabel(item.sport)}` : ""}</p>
+                  <p className="text-xs text-muted-foreground">Design: {themeNames(item)}{item.sport ? ` — ${sportLabel(item.sport)}` : ""}</p>
                   <p className="text-xs text-muted-foreground">Base Flavour: {item.flavours.join(", ")}</p>
                   {item.selectedColors && item.selectedColors.length > 0 && (
                     <p className="text-xs text-muted-foreground">Colors: {item.selectedColors.join(", ")}</p>

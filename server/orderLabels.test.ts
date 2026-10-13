@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { dietaryLabels, sizeLabel, themeLabel, formatLabel, shapeDescription, flavourLabel, sportLabel } from "../shared/orderLabels";
+import { dietaryLabels, sizeLabel, themeLabel, formatLabel, shapeDescription, flavourLabel, sportLabel, themeNames, themeSlots, itemTitle } from "../shared/orderLabels";
 
 describe("order option labels", () => {
   it("names dietary requirements as the builder does, from a list or a comma string", () => {
@@ -18,6 +18,20 @@ describe("order option labels", () => {
     expect(sportLabel("sailing")).toBe("Sailing");
     expect(sportLabel("golf")).toBe("Golf");
     expect(themeLabel("golf")).toBe("Sports");
+  });
+
+  it("names one theme, or two combined themes, with each one's typed text", () => {
+    expect(themeNames({ theme: "chess" })).toBe("Chess");
+    const combined = {
+      theme: "handDrawn",
+      secondTheme: "nameAndInitial",
+      themeCustomText: "A dragon",
+      secondThemeCustomText: "Doreen",
+    };
+    expect(themeNames(combined)).toBe("Hand Drawn + Name and Initial");
+    expect(themeSlots(combined).map((s) => s.text)).toEqual(["A dragon", "Doreen"]);
+    expect(itemTitle({ format: "cake", theme: "floralBouquet", secondTheme: "chess" })).toBe("Floral Bouquet + Chess Cake");
+    expect(itemTitle({ format: "miniGiftBox", boxes: 3, theme: "space", secondTheme: "chess" })).toBe("3 Mini Gift Boxes - Space + Chess");
   });
 
   it("names sizes, shapes and flavours as chosen", () => {

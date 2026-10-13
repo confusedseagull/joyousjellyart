@@ -8,6 +8,7 @@ import {
   SHAPE_SIZES,
   SPORTS,
   SPORTS_THEME,
+  TEXT_THEMES,
 } from "@/lib/customizeOptions";
 import {
   COLOR_SLOTS,
@@ -144,6 +145,8 @@ export function OrderItemEditor({ item, onChange }: { item: Item; onChange: (nex
   if (item.collection === "cny") return <CnyItemEditor item={item} onChange={onChange} />;
 
   const update = (changes: Item) => onChange(applyItemChange(item, changes));
+  // A design can combine two themes; each theme asks for its own follow-up.
+  const hasTheme = (value: string) => item.theme === value || item.secondTheme === value;
 
   const sizes = SHAPE_SIZES[item.shape] ?? [];
   const flavourCount = requiredFlavourCount(item.shape);
@@ -187,9 +190,25 @@ export function OrderItemEditor({ item, onChange }: { item: Item; onChange: (nex
             ))}
           </select>
         </Field>
+        <Field label="Second theme" hint="priced at the more expensive theme" className="sm:col-span-2">
+          <select
+            value={item.secondTheme ?? ""}
+            onChange={(e) => update({ secondTheme: e.target.value || undefined })}
+            className={adminInput}
+          >
+            <option value="">None (single theme)</option>
+            {themesForFormat(item.format)
+              .filter((t) => t.value !== item.theme)
+              .map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.label}
+                </option>
+              ))}
+          </select>
+        </Field>
       </div>
 
-      {item.theme === "floralBouquet" && (
+      {hasTheme("floralBouquet") && (
         <Field label="Flowers" hint={`up to ${MAX_FLOWERS}`}>
           <div className="flex flex-wrap gap-2">
             {flowerOptions.map((flower) => (
@@ -207,7 +226,7 @@ export function OrderItemEditor({ item, onChange }: { item: Item; onChange: (nex
           </div>
         </Field>
       )}
-      {item.theme === "cartoonCharacters" && (
+      {hasTheme("cartoonCharacters") && (
         <Field label="Character">
           <select
             value={item.cartoonCharacter ?? ""}
@@ -225,7 +244,7 @@ export function OrderItemEditor({ item, onChange }: { item: Item; onChange: (nex
           </select>
         </Field>
       )}
-      {item.theme === SPORTS_THEME && (
+      {hasTheme(SPORTS_THEME) && (
         <Field label="Sport">
           <select value={item.sport ?? ""} onChange={(e) => update({ sport: e.target.value || undefined })} className={adminInput}>
             <option value="">Not set</option>
@@ -237,14 +256,23 @@ export function OrderItemEditor({ item, onChange }: { item: Item; onChange: (nex
           </select>
         </Field>
       )}
-      {item.theme === "coutureFashion" && (
+      {hasTheme("coutureFashion") && (
         <Field label="Brand">
           <input value={item.fashionBrand ?? ""} onChange={(e) => update({ fashionBrand: e.target.value || undefined })} className={adminInput} />
         </Field>
       )}
-      {(item.theme === "handDrawn" || item.theme === "nameAndInitial") && (
+      {TEXT_THEMES.includes(item.theme) && (
         <Field label={item.theme === "nameAndInitial" ? "Name" : "Design description"}>
           <input value={item.themeCustomText ?? ""} onChange={(e) => update({ themeCustomText: e.target.value || undefined })} className={adminInput} />
+        </Field>
+      )}
+      {item.secondTheme && TEXT_THEMES.includes(item.secondTheme) && (
+        <Field label={item.secondTheme === "nameAndInitial" ? "Name (second theme)" : "Design description (second theme)"}>
+          <input
+            value={item.secondThemeCustomText ?? ""}
+            onChange={(e) => update({ secondThemeCustomText: e.target.value || undefined })}
+            className={adminInput}
+          />
         </Field>
       )}
 

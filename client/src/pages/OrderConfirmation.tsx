@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import {
   formatText,
   itemTitle,
-  themeLabel as optionThemeLabel,
+  themeSlots,
   sizeLabel as optionSizeLabel,
   flavourLabel,
   dietaryLabels,
@@ -36,6 +36,9 @@ interface ConfirmationCustomItem {
   format: string;
   theme: string;
   themeLabel?: string;
+  secondTheme?: string;
+  secondThemeLabel?: string;
+  secondThemeCustomText?: string;
   shape: string;
   shapeLabel?: string;
   size: string;
@@ -62,19 +65,23 @@ interface ConfirmationCustomItem {
 // picked, cartoon character, couture brand, or the name for a Name and
 // Initial design) — surfaced next to the theme itself, matching how the
 // Customize wizard's own order summary presents it.
-function themeDetailFor(item: ConfirmationCustomItem): string | undefined {
-  if (item.theme === "floralBouquet" && item.selectedFlowers?.length) return item.selectedFlowers.join(', ');
-  if (item.theme === "cartoonCharacters" && item.cartoonCharacter) return item.cartoonCharacter;
-  if (item.theme === SPORTS_THEME && item.sport) return sportLabel(item.sport);
-  if (item.theme === "coutureFashion" && item.fashionBrand) return item.fashionBrand;
-  if ((item.theme === "nameAndInitial" || item.theme === "handDrawn") && item.themeCustomText) return item.themeCustomText;
+function themeDetailFor(item: ConfirmationCustomItem, theme: string, text?: string): string | undefined {
+  if (theme === "floralBouquet" && item.selectedFlowers?.length) return item.selectedFlowers.join(', ');
+  if (theme === "cartoonCharacters" && item.cartoonCharacter) return item.cartoonCharacter;
+  if (theme === SPORTS_THEME && item.sport) return sportLabel(item.sport);
+  if (theme === "coutureFashion" && item.fashionBrand) return item.fashionBrand;
+  if ((theme === "nameAndInitial" || theme === "handDrawn") && text) return text;
   return undefined;
 }
 
+// One theme, or "Floral Bouquet — Rose + Chess" for a combined design.
 function themeValueFor(item: ConfirmationCustomItem): string {
-  const label = optionThemeLabel(item.theme, item.themeLabel);
-  const detail = themeDetailFor(item);
-  return detail ? `${label} — ${detail}` : label;
+  return themeSlots(item)
+    .map((slot) => {
+      const detail = themeDetailFor(item, slot.theme, slot.text);
+      return detail ? `${slot.label} — ${detail}` : slot.label;
+    })
+    .join(" + ");
 }
 
 // Item name shown in place of a generic "Custom Cake" label, e.g. "Floral

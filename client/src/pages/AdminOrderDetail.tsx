@@ -21,7 +21,8 @@ import { formatPrice, toWhatsAppLink } from "@/lib/utils";
 import { THEMES, SHAPES, BASE_FLAVORS, PLATTER_INDIVIDUAL_SHAPES } from "@/lib/customizeOptions";
 import {
   itemTitle,
-  themeLabel,
+  themeNames,
+  themeSlots,
   shapeLabel,
   platterShapeLabel,
   sizeLabel,
@@ -474,15 +475,21 @@ export default function AdminOrderDetail() {
                       {/* Left column: Theme, the option with the big reference photo, plus any
                           sub-selection tied to that theme (character/brand/flowers/note) */}
                       <div>
-                        {THEME_IMAGE[item.theme] && (
-                          <img
-                            src={THEME_IMAGE[item.theme]}
-                            alt={themeLabel(item.theme, item.themeLabel)}
-                            className="w-40 max-w-full aspect-square rounded-md object-cover border border-neutral-200"
-                          />
-                        )}
-                        <p className="text-xs font-medium text-neutral-500 mt-3">Theme</p>
-                        <p className="text-sm text-foreground">{themeLabel(item.theme, item.themeLabel)}</p>
+                        <div className="flex flex-wrap gap-2">
+                          {themeSlots(item).map(
+                            (slot) =>
+                              THEME_IMAGE[slot.theme] && (
+                                <img
+                                  key={slot.theme}
+                                  src={THEME_IMAGE[slot.theme]}
+                                  alt={slot.label}
+                                  className={`${item.secondTheme ? "w-28" : "w-40"} max-w-full aspect-square rounded-md object-cover border border-neutral-200`}
+                                />
+                              )
+                          )}
+                        </div>
+                        <p className="text-xs font-medium text-neutral-500 mt-3">{item.secondTheme ? "Themes (combined)" : "Theme"}</p>
+                        <p className="text-sm text-foreground">{themeNames(item)}</p>
                         {item.cartoonCharacter && (
                           <p className="text-sm text-foreground mt-2">Character: <span className="text-muted-foreground">{item.cartoonCharacter}</span></p>
                         )}
@@ -495,10 +502,13 @@ export default function AdminOrderDetail() {
                         {item.selectedFlowers?.length > 0 && (
                           <p className="text-sm text-foreground mt-2">Flowers: <span className="text-muted-foreground">{item.selectedFlowers.join(", ")}</span></p>
                         )}
-                        {item.themeCustomText && (
-                          <p className="text-sm text-foreground mt-2">
-                            {item.theme === "nameAndInitial" ? "Name" : "Design Description"}: <span className="text-muted-foreground">{item.themeCustomText}</span>
-                          </p>
+                        {themeSlots(item).map(
+                          (slot) =>
+                            slot.text && (
+                              <p key={slot.theme} className="text-sm text-foreground mt-2">
+                                {slot.theme === "nameAndInitial" ? "Name" : "Design Description"}: <span className="text-muted-foreground">{slot.text}</span>
+                              </p>
+                            )
                         )}
                       </div>
 

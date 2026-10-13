@@ -112,6 +112,13 @@ export const SPORTS = [
   { value: "golf", label: "Golf" },
 ];
 
+// Themes that ask a follow-up question (or take typed text) after being chosen.
+export const THEMES_WITH_EXTRAS = ["floralBouquet", "cartoonCharacters", SPORTS_THEME, "handDrawn", "coutureFashion", "nameAndInitial"];
+// Themes whose follow-up is typed text (a description / a name) rather than a pick.
+export const TEXT_THEMES = ["handDrawn", "nameAndInitial"];
+// Not offered for platters or gift boxes, which have no single canvas big enough.
+export const CAKE_ONLY_THEMES = ["handDrawn", "nameAndInitial"];
+
 export const SHAPES = [
   { value: "round", label: "Round", image: "/customize/shape-round.webp" },
   { value: "square", label: "Square", image: "/customize/shape-square.webp" },

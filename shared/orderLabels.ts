@@ -35,6 +35,40 @@ export function themeLabel(theme: string, storedLabel?: string): string {
   return THEMES.find((t) => t.value === theme)?.label ?? storedLabel ?? humanize(theme);
 }
 
+type ThemedItem = {
+  theme: string;
+  themeLabel?: string;
+  secondTheme?: string;
+  secondThemeLabel?: string;
+  themeCustomText?: string;
+  secondThemeCustomText?: string;
+};
+
+/** The one or two themes of a design, each with its name and any typed text (description / name). */
+export function themeSlots(item: ThemedItem): { theme: string; label: string; text?: string }[] {
+  const slots = [{ theme: item.theme, label: themeLabel(item.theme, item.themeLabel), text: item.themeCustomText }];
+  if (item.secondTheme) {
+    slots.push({
+      theme: item.secondTheme,
+      label: themeLabel(item.secondTheme, item.secondThemeLabel),
+      text: item.secondThemeCustomText,
+    });
+  }
+  return slots;
+}
+
+/** "Floral Bouquet" or, for a combined design, "Floral Bouquet + Chess". */
+export function themeNames(item: ThemedItem): string {
+  return themeSlots(item)
+    .map((s) => s.label)
+    .join(" + ");
+}
+
+/** What the typed text of a theme is called. */
+export function themeTextLabel(theme: string): string {
+  return theme === "nameAndInitial" ? "Name" : "Design description";
+}
+
 /**
  * A Mini Gift Box order for several boxes is ONE order item: its price is the
  * price of all the boxes together, its quantity stays 1, and `boxes` records
@@ -51,9 +85,9 @@ export function formatText(item: { format: string; boxes?: number }): string {
 }
 
 /** The item's headline: "Space Cake", or "3 Mini Gift Boxes - Space" for a multi-box order. */
-export function itemTitle(item: { format: string; theme: string; themeLabel?: string; boxes?: number }): string {
+export function itemTitle(item: { format: string; boxes?: number } & ThemedItem): string {
   const boxes = boxCount(item);
-  const theme = themeLabel(item.theme, item.themeLabel);
+  const theme = themeNames(item);
   return boxes > 1 ? `${boxes} Mini Gift Boxes - ${theme}` : `${theme} ${formatLabel(item.format)}`;
 }
 

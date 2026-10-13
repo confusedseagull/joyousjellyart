@@ -91,3 +91,21 @@ export function getCustomOrderPrice(theme: string, shape: string, size: string, 
 
   return typeof priceValue === "number" ? priceValue : null;
 }
+
+/**
+ * Price for a design that combines themes (one or two): the most expensive
+ * theme's price applies. Returns null if none of the themes has a price for
+ * this shape and size.
+ */
+export function getCustomOrderPriceForThemes(
+  themes: string[],
+  shape: string,
+  size: string,
+  numberCount?: 1 | 2
+): number | null {
+  const prices = themes
+    .filter(Boolean)
+    .map((theme) => getCustomOrderPrice(theme, shape, size, numberCount))
+    .filter((price): price is number => price !== null);
+  return prices.length > 0 ? Math.max(...prices) : null;
+}

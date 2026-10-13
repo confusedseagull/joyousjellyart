@@ -50,6 +50,10 @@ export type CustomOrderItem = {
   format: "cake" | "jellyPlatter" | "miniGiftBox";
   theme: string;
   themeLabel?: string;
+  // A design can combine two themes; the price is that of the more expensive one.
+  secondTheme?: string;
+  secondThemeLabel?: string;
+  secondThemeCustomText?: string;
   selectedFlowers?: string[];
   selectedColors?: string[];
   backgroundColor?: string;

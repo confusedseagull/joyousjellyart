@@ -11,8 +11,10 @@ import {
   BASE_FLAVORS,
   FLOWERS,
   SPORTS_THEME,
+  TEXT_THEMES,
+  CAKE_ONLY_THEMES,
 } from "../client/src/lib/customizeOptions";
-import { getCustomOrderPrice } from "./customOrderPricing";
+import { getCustomOrderPriceForThemes } from "./customOrderPricing";
 import { boxCount } from "./orderLabels";
 
 // Stored custom items are loose JSON; the admin edits them field by field.
@@ -25,9 +27,9 @@ export function shapesForFormat(format: string) {
   return format === "cake" ? CAKE_SHAPES : format === "jellyPlatter" ? PLATTER_FORMAT_SHAPES : GIFT_BOX_FORMAT_SHAPES;
 }
 
-/** Hand Drawn isn't offered for platters or gift boxes. */
+/** Hand Drawn and Name and Initial are cake-only; platters and gift boxes don't offer them. */
 export function themesForFormat(format: string) {
-  return format === "cake" ? THEMES : THEMES.filter((t) => t.value !== "handDrawn");
+  return format === "cake" ? THEMES : THEMES.filter((t) => !CAKE_ONLY_THEMES.includes(t.value));
 }
 
 export function requiredFlavourCount(shape: string): number {
@@ -77,15 +79,23 @@ export function buildNumbers(count: 1 | 2, first: string, second: string): strin
   return count === 2 ? `${first},${second}` : first;
 }
 
-/** The price list's price for this item (all its boxes, for a multi-box order), or null if it has none. */
+/**
+ * The price list's price for this item (all its boxes, for a multi-box order), or null if it has none.
+ * A design that combines two themes is priced at the more expensive theme.
+ */
 export function unitPrice(item: EditableCustomItem): number | null {
-  const price = getCustomOrderPrice(item.theme, item.shape, item.size, item.shape === "numbers" ? numberCountOf(item) : undefined);
+  const price = getCustomOrderPriceForThemes(
+    [item.theme, item.secondTheme],
+    item.shape,
+    item.size,
+    item.shape === "numbers" ? numberCountOf(item) : undefined
+  );
   if (price === null) return null;
   // A multi-box Mini Gift Box order is one item priced for all its boxes.
   return Number((price * boxCount(item)).toFixed(2));
 }
 
-const PRICE_FIELDS = ["format", "theme", "shape", "size", "numbers", "boxes"] as const;
+const PRICE_FIELDS = ["format", "theme", "secondTheme", "shape", "size", "numbers", "boxes"] as const;
 
 function pricingChanged(before: EditableCustomItem, after: EditableCustomItem): boolean {
   return PRICE_FIELDS.some((field) => before[field] !== after[field]);
@@ -113,6 +123,12 @@ export function applyItemChange(item: EditableCustomItem, changes: EditableCusto
   }
   next.themeLabel = THEMES.find((t) => t.value === next.theme)?.label ?? next.theme;
 
+  // An optional second theme: it must differ from the first and be offered for this format.
+  if (next.secondTheme && (next.secondTheme === next.theme || !themesForFormat(next.format).some((t) => t.value === next.secondTheme))) {
+    next.secondTheme = undefined;
+  }
+  next.secondThemeLabel = next.secondTheme ? (THEMES.find((t) => t.value === next.secondTheme)?.label ?? next.secondTheme) : undefined;
+
   const maxShapes = maxPlatterShapes(next.shape, next.size);
   next.platterShapes = maxShapes > 0 ? (next.platterShapes ?? []).slice(0, maxShapes) : undefined;
 
@@ -133,11 +149,15 @@ export function applyItemChange(item: EditableCustomItem, changes: EditableCusto
   next.quantity = 1;
   next.boxes = next.format === "miniGiftBox" && Number(next.boxes) > 1 ? Math.floor(Number(next.boxes)) : undefined;
 
-  if (next.theme !== "floralBouquet") next.selectedFlowers = undefined;
-  if (next.theme !== "cartoonCharacters") next.cartoonCharacter = undefined;
-  if (next.theme !== SPORTS_THEME) next.sport = undefined;
-  if (next.theme !== "coutureFashion") next.fashionBrand = undefined;
-  if (next.theme !== "handDrawn" && next.theme !== "nameAndInitial") next.themeCustomText = undefined;
+  // Each theme's extras are kept only while one of the chosen themes still asks for them.
+  const hasTheme = (value: string) => next.theme === value || next.secondTheme === value;
+  if (!hasTheme("floralBouquet")) next.selectedFlowers = undefined;
+  if (!hasTheme("cartoonCharacters")) next.cartoonCharacter = undefined;
+  if (!hasTheme(SPORTS_THEME)) next.sport = undefined;
+  if (!hasTheme("coutureFashion")) next.fashionBrand = undefined;
+  // Typed text belongs to a theme slot (a design may combine Hand Drawn with Name and Initial).
+  if (!TEXT_THEMES.includes(next.theme)) next.themeCustomText = undefined;
+  if (!next.secondTheme || !TEXT_THEMES.includes(next.secondTheme)) next.secondThemeCustomText = undefined;
 
   if (pricingChanged(item, next)) {
     const price = unitPrice(next);

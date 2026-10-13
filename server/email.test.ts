@@ -117,6 +117,15 @@ describe("option names in order emails", () => {
     }
   });
 
+  it("names both themes of a combined-theme item", () => {
+    const html = buildOrderConfirmationEmailHtml(
+      makeOrder({ items: [{ ...custom, theme: "floralBouquet", secondTheme: "chess", secondThemeLabel: "Chess" }] })
+    );
+
+    expect(html).toContain("Floral Bouquet + Chess Cake");
+    expect(html).toContain("Theme: Floral Bouquet + Chess");
+  });
+
   it("names the sport chosen for a Sports theme item", () => {
     const html = buildOrderConfirmationEmailHtml(
       makeOrder({ items: [{ ...custom, theme: "golf", themeLabel: "Sports", sport: "sailing" }] })

@@ -3,7 +3,8 @@ import type { Order, OrderItem } from "../drizzle/schema";
 import {
   formatText,
   itemTitle,
-  themeLabel,
+  themeSlots,
+  themeNames,
   sizeLabel,
   flavourLabel,
   dietaryLabels,
@@ -48,7 +49,9 @@ function extraOptionLines(item: Extract<OrderItem, { collection: "custom" }>): s
   if (item.cartoonCharacter) lines.push(`Character: ${item.cartoonCharacter}`);
   if (item.sport) lines.push(`Sport: ${sportLabel(item.sport)}`);
   if (item.fashionBrand) lines.push(`Brand: ${item.fashionBrand}`);
-  if (item.themeCustomText) lines.push(`${item.theme === "nameAndInitial" ? "Name" : "Design"}: ${item.themeCustomText}`);
+  for (const slot of themeSlots(item)) {
+    if (slot.text) lines.push(`${slot.theme === "nameAndInitial" ? "Name" : "Design"}: ${slot.text}`);
+  }
   if (item.cakeText) lines.push(`Text: ${item.cakeText}`);
   const dietary = dietaryLabels(item.dietaryRequirements);
   if (dietary.length) lines.push(`Dietary: ${dietary.join(", ")}`);
@@ -105,7 +108,7 @@ function renderItemRow(item: OrderItem): string {
       <td style="padding: 12px 0; border-bottom: 1px solid ${BORDER_COLOR};">
         <p style="margin: 0 0 4px; font-weight: 600; color: #1a1e1b;">${esc(itemNameFor(item))}</p>
         <p style="margin: 0; font-size: 13px; color: ${MUTED_TEXT};">${esc(formatText(item))} &middot; ${esc(shapeDescription(item))} &middot; ${esc(sizeLabel(item.shape, item.size))}</p>
-        <p style="margin: 0; font-size: 13px; color: ${MUTED_TEXT};">Theme: ${esc(themeLabel(item.theme, item.themeLabel))} &middot; Flavour: ${esc(item.flavours.map(flavourLabel).join(", "))}</p>
+        <p style="margin: 0; font-size: 13px; color: ${MUTED_TEXT};">Theme: ${esc(themeNames(item))} &middot; Flavour: ${esc(item.flavours.map(flavourLabel).join(", "))}</p>
         ${extras.length ? `<p style="margin: 0; font-size: 13px; color: ${MUTED_TEXT};">${extras.map(esc).join(" &middot; ")}</p>` : ""}
         <p style="margin: 4px 0 0; font-size: 13px; color: ${MUTED_TEXT};">Qty: ${item.quantity} &middot; ${formatPrice(item.price)} each</p>
       </td>

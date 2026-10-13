@@ -72,7 +72,7 @@ const VIEWS = [
 
 const INTRO: Record<(typeof VIEWS)[number]["value"], string> = {
   themes:
-    "Every theme we can bring to life on a jelly cake — pick one as inspiration, or use it as a starting point. Customise the format, shape, size, colors, details, wording and flavour and let us bring it to life!",
+    "Every theme we can bring to life on a jelly cake — pick one as inspiration, or use it as a starting point. Customise the format, shape, size, colors, details, wording and flavour and let us bring it to life! You can even combine two themes into one design.",
   formats:
     "Cakes, jelly platters and mini gift boxes: what each one is, the shapes it comes in, and the sizes you can choose.",
 };

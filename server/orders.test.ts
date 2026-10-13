@@ -189,6 +189,24 @@ describe("orders.create", () => {
     expect(result.items[0].cartoonCharacter).toBe("Pikachu");
   });
 
+  it("keeps both themes of a combined-theme item", async () => {
+    const caller = appRouter.createCaller(createPublicContext());
+
+    const result = await caller.orders.create({
+      customerName: "Tess Lim",
+      customerEmail: "tess.lim@example.com",
+      customerPhone: "+65 8888 6666",
+      deliveryMethod: "pickup" as const,
+      fulfillmentDate: new Date("2025-03-01T10:00:00"),
+      items: [{ ...makeItem({ theme: "floralBouquet" }), secondTheme: "chess", secondThemeLabel: "Chess" }],
+      subtotal: 99,
+      deliveryFee: 0,
+      total: 99,
+    });
+
+    expect(result.items[0]).toMatchObject({ theme: "floralBouquet", secondTheme: "chess", secondThemeLabel: "Chess" });
+  });
+
   it("keeps the sport chosen for a Sports theme item", async () => {
     const caller = appRouter.createCaller(createPublicContext());
 

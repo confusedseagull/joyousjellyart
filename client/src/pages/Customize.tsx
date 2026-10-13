@@ -3,11 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, ArrowRight, Check, ChevronDown, Minus, Plus, X } from "lucide-react";
 import { SelectablePill } from "@/components/SelectablePill";
 import { upload } from "@vercel/blob/client";
 import { toast } from "sonner";
-import { getCustomOrderPrice } from "../../../shared/customOrderPricing";
+import { getCustomOrderPrice, getCustomOrderPriceForThemes } from "../../../shared/customOrderPricing";
 import { formatPrice } from "@/lib/utils";
 import { useCart, type CakeFormat } from "@/contexts/CartContext";
 import {
@@ -28,6 +29,9 @@ import {
   NUMBER_CAKE_SIZES,
   SPORTS,
   SPORTS_THEME,
+  THEMES_WITH_EXTRAS,
+  TEXT_THEMES,
+  CAKE_ONLY_THEMES,
 } from "@/lib/customizeOptions";
 
 const inputClass = "h-[52px] rounded-2xl border-[#e5e5e5]";
@@ -260,6 +264,9 @@ export default function Customize() {
 
   // Theme & Design state
   const [theme, setTheme] = useState("");
+  // "Combine 2 themes": a design can blend two themes; priced at the dearer one.
+  const [combineThemes, setCombineThemes] = useState(false);
+  const [theme2, setTheme2] = useState("");
   const [selectedFlowers, setSelectedFlowers] = useState<string[]>([]);
   const [cartoonCharacter, setCartoonCharacter] = useState("");
   const [sport, setSport] = useState("");
@@ -298,7 +305,7 @@ export default function Customize() {
   // canvas large enough for either.
   const themeOptionsForFormat =
     format === "jellyPlatter" || format === "miniGiftBox"
-      ? THEMES.filter((t) => t.value !== "handDrawn" && t.value !== "nameAndInitial")
+      ? THEMES.filter((t) => !CAKE_ONLY_THEMES.includes(t.value))
       : THEMES;
 
   const getRequiredFlavorCount = () => {
@@ -354,10 +361,11 @@ export default function Customize() {
   // Calculate estimated unit price
   const estimatedPrice = useMemo(() => {
     if (!theme || !shape || !size) return null;
-    const basePrice = getCustomOrderPrice(theme, shape, size, numberCount);
+    // Two combined themes are priced at whichever of them costs more.
+    const basePrice = getCustomOrderPriceForThemes([theme, combineThemes ? theme2 : ""], shape, size, numberCount);
     if (!basePrice) return null;
     return Number(basePrice.toFixed(2));
-  }, [theme, shape, size, numberCount]);
+  }, [theme, theme2, combineThemes, shape, size, numberCount]);
 
   const totalPrice = useMemo(() => {
     if (estimatedPrice === null) return null;
@@ -382,11 +390,19 @@ export default function Customize() {
     setQuantity(1);
     setNumber1("");
     setNumber2("");
-    // Hand Drawn isn't offered for platters/gift boxes — clear a stale
-    // selection (and its description) if the customer switches into one.
-    if ((value === "jellyPlatter" || value === "miniGiftBox") && theme === "handDrawn") {
-      setTheme("");
+    // Hand Drawn and Name and Initial aren't offered for platters/gift boxes —
+    // drop a stale selection (and what was typed for it) if the customer
+    // switches into one; a valid second theme moves up to be the first.
+    if (value === "jellyPlatter" || value === "miniGiftBox") {
+      const dropped = (t: string) => CAKE_ONLY_THEMES.includes(t);
+      if (dropped(theme)) {
+        setTheme(theme2 && !dropped(theme2) ? theme2 : "");
+        setTheme2("");
+      } else if (dropped(theme2)) {
+        setTheme2("");
+      }
       setHandDrawnDesign("");
+      setNameAndInitialName("");
     }
   };
 
@@ -490,17 +506,24 @@ export default function Customize() {
     prevDietaryCountRef.current = dietaryRequirements.length;
   }, [currentStep, dietaryRequirements]);
 
+  // Whether the follow-up a theme asks for (character, sport, brand, typed text) has been filled in.
+  const themeIsComplete = (t: string): boolean => {
+    if (t === "cartoonCharacters") return !!cartoonCharacter;
+    if (t === SPORTS_THEME) return !!sport;
+    if (t === "coutureFashion") return !!coutureBrand.trim();
+    if (t === "handDrawn") return !!handDrawnDesign.trim();
+    if (t === "nameAndInitial") return !!nameAndInitialName.trim();
+    return true;
+  };
+
   const isStepComplete = (step: number): boolean => {
     switch (step) {
       case 1: return !!format;
       case 2: return shapeSizeComplete;
       case 3:
-        if (theme === "cartoonCharacters") return !!cartoonCharacter;
-        if (theme === SPORTS_THEME) return !!sport;
-        if (theme === "coutureFashion") return !!coutureBrand.trim();
-        if (theme === "handDrawn") return !!handDrawnDesign.trim();
-        if (theme === "nameAndInitial") return !!nameAndInitialName.trim();
-        return !!theme;
+        if (!theme) return false;
+        if (combineThemes && !theme2) return false; // combining needs both themes
+        return [theme, combineThemes ? theme2 : ""].filter(Boolean).every(themeIsComplete);
       case 4: return selectedFlavors.length >= 1;
       case 8: return dietaryRequirements.length > 0;
       default: return true; // steps 5-7 are optional
@@ -563,7 +586,8 @@ export default function Customize() {
   useEffect(() => {
     const justScrolledToSubsection = Date.now() - subsectionScrollAtRef.current < 800;
     // For themes that need typed text, the step completes on the first keystroke; don't scroll away mid-typing.
-    const typingTheme = currentStep === 3 && (theme === "handDrawn" || theme === "coutureFashion" || theme === "nameAndInitial");
+    const typingTheme =
+      currentStep === 3 && [theme, combineThemes ? theme2 : ""].some((t) => TEXT_THEMES.includes(t) || t === "coutureFashion");
     // Multi-picks that are "complete" at one choice but expect more (platter flavours / piece shapes), and
     // number digits, scroll to Next themselves once the last pick or digit is in.
     const partialMultiPick =
@@ -587,6 +611,8 @@ export default function Customize() {
     setNumberCount(2);
     setQuantity(1);
     setTheme("");
+    setTheme2("");
+    setCombineThemes(false);
     setSelectedFlowers([]);
     setCartoonCharacter("");
     setSport("");
@@ -611,6 +637,10 @@ export default function Customize() {
     const numbers = shape === "numbers" ? (numberCount === 2 ? `${number1},${number2}` : number1) : undefined;
     const selectedColors = [color1, color2, color3].filter(Boolean);
     const themeLabel = THEMES.find(t => t.value === theme)?.label || theme;
+    const chosenThemes = combineThemes && theme2 ? [theme, theme2] : [theme];
+    const has = (t: string) => chosenThemes.includes(t);
+    // What was typed for a text theme (the description for Hand Drawn, the name for Name and Initial).
+    const textFor = (t: string) => (t === "handDrawn" ? handDrawnDesign : t === "nameAndInitial" ? nameAndInitialName : "");
     const shapeLabel = SHAPES.find(s => s.value === shape)?.label || shape;
     const sizeLabel =
       shape === "numbers"
@@ -622,16 +652,18 @@ export default function Customize() {
       format,
       theme,
       themeLabel,
+      secondTheme: chosenThemes[1],
+      secondThemeLabel: chosenThemes[1] ? THEMES.find((t) => t.value === chosenThemes[1])?.label : undefined,
+      secondThemeCustomText: chosenThemes[1] ? textFor(chosenThemes[1]) || undefined : undefined,
       // Theme extras are saved only for the theme that is currently chosen, so
       // switching theme never leaves a stray flower / character / brand behind.
-      selectedFlowers: theme === "floralBouquet" && selectedFlowers.length > 0 ? selectedFlowers : undefined,
+      selectedFlowers: has("floralBouquet") && selectedFlowers.length > 0 ? selectedFlowers : undefined,
       selectedColors: selectedColors.length > 0 ? selectedColors : undefined,
       backgroundColor: backgroundColor || undefined,
-      cartoonCharacter: theme === "cartoonCharacters" ? cartoonCharacter || undefined : undefined,
-      sport: theme === SPORTS_THEME ? sport || undefined : undefined,
-      themeCustomText:
-        theme === "handDrawn" ? handDrawnDesign || undefined : theme === "nameAndInitial" ? nameAndInitialName || undefined : undefined,
-      fashionBrand: theme === "coutureFashion" ? coutureBrand || undefined : undefined,
+      cartoonCharacter: has("cartoonCharacters") ? cartoonCharacter || undefined : undefined,
+      sport: has(SPORTS_THEME) ? sport || undefined : undefined,
+      themeCustomText: textFor(theme) || undefined,
+      fashionBrand: has("coutureFashion") ? coutureBrand || undefined : undefined,
       shape,
       shapeLabel,
       size,
@@ -733,29 +765,194 @@ export default function Customize() {
     .join(", ");
 
   // Theme-specific detail the customer entered while customizing (flowers
-  // picked, cartoon character, couture brand, or the name for a Name and
-  // Initial design) — surfaced next to the theme itself in the summary.
-  const themeDetail =
-    theme === "floralBouquet" && selectedFlowers.length > 0
-      ? selectedFlowers.join(", ")
-      : theme === "cartoonCharacters" && cartoonCharacter
-        ? cartoonCharacter
-        : theme === SPORTS_THEME && sport
-          ? SPORTS.find((s) => s.value === sport)?.label
-          : theme === "coutureFashion" && coutureBrand
-          ? coutureBrand
-          : theme === "nameAndInitial" && nameAndInitialName
-            ? nameAndInitialName
-            : theme === "handDrawn" && handDrawnDesign
-              ? handDrawnDesign
-              : undefined;
-  const themeLabel = THEMES.find(t => t.value === theme)?.label;
+  // picked, cartoon character, sport, couture brand, or the name for a Name
+  // and Initial design) — surfaced next to the theme itself in the summary.
+  const detailFor = (t: string): string | undefined => {
+    if (t === "floralBouquet") return selectedFlowers.length > 0 ? selectedFlowers.join(", ") : undefined;
+    if (t === "cartoonCharacters") return cartoonCharacter || undefined;
+    if (t === SPORTS_THEME) return SPORTS.find((o) => o.value === sport)?.label;
+    if (t === "coutureFashion") return coutureBrand || undefined;
+    if (t === "nameAndInitial") return nameAndInitialName || undefined;
+    if (t === "handDrawn") return handDrawnDesign || undefined;
+    return undefined;
+  };
+  const themeSummary = [theme, combineThemes ? theme2 : ""]
+    .filter(Boolean)
+    .map((t) => {
+      const label = THEMES.find((o) => o.value === t)?.label ?? t;
+      const detail = detailFor(t);
+      return detail ? `${label} — ${detail}` : label;
+    })
+    .join(" + ");
+
+  // Combine-2-themes: ticking allows a second theme; unticking drops it.
+  const handleCombineToggle = (checked: boolean) => {
+    setCombineThemes(checked);
+    if (!checked) setTheme2("");
+  };
+
+  const handleThemeClick = (value: string) => {
+    if (!combineThemes) {
+      setTheme(value);
+      setTheme2("");
+      // Themes with a follow-up choice or text field go there next; the rest go to Additional Notes.
+      scrollToSection(THEMES_WITH_EXTRAS.includes(value) ? "themeExtras1" : "notes");
+      return;
+    }
+    if (value === theme) {
+      // Un-picking the first theme moves the second one up.
+      setTheme(theme2);
+      setTheme2("");
+    } else if (value === theme2) {
+      setTheme2("");
+    } else if (!theme) {
+      setTheme(value); // stay put: the second theme still needs choosing
+    } else if (!theme2) {
+      setTheme2(value);
+      scrollToSection(
+        THEMES_WITH_EXTRAS.includes(theme) ? "themeExtras1" : THEMES_WITH_EXTRAS.includes(value) ? "themeExtras2" : "notes"
+      );
+    }
+  };
+
+  // After finishing one theme's follow-up: the other theme's follow-up if it has one, else the notes.
+  const afterThemeExtras = (slot: 1 | 2) => {
+    const secondHasExtras = slot === 1 && combineThemes && !!theme2 && THEMES_WITH_EXTRAS.includes(theme2);
+    scrollToSection(secondHasExtras ? "themeExtras2" : "notes");
+  };
+
+  // The follow-up a chosen theme asks for (flowers / character / sport / typed text), for slot 1 or 2.
+  const renderThemeExtras = (themeValue: string, slot: 1 | 2) => {
+    const heading =
+      combineThemes && THEMES_WITH_EXTRAS.includes(themeValue) ? (
+        <p className="font-medium">{THEMES.find((o) => o.value === themeValue)?.label} options</p>
+      ) : null;
+    const key = `${slot}-${themeValue}`;
+
+    if (themeValue === "floralBouquet") {
+      return (
+        <div key={key} ref={section(`themeExtras${slot}`)} className="flex flex-col gap-4 scroll-mt-44">
+          <div className="h-px w-full max-w-2xl bg-[#e5e5e5]" />
+          {heading}
+          <p className="text-sm text-muted-foreground">
+            Choose up to 5 flower types. Flower colors will be customised based on the color preferences indicated. Images provided are for reference only.
+          </p>
+          <div className="flex flex-wrap gap-6">
+            {FLOWERS.map((flower) => {
+              const isSelected = selectedFlowers.includes(flower.value);
+              const isDisabled = !isSelected && selectedFlowers.length >= 5;
+              return (
+                <CircleOption
+                  key={flower.value}
+                  option={flower}
+                  isSelected={isSelected}
+                  disabled={isDisabled}
+                  onClick={() => {
+                    setSelectedFlowers((prev) => (isSelected ? prev.filter((f) => f !== flower.value) : [...prev, flower.value]));
+                    // Five is the most allowed, so that pick finishes the flowers.
+                    if (!isSelected && selectedFlowers.length + 1 >= 5) afterThemeExtras(slot);
+                  }}
+                />
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+    if (themeValue === "cartoonCharacters") {
+      return (
+        <div key={key} ref={section(`themeExtras${slot}`)} className="flex flex-col gap-4 scroll-mt-44">
+          {heading}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-4xl">
+            {CARTOON_CHARACTERS.map((character) => (
+              <SelectablePill
+                key={character}
+                selected={cartoonCharacter === character}
+                onClick={() => {
+                  setCartoonCharacter(character);
+                  afterThemeExtras(slot);
+                }}
+                className="flex items-center justify-between px-4 py-3"
+              >
+                <span>{character}</span>
+                {cartoonCharacter === character && <Check className="h-4 w-4 text-primary" />}
+              </SelectablePill>
+            ))}
+          </div>
+        </div>
+      );
+    }
+    if (themeValue === SPORTS_THEME) {
+      return (
+        <div key={key} ref={section(`themeExtras${slot}`)} className="flex flex-col gap-4 scroll-mt-44">
+          {heading}
+          <p className="text-sm text-muted-foreground">Choose a sport for your design.</p>
+          <div className="grid grid-cols-2 gap-4 max-w-md">
+            {SPORTS.map((option) => (
+              <SelectablePill
+                key={option.value}
+                selected={sport === option.value}
+                onClick={() => {
+                  setSport(option.value);
+                  afterThemeExtras(slot);
+                }}
+                className="flex items-center justify-between px-4 py-3"
+              >
+                <span>{option.label}</span>
+                {sport === option.value && <Check className="h-4 w-4 text-primary" />}
+              </SelectablePill>
+            ))}
+          </div>
+        </div>
+      );
+    }
+    if (themeValue === "handDrawn") {
+      return (
+        <div key={key} ref={section(`themeExtras${slot}`)} className="flex flex-col gap-3 scroll-mt-44">
+          {heading}
+          <Textarea
+            value={handDrawnDesign}
+            onChange={(e) => setHandDrawnDesign(e.target.value)}
+            placeholder="Describe your custom hand-drawn design..."
+            className="min-h-[120px] rounded-2xl border-[#e5e5e5] w-full"
+          />
+        </div>
+      );
+    }
+    if (themeValue === "coutureFashion") {
+      return (
+        <div key={key} ref={section(`themeExtras${slot}`)} className="flex flex-col gap-3 scroll-mt-44">
+          {heading}
+          <Input
+            value={coutureBrand}
+            onChange={(e) => setCoutureBrand(e.target.value)}
+            placeholder="Enter brand name (e.g., Chanel, Dior)..."
+            className={inputClass}
+          />
+        </div>
+      );
+    }
+    if (themeValue === "nameAndInitial") {
+      return (
+        <div key={key} ref={section(`themeExtras${slot}`)} className="flex flex-col gap-3 scroll-mt-44">
+          {heading}
+          <Input
+            value={nameAndInitialName}
+            onChange={(e) => setNameAndInitialName(e.target.value)}
+            placeholder="Enter the name to be carved (e.g., Doreen)..."
+            className={inputClass}
+          />
+        </div>
+      );
+    }
+    return null;
+  };
 
   const summaryRows: { label: string; value: string }[] = [
     { label: "Format", value: FORMATS.find(f => f.value === format)?.label ?? "None" },
     { label: "Shape", value: SHAPES.find(s => s.value === shape)?.label ?? "None" },
     { label: "Size", value: sizeLabel ?? "None" },
-    { label: "Theme", value: themeLabel ? (themeDetail ? `${themeLabel} — ${themeDetail}` : themeLabel) : "None" },
+    { label: "Theme", value: themeSummary || "None" },
     { label: "Base Flavour", value: selectedFlavors.length > 0 ? selectedFlavors.join(", ") : "None" },
     { label: "Background Color", value: backgroundColor || "None" },
     { label: "Color Preferences", value: colorPreferences || "None" },
@@ -1042,125 +1239,31 @@ export default function Customize() {
             {currentStep === 3 && (
                 <section className="flex flex-col gap-6 animate-in fade-in duration-300">
                 <StepHeader number={3} title="Choose a theme" description="Choose the design theme for your jelly cake. The final design will differ based on the customer's requirements on color, and other additional notes provided. If you would like the exact replica of a particular design, you can upload a picture and indicate it in the additional notes." />
+                <div className="flex flex-col gap-2">
+                  <label className="flex w-fit cursor-pointer items-center gap-3">
+                    <Checkbox checked={combineThemes} onCheckedChange={(checked) => handleCombineToggle(checked === true)} />
+                    <span className="text-[15px] text-foreground">Combine 2 themes</span>
+                  </label>
+                  <p className="text-sm text-muted-foreground">
+                    {combineThemes
+                      ? `${!theme ? "Choose 2 themes." : !theme2 ? "Now choose a second theme." : "Two themes chosen."} The price follows the more expensive of the two.`
+                      : "Blend two themes into one design."}
+                  </p>
+                </div>
+
                 <div className="flex flex-wrap gap-6">
                   {themeOptionsForFormat.map((themeOption) => (
                     <CircleOption
                       key={themeOption.value}
                       option={themeOption}
-                      isSelected={theme === themeOption.value}
-                      onClick={() => {
-                        setTheme(themeOption.value);
-                        // Themes with a follow-up choice or text field go there next; the rest go to Additional Notes.
-                        const hasExtras = ["floralBouquet", "cartoonCharacters", SPORTS_THEME, "handDrawn", "coutureFashion", "nameAndInitial"].includes(themeOption.value);
-                        scrollToSection(hasExtras ? "themeExtras" : "notes");
-                      }}
+                      isSelected={theme === themeOption.value || (combineThemes && theme2 === themeOption.value)}
+                      disabled={combineThemes && !!theme && !!theme2 && theme !== themeOption.value && theme2 !== themeOption.value}
+                      onClick={() => handleThemeClick(themeOption.value)}
                     />
                   ))}
                 </div>
 
-                {theme === "floralBouquet" && (
-                  <div ref={section("themeExtras")} className="flex flex-col gap-4 scroll-mt-44">
-                    <div className="h-px w-full max-w-2xl bg-[#e5e5e5]" />
-                    <p className="text-sm text-muted-foreground">
-                      Choose up to 5 flower types. Flower colors will be customised based on the color preferences indicated. Images provided are for reference only.
-                    </p>
-                    <div className="flex flex-wrap gap-6">
-                      {FLOWERS.map((flower) => {
-                        const isSelected = selectedFlowers.includes(flower.value);
-                        const isDisabled = !isSelected && selectedFlowers.length >= 5;
-                        return (
-                          <CircleOption
-                            key={flower.value}
-                            option={flower}
-                            isSelected={isSelected}
-                            disabled={isDisabled}
-                            onClick={() => {
-                              setSelectedFlowers(prev =>
-                                isSelected ? prev.filter(f => f !== flower.value) : [...prev, flower.value]
-                              );
-                              // Five is the most allowed, so that pick finishes the flowers.
-                              if (!isSelected && selectedFlowers.length + 1 >= 5) scrollToSection("notes");
-                            }}
-                          />
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {theme === "cartoonCharacters" && (
-                  <div ref={section("themeExtras")} className="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-4xl scroll-mt-44">
-                    {CARTOON_CHARACTERS.map((character) => (
-                      <SelectablePill
-                        key={character}
-                        selected={cartoonCharacter === character}
-                        onClick={() => {
-                          setCartoonCharacter(character);
-                          scrollToSection("notes");
-                        }}
-                        className="flex items-center justify-between px-4 py-3"
-                      >
-                        <span>{character}</span>
-                        {cartoonCharacter === character && <Check className="h-4 w-4 text-primary" />}
-                      </SelectablePill>
-                    ))}
-                  </div>
-                )}
-
-                {theme === SPORTS_THEME && (
-                  <div ref={section("themeExtras")} className="flex flex-col gap-4 scroll-mt-44">
-                    <p className="text-sm text-muted-foreground">Choose a sport for your design.</p>
-                    <div className="grid grid-cols-2 gap-4 max-w-md">
-                      {SPORTS.map((option) => (
-                        <SelectablePill
-                          key={option.value}
-                          selected={sport === option.value}
-                          onClick={() => {
-                            setSport(option.value);
-                            scrollToSection("notes");
-                          }}
-                          className="flex items-center justify-between px-4 py-3"
-                        >
-                          <span>{option.label}</span>
-                          {sport === option.value && <Check className="h-4 w-4 text-primary" />}
-                        </SelectablePill>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {theme === "handDrawn" && (
-                  <div ref={section("themeExtras")} className="scroll-mt-44">
-                    <Textarea
-                      value={handDrawnDesign}
-                      onChange={(e) => setHandDrawnDesign(e.target.value)}
-                      placeholder="Describe your custom hand-drawn design..."
-                      className="min-h-[120px] rounded-2xl border-[#e5e5e5] w-full"
-                    />
-                  </div>
-                )}
-
-                {theme === "coutureFashion" && (
-                  <div ref={section("themeExtras")} className="scroll-mt-44">
-                    <Input
-                      value={coutureBrand}
-                      onChange={(e) => setCoutureBrand(e.target.value)}
-                      placeholder="Enter brand name (e.g., Chanel, Dior)..."
-                      className={inputClass}
-                    />
-                  </div>
-                )}
-
-                {theme === "nameAndInitial" && (
-                  <div ref={section("themeExtras")} className="scroll-mt-44">
-                    <Input
-                      value={nameAndInitialName}
-                      onChange={(e) => setNameAndInitialName(e.target.value)}
-                      placeholder="Enter the name to be carved (e.g., Doreen)..."
-                      className={inputClass}
-                    />
-                  </div>
-                )}
+                {[theme, combineThemes ? theme2 : ""].map((t, i) => (t ? renderThemeExtras(t, (i + 1) as 1 | 2) : null))}
 
                 {theme && (
                   <div ref={section("notes")} className="flex flex-col gap-3 scroll-mt-44">

@@ -4,7 +4,8 @@ import { formatTimeRange } from "@/lib/utils";
 import {
   formatText,
   boxCount,
-  themeLabel,
+  themeNames,
+  themeSlots,
   shapeDescription,
   sizeLabel,
   flavourLabel,
@@ -119,14 +120,13 @@ function buildCustomItem(item: any): PdfItem {
   if (item.cartoonCharacter) themeDetails.push({ label: "Character", value: item.cartoonCharacter });
   if (item.sport) themeDetails.push({ label: "Sport", value: sportLabel(item.sport) });
   if (item.fashionBrand) themeDetails.push({ label: "Brand", value: item.fashionBrand });
-  if (item.themeCustomText) {
-    themeDetails.push({
-      label: item.theme === "nameAndInitial" ? "Name" : "Design Description",
-      value: item.themeCustomText,
-    });
+  for (const slot of themeSlots(item)) {
+    if (slot.text) {
+      themeDetails.push({ label: slot.theme === "nameAndInitial" ? "Name" : "Design Description", value: slot.text });
+    }
   }
 
-  const themeField: PdfField = { label: "Theme", value: themeLabel(item.theme, item.themeLabel) };
+  const themeField: PdfField = { label: "Theme", value: themeNames(item) };
   const designDetails: PdfField = { label: "Design Details", value: item.designDetails || NONE };
   const additionalNotes: PdfField = { label: "Additional Notes", value: item.specialInstructions || NONE };
 

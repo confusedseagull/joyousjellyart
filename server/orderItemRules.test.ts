@@ -80,6 +80,45 @@ describe("applyItemChange", () => {
     expect(applyItemChange(sports, { sport: "golf" }).sport).toBe("golf");
   });
 
+  it("prices a combined-theme design at the more expensive theme, and back again when the second theme is removed", () => {
+    const floral = { ...cake, theme: "floralBouquet", themeLabel: "Floral Bouquet", price: 88 };
+    const combined = applyItemChange(floral, { secondTheme: "chess" });
+
+    expect(combined.secondTheme).toBe("chess");
+    expect(combined.secondThemeLabel).toBe("Chess");
+    expect(combined.price).toBe(99); // Chess is the dearer of the two
+    expect(applyItemChange(combined, { secondTheme: undefined }).price).toBe(88);
+  });
+
+  it("drops a second theme that repeats the first or isn't offered for the format", () => {
+    expect(applyItemChange({ ...cake, secondTheme: "chess" }, {}).secondTheme).toBeUndefined();
+    const platter = applyItemChange(cake, { format: "jellyPlatter", secondTheme: "nameAndInitial" });
+    expect(platter.secondTheme).toBeUndefined();
+  });
+
+  it("keeps each theme's extras while either chosen theme still asks for them", () => {
+    const both = applyItemChange(
+      { ...cake, theme: "floralBouquet", selectedFlowers: ["Rose"], cartoonCharacter: "Pikachu" },
+      { secondTheme: "cartoonCharacters" }
+    );
+    expect(both.selectedFlowers).toEqual(["Rose"]);
+    expect(both.cartoonCharacter).toBe("Pikachu");
+
+    const onlyCartoon = applyItemChange(both, { theme: "cartoonCharacters", secondTheme: undefined });
+    expect(onlyCartoon.selectedFlowers).toBeUndefined();
+    expect(onlyCartoon.cartoonCharacter).toBe("Pikachu");
+  });
+
+  it("keeps typed text per theme slot, so Hand Drawn and Name and Initial can be combined", () => {
+    const item = applyItemChange(
+      { ...cake, theme: "handDrawn", themeCustomText: "A dragon" },
+      { secondTheme: "nameAndInitial", secondThemeCustomText: "Doreen" }
+    );
+    expect(item.themeCustomText).toBe("A dragon");
+    expect(item.secondThemeCustomText).toBe("Doreen");
+    expect(applyItemChange(item, { secondTheme: "chess" }).secondThemeCustomText).toBeUndefined();
+  });
+
   it("prices a Numbers cake by how many numbers it has", () => {
     const numbers = applyItemChange(cake, { shape: "numbers" });
 
