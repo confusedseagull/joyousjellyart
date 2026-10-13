@@ -9,6 +9,7 @@ import { SelectablePill } from "@/components/SelectablePill";
 import { upload } from "@vercel/blob/client";
 import { toast } from "sonner";
 import { getCustomOrderPrice, getCustomOrderPriceForThemes } from "../../../shared/customOrderPricing";
+import { requiredFlavourCount } from "../../../shared/orderItemRules";
 import { formatPrice } from "@/lib/utils";
 import { useCart, type CakeFormat } from "@/contexts/CartContext";
 import {
@@ -308,12 +309,7 @@ export default function Customize() {
       ? THEMES.filter((t) => !CAKE_ONLY_THEMES.includes(t.value))
       : THEMES;
 
-  const getRequiredFlavorCount = () => {
-    if (shape === "platter9") return 3;
-    if (shape === "platter6") return 2;
-    if (shape === "platter4") return 2;
-    return 1;
-  };
+  const getRequiredFlavorCount = () => requiredFlavourCount(shape, format === "miniGiftBox" ? quantity : undefined);
 
   const getMaxShapeSelection = () => {
     if (shape === "platter9" && size === "6cm") return 3;
@@ -357,6 +353,13 @@ export default function Customize() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [format, shape, size, platterShapes]);
+
+  // Fewer boxes means fewer flavours (4 boxes: 2, 9 or more: 3): trim picks that no longer fit.
+  useEffect(() => {
+    const max = getRequiredFlavorCount();
+    setSelectedFlavors((prev) => (prev.length > max ? prev.slice(0, max) : prev));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [format, shape, quantity]);
 
   // Calculate estimated unit price
   const estimatedPrice = useMemo(() => {

@@ -260,7 +260,7 @@ export function FormatsGuide() {
         id="miniGiftBox"
         title="Mini Gift Boxes"
         description="Individually packaged jellies, ready to give — lovely for gifts and party favours. Choose a square box or a round cupcake, then order as many as you need in one go."
-        facts={["2 styles", "Order any quantity", "1 base flavour"]}
+        facts={["2 styles", "Order any quantity", "1–3 flavours"]}
         cta="Customise mini gift boxes"
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
@@ -271,7 +271,8 @@ export function FormatsGuide() {
           ))}
         </div>
         <p className="text-sm text-muted-foreground mt-8 max-w-2xl leading-relaxed">
-          Several boxes ordered together are one item in your cart, priced for all of them.
+          Several boxes ordered together are one item in your cart, priced for all of them. Order 4 or more boxes to choose 2 flavours,
+          or 9 or more to choose 3.
         </p>
       </FormatSection>
     </div>

@@ -32,9 +32,18 @@ export function themesForFormat(format: string) {
   return format === "cake" ? THEMES : THEMES.filter((t) => !CAKE_ONLY_THEMES.includes(t.value));
 }
 
-export function requiredFlavourCount(shape: string): number {
+/**
+ * How many flavours an item takes. Platters are fixed by their size; a Mini Gift Box
+ * order earns more flavours as it grows: 2 from 4 boxes, 3 from 9 boxes.
+ */
+export function requiredFlavourCount(shape: string, boxes?: number): number {
   if (shape === "platter9") return 3;
   if (shape === "platter6" || shape === "platter4") return 2;
+  if (shape === "miniGiftBox" || shape === "cupcake") {
+    const count = Math.floor(Number(boxes) || 1);
+    if (count >= 9) return 3;
+    if (count >= 4) return 2;
+  }
   return 1;
 }
 
@@ -138,16 +147,16 @@ export function applyItemChange(item: EditableCustomItem, changes: EditableCusto
     next.numbers = undefined;
   }
 
-  const count = requiredFlavourCount(next.shape);
+  // Only Mini Gift Boxes come in several boxes, and that is still ONE item (quantity 1).
+  next.quantity = 1;
+  next.boxes = next.format === "miniGiftBox" && Number(next.boxes) > 1 ? Math.floor(Number(next.boxes)) : undefined;
+
+  const count = requiredFlavourCount(next.shape, next.boxes);
   const allowed = new Set(flavourChoices(next).map((f) => f.value));
   next.flavours = Array.from({ length: count }, (_, i) => {
     const flavour = (next.flavours ?? [])[i];
     return flavour && allowed.has(flavour) ? flavour : "";
   });
-
-  // Only Mini Gift Boxes come in several boxes, and that is still ONE item (quantity 1).
-  next.quantity = 1;
-  next.boxes = next.format === "miniGiftBox" && Number(next.boxes) > 1 ? Math.floor(Number(next.boxes)) : undefined;
 
   // Each theme's extras are kept only while one of the chosen themes still asks for them.
   const hasTheme = (value: string) => next.theme === value || next.secondTheme === value;
@@ -172,7 +181,7 @@ export const FLOWER_VALUES = FLOWERS.map((f) => f.value);
 /** Returns what's wrong with an edited item, or null if it can be saved. */
 export function validateCustomItem(item: EditableCustomItem): string | null {
   if (!item.theme || !item.shape || !item.size) return "Choose a theme, shape and size";
-  const needed = requiredFlavourCount(item.shape);
+  const needed = requiredFlavourCount(item.shape, item.boxes);
   const flavours = (item.flavours ?? []).filter(Boolean);
   if (flavours.length < needed) return `Choose ${needed === 1 ? "a flavour" : `${needed} flavours`}`;
   if (maxPlatterShapes(item.shape, item.size) > 0 && !(item.platterShapes ?? []).length) {

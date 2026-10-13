@@ -47,6 +47,21 @@ describe("applyItemChange", () => {
     expect(next.flavours[0]).toBe("Longan");
   });
 
+  it("gives Mini Gift Boxes 2 flavours from 4 boxes and 3 from 9 boxes", () => {
+    expect(requiredFlavourCount("miniGiftBox", 1)).toBe(1);
+    expect(requiredFlavourCount("miniGiftBox", 3)).toBe(1);
+    expect(requiredFlavourCount("miniGiftBox", 4)).toBe(2);
+    expect(requiredFlavourCount("cupcake", 8)).toBe(2);
+    expect(requiredFlavourCount("cupcake", 9)).toBe(3);
+    expect(requiredFlavourCount("cupcake", 12)).toBe(3);
+    expect(requiredFlavourCount("round", 12)).toBe(1);
+
+    const box = applyItemChange(cake, { format: "miniGiftBox", boxes: 4 });
+    expect(box.flavours).toHaveLength(2);
+    expect(applyItemChange(box, { boxes: 9 }).flavours).toHaveLength(3);
+    expect(applyItemChange(box, { boxes: 2 }).flavours).toHaveLength(1);
+  });
+
   it("trims platter pieces when the platter gets smaller", () => {
     const platter = applyItemChange(cake, { format: "jellyPlatter", platterShapes: ["heart", "square", "clover"] });
 

@@ -149,7 +149,7 @@ export function OrderItemEditor({ item, onChange }: { item: Item; onChange: (nex
   const hasTheme = (value: string) => item.theme === value || item.secondTheme === value;
 
   const sizes = SHAPE_SIZES[item.shape] ?? [];
-  const flavourCount = requiredFlavourCount(item.shape);
+  const flavourCount = requiredFlavourCount(item.shape, item.boxes);
   const flavourOptions = flavourChoices(item);
   const platterMax = maxPlatterShapes(item.shape, item.size);
   const platterPieces: string[] = item.platterShapes ?? [];
