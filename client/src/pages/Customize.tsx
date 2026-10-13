@@ -495,6 +495,7 @@ export default function Customize() {
       case 1: return !!format;
       case 2: return shapeSizeComplete;
       case 3:
+        if (theme === "cartoonCharacters") return !!cartoonCharacter;
         if (theme === SPORTS_THEME) return !!sport;
         if (theme === "coutureFashion") return !!coutureBrand.trim();
         if (theme === "handDrawn") return !!handDrawnDesign.trim();
@@ -621,13 +622,16 @@ export default function Customize() {
       format,
       theme,
       themeLabel,
-      selectedFlowers: selectedFlowers.length > 0 ? selectedFlowers : undefined,
+      // Theme extras are saved only for the theme that is currently chosen, so
+      // switching theme never leaves a stray flower / character / brand behind.
+      selectedFlowers: theme === "floralBouquet" && selectedFlowers.length > 0 ? selectedFlowers : undefined,
       selectedColors: selectedColors.length > 0 ? selectedColors : undefined,
       backgroundColor: backgroundColor || undefined,
-      cartoonCharacter: cartoonCharacter || undefined,
+      cartoonCharacter: theme === "cartoonCharacters" ? cartoonCharacter || undefined : undefined,
       sport: theme === SPORTS_THEME ? sport || undefined : undefined,
-      themeCustomText: handDrawnDesign || nameAndInitialName || undefined,
-      fashionBrand: coutureBrand || undefined,
+      themeCustomText:
+        theme === "handDrawn" ? handDrawnDesign || undefined : theme === "nameAndInitial" ? nameAndInitialName || undefined : undefined,
+      fashionBrand: theme === "coutureFashion" ? coutureBrand || undefined : undefined,
       shape,
       shapeLabel,
       size,
