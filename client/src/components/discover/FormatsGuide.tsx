@@ -24,8 +24,8 @@ type Shape = { value: string; label: string; image: string };
 
 // Finished-cake photos for the Cakes section (from the Figma "Discover" frame).
 // The builder's mould pictures are kept for the platters. Round
-// has no photo of its own, so it shows the round two-tier cake; Numbers has a
-// one-number and a two-number cake.
+// has no photo of its own, so it keeps the builder's mould picture; Numbers
+// has a one-number and a two-number cake. Two-tier cakes get a card of their own.
 // Photos for the two Mini Gift Box styles (10cm square box, 6cm round cupcake).
 const GIFT_BOX_PHOTOS: Record<string, string[]> = {
   miniGiftBox: ["/discover/minigiftbox-10cm.webp"],
@@ -33,7 +33,6 @@ const GIFT_BOX_PHOTOS: Record<string, string[]> = {
 };
 
 const CAKE_PHOTOS: Record<string, string[]> = {
-  round: ["/discover/cake-twotier.webp"],
   square: ["/discover/cake-square.webp"],
   octagon: ["/discover/cake-octagon.webp"],
   heart: ["/discover/cake-heart.webp"],
@@ -71,6 +70,32 @@ function ShapeCard({ shape, images, children }: { shape: Shape; images?: string[
   );
 }
 
+const isTwoTier = (value: string) => value.startsWith("2tier_");
+
+// Two-tier sizes aren't repeated on each shape: they get one "2 Tier" card, which
+// lists every combination and the shapes it can be made in.
+const TWO_TIER_CARD: Shape = { value: "twoTier", label: "2 Tier", image: "/discover/cake-twotier.webp" };
+const TWO_TIER_PHOTOS = ["/discover/cake-twotier.webp", "/discover/cake-twotier-2.webp"];
+
+function twoTierOptions(shapes: Shape[]) {
+  const byValue = new Map<string, { value: string; label: string; shapes: string[] }>();
+  for (const shape of shapes) {
+    for (const size of SHAPE_SIZES[shape.value] ?? []) {
+      if (!isTwoTier(size.value)) continue;
+      const existing = byValue.get(size.value);
+      if (existing) existing.shapes.push(shape.label);
+      else byValue.set(size.value, { value: size.value, label: sizeLabel(shape.value, size.value), shapes: [shape.label] });
+    }
+  }
+  // 6"+8" before 6"+10" before 7"+8" ...: sort on the two tier sizes
+  const tiers = (value: string) => value.split("_").slice(1).map(Number);
+  return Array.from(byValue.values()).sort((a, b) => {
+    const [a1, a2] = tiers(a.value);
+    const [b1, b2] = tiers(b.value);
+    return a1 - b1 || a2 - b2;
+  });
+}
+
 // Every size a shape comes in, with servings where we have them.
 function SizeList({ shape }: { shape: string }) {
   if (shape === "numbers") {
@@ -86,12 +111,14 @@ function SizeList({ shape }: { shape: string }) {
   }
   return (
     <ul className="flex flex-col gap-0.5">
-      {(SHAPE_SIZES[shape] ?? []).map((s) => (
+      {(SHAPE_SIZES[shape] ?? [])
+        .filter((s) => !isTwoTier(s.value))
+        .map((s) => (
         <li key={s.value}>
           {sizeLabel(shape, s.value)}
           {SERVES_INFO[s.value] ? ` · ${SERVES_INFO[s.value]}` : ""}
         </li>
-      ))}
+        ))}
     </ul>
   );
 }
@@ -174,10 +201,21 @@ export function FormatsGuide() {
               <SizeList shape={shape.value} />
             </ShapeCard>
           ))}
+          <ShapeCard shape={TWO_TIER_CARD} images={TWO_TIER_PHOTOS}>
+            <ul className="flex flex-col gap-1.5">
+              {twoTierOptions(cakeShapes).map((option) => (
+                <li key={option.value}>
+                  {option.label}
+                  {SERVES_INFO[option.value] ? ` · ${SERVES_INFO[option.value]}` : ""}
+                  <span className="block text-xs text-muted-foreground/80">{option.shapes.join(", ")}</span>
+                </li>
+              ))}
+            </ul>
+          </ShapeCard>
         </div>
         <p className="text-sm text-muted-foreground mt-8 max-w-2xl leading-relaxed">
-          Two-tier cakes stack the two sizes shown, larger below. The Numbers cake is made from one or two numbers you choose. Servings
-          are a guide, shown where we have them.
+          A 2 Tier cake stacks the two sizes shown, larger below, in one of the shapes listed under it. The Numbers cake is made from one
+          or two numbers you choose. Servings are a guide, shown where we have them.
         </p>
       </FormatSection>
 
