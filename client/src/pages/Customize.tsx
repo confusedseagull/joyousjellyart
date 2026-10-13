@@ -52,6 +52,10 @@ function StepHeader({ number, title, description }: { number: number; title: str
   );
 }
 
+// The picker circles are at most ~190px wide, so they load a small 400px copy
+// (public/customize/t/) instead of the full-size photo the Discover page uses.
+const optionThumb = (src: string) => src.replace(/^\/customize\/([^/]+\.webp)$/, "/customize/t/$1");
+
 // Circular photo swatch with carousel/swipe support, used for Format/Theme/Shape selection
 function CircleOption({
   option,
@@ -122,7 +126,7 @@ function CircleOption({
       >
         {images.length > 0 && (
           <img loading="lazy" decoding="async"
-            src={images[currentImageIndex]}
+            src={optionThumb(images[currentImageIndex])}
             alt={option.label}
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
           />
