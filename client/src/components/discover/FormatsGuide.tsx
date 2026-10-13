@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import {
-  FORMATS,
   CAKE_SHAPES,
   PLATTER_FORMAT_SHAPES,
   GIFT_BOX_FORMAT_SHAPES,
@@ -45,20 +44,18 @@ const CAKE_PHOTOS: Record<string, string[]> = {
   sakura: ["/discover/cake-sakura.webp"],
 };
 
-const FORMAT_IMAGE: Record<string, string> = Object.fromEntries(FORMATS.map((f) => [f.value, f.image]));
-
 function ShapeCard({ shape, images, children }: { shape: Shape; images?: string[]; children: ReactNode }) {
   const pictures = images && images.length > 0 ? images : [shape.image];
   return (
-    <div className="flex items-start gap-4">
+    <div className="flex items-start gap-5">
       {/* Several pictures (e.g. the one- and two-number cakes) overlap slightly. */}
-      <div className="flex shrink-0 -space-x-6">
+      <div className="flex shrink-0 -space-x-10">
         {pictures.map((src) => (
           <img
             key={src}
             src={src}
             alt={shape.label}
-            className="size-20 md:size-24 rounded-full object-cover border-2 border-background"
+            className="size-32 md:size-40 rounded-full object-cover border-2 border-background"
           />
         ))}
       </div>
@@ -140,19 +137,16 @@ function FormatSection({
 }) {
   return (
     <section id={id} className="scroll-mt-24 py-10 md:py-14 border-b border-[#e5e5e5] last:border-b-0">
-      <div className="flex flex-col md:flex-row md:items-center gap-5 md:gap-10 mb-8">
-        <img src={FORMAT_IMAGE[id]} alt={title} className="size-40 md:size-48 rounded-full object-cover shrink-0" />
-        <div className="flex flex-col gap-3 max-w-2xl">
-          <h2 className="text-3xl md:text-4xl font-normal">{title}</h2>
-          <p className="text-muted-foreground leading-relaxed">{description}</p>
-          <ul className="flex flex-wrap gap-2 mt-1">
-            {facts.map((fact) => (
-              <li key={fact} className="rounded-full border border-[#e5e5e5] bg-white px-3 py-1 text-sm text-muted-foreground">
-                {fact}
-              </li>
-            ))}
-          </ul>
-        </div>
+      <div className="flex flex-col gap-3 max-w-2xl mb-8">
+        <h2 className="text-3xl md:text-4xl font-normal">{title}</h2>
+        <p className="text-muted-foreground leading-relaxed">{description}</p>
+        <ul className="flex flex-wrap gap-2 mt-1">
+          {facts.map((fact) => (
+            <li key={fact} className="rounded-full border border-[#e5e5e5] bg-white px-3 py-1 text-sm text-muted-foreground">
+              {fact}
+            </li>
+          ))}
+        </ul>
       </div>
       {children}
       <div className="mt-8">
