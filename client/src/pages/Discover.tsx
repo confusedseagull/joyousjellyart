@@ -46,7 +46,6 @@ const THEME_OPTIONS: Record<string, string> = {
 const THEME_NOTES: Record<string, string> = {
   cartoonCharacters: "Can't find what you're looking for? Check out our hand drawn creations.",
   handDrawn: "We draw your pets, your loved ones, your favourite characters, your company logo and more.",
-  lego: "One of our favourites is the Lego Princess Choo Choo Train with Bunnies and Teddy Bears. Yes, we really meant it when we said your imagination can go wild.",
 };
 
 // Every reference photo for each customizable theme (the same assets used in
