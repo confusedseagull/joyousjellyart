@@ -1246,7 +1246,11 @@ export default function Customize() {
                   </label>
                   <p className="text-sm text-muted-foreground">
                     {combineThemes
-                      ? `${!theme ? "Choose 2 themes." : !theme2 ? "Now choose a second theme." : "Two themes chosen."} The price follows the more expensive of the two.`
+                      ? !theme
+                        ? "Choose 2 themes."
+                        : !theme2
+                          ? "Now choose a second theme."
+                          : "Two themes chosen."
                       : "Blend two themes into one design."}
                   </p>
                 </div>
