@@ -14,7 +14,11 @@ export const THEMES = [
     "/customize/floralBouquet-4.webp",
     "/customize/floralBouquet-5.webp",
     "/customize/floralBouquet-6.webp",
-    "/customize/floralBouquet-7.webp"
+    "/customize/floralBouquet-7.webp",
+    "/customize/floralBouquet-8.webp",
+    "/customize/floralBouquet-9.webp",
+    "/customize/floralBouquet-10.webp",
+    "/customize/floralBouquet-11.webp"
   ] },
   { value: "cartoonCharacters", label: "Cartoon Characters", images: [
     "/customize/cartoonCharacters-1.webp",
@@ -22,38 +26,62 @@ export const THEMES = [
     "/customize/cartoonCharacters-3.webp",
     "/customize/cartoonCharacters-4.webp",
     "/customize/cartoonCharacters-5.webp",
-    "/customize/cartoonCharacters-6.webp"
+    "/customize/cartoonCharacters-6.webp",
+    "/customize/cartoonCharacters-7.webp",
+    "/customize/cartoonCharacters-8.webp"
   ] },
   { value: "handDrawn", label: "Hand Drawn", images: [
     "/customize/handDrawn-1.webp",
     "/customize/handDrawn-2.webp",
     "/customize/handDrawn-3.webp",
     "/customize/handDrawn-4.webp",
-    "/customize/handDrawn-5.webp"
+    "/customize/handDrawn-5.webp",
+    "/customize/handDrawn-6.webp",
+    "/customize/handDrawn-7.webp",
+    "/customize/handDrawn-8.webp",
+    "/customize/handDrawn-9.webp",
+    "/customize/handDrawn-10.webp",
+    "/customize/handDrawn-11.webp",
+    "/customize/handDrawn-12.webp",
+    "/customize/handDrawn-13.webp",
+    "/customize/handDrawn-14.webp",
+    "/customize/handDrawn-15.webp",
+    "/customize/handDrawn-16.webp",
+    "/customize/handDrawn-17.webp",
+    "/customize/handDrawn-18.webp",
+    "/customize/handDrawn-19.webp"
   ] },
   { value: "lego", label: "Lego", images: [
     "/customize/lego-1.webp",
     "/customize/lego-2.webp",
     "/customize/lego-3.webp",
-    "/customize/lego-4.webp"
+    "/customize/lego-4.webp",
+    "/customize/lego-5.webp",
+    "/customize/lego-6.webp",
+    "/customize/lego-7.webp"
   ] },
   { value: "mahjong", label: "Mahjong", images: [
     "/customize/mahjong-1.webp",
     "/customize/mahjong-2.webp",
     "/customize/mahjong-3.webp",
-    "/customize/mahjong-4.webp"
+    "/customize/mahjong-4.webp",
+    "/customize/mahjong-5.webp"
   ] },
   { value: "poker", label: "Poker", images: [
     "/customize/poker-1.webp",
     "/customize/poker-2.webp"
   ] },
-  { value: "chess", label: "Chess", image: "/customize/chess.webp" },
+  { value: "chess", label: "Chess", images: [
+    "/customize/chess-1.webp",
+    "/customize/chess-2.webp"
+  ] },
   { value: "underTheSea", label: "Under the Sea", images: [
     "/customize/underTheSea-1.webp",
     "/customize/underTheSea-2.webp",
     "/customize/underTheSea-3.webp",
     "/customize/underTheSea-4.webp",
-    "/customize/underTheSea-5.webp"
+    "/customize/underTheSea-5.webp",
+    "/customize/underTheSea-6.webp"
   ] },
   { value: "animalKingdom", label: "Animal Kingdom", image: "/customize/animalKingdom.webp" },
   { value: "unicorn", label: "Unicorn", images: [
@@ -63,17 +91,40 @@ export const THEMES = [
     "/customize/unicorn-4.webp"
   ] },
   { value: "dinosaurs", label: "Dinosaurs", image: "/customize/dinosaurs.webp" },
-  { value: "space", label: "Space", image: "/customize/space.webp" },
+  { value: "space", label: "Space", images: [
+    "/customize/space-1.webp",
+    "/customize/space-2.webp"
+  ] },
   { value: "koiPond", label: "Koi Pond", images: [
     "/customize/koiPond-1.webp",
-    "/customize/koiPond-2.webp"
+    "/customize/koiPond-2.webp",
+    "/customize/koiPond-3.webp",
+    "/customize/koiPond-4.webp"
   ] },
-  { value: "golf", label: "Sports", image: "/customize/golf.webp" },
+  { value: "golf", label: "Sports", images: [
+    "/customize/sports-1.webp",
+    "/customize/sports-2.webp",
+    "/customize/sports-3.webp"
+  ] },
   { value: "cars", label: "Cars", image: "/customize/cars.webp" },
-  { value: "coutureFashion", label: "Couture/High Fashion", image: "/customize/coutureFashion.webp" },
+  { value: "trains", label: "Trains", images: [
+    "/customize/trains-1.webp",
+    "/customize/trains-2.webp"
+  ] },
+  { value: "coutureFashion", label: "Couture/High Fashion", images: [
+    "/customize/coutureFashion-1.webp",
+    "/customize/coutureFashion-2.webp",
+    "/customize/coutureFashion-3.webp"
+  ] },
   { value: "cactus", label: "Cactus/Foliage", image: "/customize/cactus.webp" },
+  { value: "fruitGarden", label: "Fruit Garden", image: "/customize/fruitGarden.webp" },
   { value: "butterflies", label: "Butterflies", image: "/customize/butterflies.webp" },
-  { value: "mermaid", label: "Mermaid", image: "/customize/mermaid.webp" },
+  { value: "mermaid", label: "Mermaid", images: [
+    "/customize/mermaid-1.webp",
+    "/customize/mermaid-2.webp",
+    "/customize/mermaid-3.webp",
+    "/customize/mermaid-4.webp"
+  ] },
   { value: "nameAndInitial", label: "Bespoke Signature", images: [
     "/customize/nameAndInitial-1.webp",
     "/customize/nameAndInitial-2.webp"
