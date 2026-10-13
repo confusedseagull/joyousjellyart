@@ -1,5 +1,14 @@
 import type { ReactNode } from "react";
-import { CARTOON_CHARACTERS, DIETARY_OPTIONS, FLOWERS, FORMATS, PLATTER_INDIVIDUAL_SHAPES, SHAPE_SIZES } from "@/lib/customizeOptions";
+import {
+  CARTOON_CHARACTERS,
+  DIETARY_OPTIONS,
+  FLOWERS,
+  FORMATS,
+  PLATTER_INDIVIDUAL_SHAPES,
+  SHAPE_SIZES,
+  SPORTS,
+  SPORTS_THEME,
+} from "@/lib/customizeOptions";
 import {
   COLOR_SLOTS,
   MAX_FLOWERS,
@@ -213,6 +222,18 @@ export function OrderItemEditor({ item, onChange }: { item: Item; onChange: (nex
                 </option>
               )
             )}
+          </select>
+        </Field>
+      )}
+      {item.theme === SPORTS_THEME && (
+        <Field label="Sport">
+          <select value={item.sport ?? ""} onChange={(e) => update({ sport: e.target.value || undefined })} className={adminInput}>
+            <option value="">Not set</option>
+            {SPORTS.map((s) => (
+              <option key={s.value} value={s.value}>
+                {s.label}
+              </option>
+            ))}
           </select>
         </Field>
       )}

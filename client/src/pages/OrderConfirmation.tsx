@@ -13,7 +13,9 @@ import {
   flavourLabel,
   dietaryLabels,
   shapeDescription,
+  sportLabel,
 } from "../../../shared/orderLabels";
+import { SPORTS_THEME } from "@/lib/customizeOptions";
 
 const WHATSAPP_NUMBER = "6582999559";
 
@@ -45,6 +47,7 @@ interface ConfirmationCustomItem {
   backgroundColor?: string;
   selectedFlowers?: string[];
   cartoonCharacter?: string;
+  sport?: string;
   themeCustomText?: string;
   fashionBrand?: string;
   designDetails?: string;
@@ -62,6 +65,7 @@ interface ConfirmationCustomItem {
 function themeDetailFor(item: ConfirmationCustomItem): string | undefined {
   if (item.theme === "floralBouquet" && item.selectedFlowers?.length) return item.selectedFlowers.join(', ');
   if (item.theme === "cartoonCharacters" && item.cartoonCharacter) return item.cartoonCharacter;
+  if (item.theme === SPORTS_THEME && item.sport) return sportLabel(item.sport);
   if (item.theme === "coutureFashion" && item.fashionBrand) return item.fashionBrand;
   if ((item.theme === "nameAndInitial" || item.theme === "handDrawn") && item.themeCustomText) return item.themeCustomText;
   return undefined;

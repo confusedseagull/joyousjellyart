@@ -10,6 +10,7 @@ import {
   GIFT_BOX_FORMAT_SHAPES,
   BASE_FLAVORS,
   FLOWERS,
+  SPORTS_THEME,
 } from "../client/src/lib/customizeOptions";
 import { getCustomOrderPrice } from "./customOrderPricing";
 import { boxCount } from "./orderLabels";
@@ -134,6 +135,7 @@ export function applyItemChange(item: EditableCustomItem, changes: EditableCusto
 
   if (next.theme !== "floralBouquet") next.selectedFlowers = undefined;
   if (next.theme !== "cartoonCharacters") next.cartoonCharacter = undefined;
+  if (next.theme !== SPORTS_THEME) next.sport = undefined;
   if (next.theme !== "coutureFashion") next.fashionBrand = undefined;
   if (next.theme !== "handDrawn" && next.theme !== "nameAndInitial") next.themeCustomText = undefined;
 

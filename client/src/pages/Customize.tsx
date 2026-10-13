@@ -26,6 +26,8 @@ import {
   DIETARY_OPTIONS,
   SERVES_INFO,
   NUMBER_CAKE_SIZES,
+  SPORTS,
+  SPORTS_THEME,
 } from "@/lib/customizeOptions";
 
 const inputClass = "h-[52px] rounded-2xl border-[#e5e5e5]";
@@ -260,6 +262,7 @@ export default function Customize() {
   const [theme, setTheme] = useState("");
   const [selectedFlowers, setSelectedFlowers] = useState<string[]>([]);
   const [cartoonCharacter, setCartoonCharacter] = useState("");
+  const [sport, setSport] = useState("");
   const [handDrawnDesign, setHandDrawnDesign] = useState("");
   const [coutureBrand, setCoutureBrand] = useState("");
   const [nameAndInitialName, setNameAndInitialName] = useState("");
@@ -492,6 +495,7 @@ export default function Customize() {
       case 1: return !!format;
       case 2: return shapeSizeComplete;
       case 3:
+        if (theme === SPORTS_THEME) return !!sport;
         if (theme === "coutureFashion") return !!coutureBrand.trim();
         if (theme === "handDrawn") return !!handDrawnDesign.trim();
         if (theme === "nameAndInitial") return !!nameAndInitialName.trim();
@@ -584,6 +588,7 @@ export default function Customize() {
     setTheme("");
     setSelectedFlowers([]);
     setCartoonCharacter("");
+    setSport("");
     setHandDrawnDesign("");
     setCoutureBrand("");
     setNameAndInitialName("");
@@ -620,6 +625,7 @@ export default function Customize() {
       selectedColors: selectedColors.length > 0 ? selectedColors : undefined,
       backgroundColor: backgroundColor || undefined,
       cartoonCharacter: cartoonCharacter || undefined,
+      sport: theme === SPORTS_THEME ? sport || undefined : undefined,
       themeCustomText: handDrawnDesign || nameAndInitialName || undefined,
       fashionBrand: coutureBrand || undefined,
       shape,
@@ -730,7 +736,9 @@ export default function Customize() {
       ? selectedFlowers.join(", ")
       : theme === "cartoonCharacters" && cartoonCharacter
         ? cartoonCharacter
-        : theme === "coutureFashion" && coutureBrand
+        : theme === SPORTS_THEME && sport
+          ? SPORTS.find((s) => s.value === sport)?.label
+          : theme === "coutureFashion" && coutureBrand
           ? coutureBrand
           : theme === "nameAndInitial" && nameAndInitialName
             ? nameAndInitialName
@@ -1039,7 +1047,7 @@ export default function Customize() {
                       onClick={() => {
                         setTheme(themeOption.value);
                         // Themes with a follow-up choice or text field go there next; the rest go to Additional Notes.
-                        const hasExtras = ["floralBouquet", "cartoonCharacters", "handDrawn", "coutureFashion", "nameAndInitial"].includes(themeOption.value);
+                        const hasExtras = ["floralBouquet", "cartoonCharacters", SPORTS_THEME, "handDrawn", "coutureFashion", "nameAndInitial"].includes(themeOption.value);
                         scrollToSection(hasExtras ? "themeExtras" : "notes");
                       }}
                     />
@@ -1092,6 +1100,28 @@ export default function Customize() {
                         {cartoonCharacter === character && <Check className="h-4 w-4 text-primary" />}
                       </SelectablePill>
                     ))}
+                  </div>
+                )}
+
+                {theme === SPORTS_THEME && (
+                  <div ref={section("themeExtras")} className="flex flex-col gap-4 scroll-mt-44">
+                    <p className="text-sm text-muted-foreground">Choose a sport for your design.</p>
+                    <div className="grid grid-cols-2 gap-4 max-w-md">
+                      {SPORTS.map((option) => (
+                        <SelectablePill
+                          key={option.value}
+                          selected={sport === option.value}
+                          onClick={() => {
+                            setSport(option.value);
+                            scrollToSection("notes");
+                          }}
+                          className="flex items-center justify-between px-4 py-3"
+                        >
+                          <span>{option.label}</span>
+                          {sport === option.value && <Check className="h-4 w-4 text-primary" />}
+                        </SelectablePill>
+                      ))}
+                    </div>
                   </div>
                 )}
 

@@ -9,6 +9,7 @@ import {
   sizeLabel,
   flavourLabel,
   dietaryLabels,
+  sportLabel,
 } from "../../../../shared/orderLabels";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "../../../../server/routers";
@@ -116,6 +117,7 @@ function buildCustomItem(item: any): PdfItem {
   const themeDetails: PdfField[] = [];
   if (item.selectedFlowers?.length) themeDetails.push({ label: "Flowers", value: item.selectedFlowers.join(", ") });
   if (item.cartoonCharacter) themeDetails.push({ label: "Character", value: item.cartoonCharacter });
+  if (item.sport) themeDetails.push({ label: "Sport", value: sportLabel(item.sport) });
   if (item.fashionBrand) themeDetails.push({ label: "Brand", value: item.fashionBrand });
   if (item.themeCustomText) {
     themeDetails.push({

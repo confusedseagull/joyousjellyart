@@ -59,6 +59,7 @@ function makeItem(overrides: Partial<{
   size: string;
   flavours: string[];
   cartoonCharacter: string;
+  sport: string;
   selectedColors: string[];
   price: number;
   quantity: number;
@@ -186,6 +187,25 @@ describe("orders.create", () => {
     expect(result).toBeDefined();
     expect(result.items[0].theme).toBe("cartoonCharacters");
     expect(result.items[0].cartoonCharacter).toBe("Pikachu");
+  });
+
+  it("keeps the sport chosen for a Sports theme item", async () => {
+    const caller = appRouter.createCaller(createPublicContext());
+
+    const result = await caller.orders.create({
+      customerName: "Sam Lee",
+      customerEmail: "sam.lee@example.com",
+      customerPhone: "+65 8888 7777",
+      deliveryMethod: "pickup" as const,
+      fulfillmentDate: new Date("2025-03-01T10:00:00"),
+      items: [makeItem({ theme: "golf", sport: "sailing" })],
+      subtotal: 118,
+      deliveryFee: 0,
+      total: 118,
+    });
+
+    expect(result.items[0].theme).toBe("golf");
+    expect(result.items[0].sport).toBe("sailing");
   });
 
   it("supports multiple cake items in a single order", async () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { dietaryLabels, sizeLabel, themeLabel, formatLabel, shapeDescription, flavourLabel } from "../shared/orderLabels";
+import { dietaryLabels, sizeLabel, themeLabel, formatLabel, shapeDescription, flavourLabel, sportLabel } from "../shared/orderLabels";
 
 describe("order option labels", () => {
   it("names dietary requirements as the builder does, from a list or a comma string", () => {
@@ -12,6 +12,12 @@ describe("order option labels", () => {
     expect(dietaryLabels(["noShellfish"])).toEqual(["No Shellfish"]);
     expect(themeLabel("someOldTheme")).toBe("Some Old Theme");
     expect(formatLabel("miniGiftBox")).toBe("Mini Gift Box");
+  });
+
+  it("names the sports as the builder does, and the Sports theme as Sports", () => {
+    expect(sportLabel("sailing")).toBe("Sailing");
+    expect(sportLabel("golf")).toBe("Golf");
+    expect(themeLabel("golf")).toBe("Sports");
   });
 
   it("names sizes, shapes and flavours as chosen", () => {

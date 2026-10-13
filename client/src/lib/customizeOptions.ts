@@ -105,6 +105,13 @@ export const CARTOON_CHARACTERS = [
   "Miffy", "Sumikko Gurashi", "Super Mario", "Winnie the Pooh"
 ];
 
+// The "Sports" theme (stored as "golf" for historical reasons) asks which sport.
+export const SPORTS_THEME = "golf";
+export const SPORTS = [
+  { value: "sailing", label: "Sailing" },
+  { value: "golf", label: "Golf" },
+];
+
 export const SHAPES = [
   { value: "round", label: "Round", image: "/customize/shape-round.webp" },
   { value: "square", label: "Square", image: "/customize/shape-square.webp" },

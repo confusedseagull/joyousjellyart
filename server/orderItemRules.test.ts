@@ -72,6 +72,14 @@ describe("applyItemChange", () => {
     expect(next.themeLabel).toBe("Chess");
   });
 
+  it("keeps the chosen sport only while the theme is Sports", () => {
+    const sports = { ...cake, theme: "golf", themeLabel: "Sports", sport: "sailing" };
+
+    expect(applyItemChange(sports, { cakeText: "Ahoy" }).sport).toBe("sailing");
+    expect(applyItemChange(sports, { theme: "chess" }).sport).toBeUndefined();
+    expect(applyItemChange(sports, { sport: "golf" }).sport).toBe("golf");
+  });
+
   it("prices a Numbers cake by how many numbers it has", () => {
     const numbers = applyItemChange(cake, { shape: "numbers" });
 

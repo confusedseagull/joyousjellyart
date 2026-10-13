@@ -54,6 +54,7 @@ export type CustomOrderItem = {
   selectedColors?: string[];
   backgroundColor?: string;
   cartoonCharacter?: string;
+  sport?: string; // Sports theme: "sailing" | "golf"
   themeCustomText?: string;
   fashionBrand?: string;
   shape: string;

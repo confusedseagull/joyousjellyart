@@ -15,7 +15,7 @@ import { format } from "date-fns";
 import { formatPrice, shortSizeLabel } from "@/lib/utils";
 import { COUNTRY_CODES, DEFAULT_COUNTRY_DIAL_CODE } from "@/lib/countryCodes";
 import { toast } from "sonner";
-import { dietaryLabels, itemTitle, formatText } from "../../../shared/orderLabels";
+import { dietaryLabels, itemTitle, formatText, sportLabel } from "../../../shared/orderLabels";
 
 // Formats minutes-since-midnight as "H:MM AM/PM", matching the label style
 // already used throughout the app (e.g. "11:00 AM - 1:00 PM").
@@ -182,6 +182,7 @@ function toOrderItemPayload(item: CartItem) {
       selectedColors: item.selectedColors,
       backgroundColor: item.backgroundColor,
       cartoonCharacter: item.cartoonCharacter,
+      sport: item.sport,
       themeCustomText: item.themeCustomText,
       fashionBrand: item.fashionBrand,
       shape: item.shape,
@@ -610,7 +611,7 @@ export default function Cart() {
                   <p className="text-xs text-muted-foreground">Format: {formatText(item)}</p>
                   <p className="text-xs text-muted-foreground">Shape: {itemShapeDisplay(item)}</p>
                   <p className="text-xs text-muted-foreground">Size: {shortSizeLabel(item.sizeLabel)}</p>
-                  <p className="text-xs text-muted-foreground">Design: {item.themeLabel}</p>
+                  <p className="text-xs text-muted-foreground">Design: {item.themeLabel}{item.sport ? ` — ${sportLabel(item.sport)}` : ""}</p>
                   <p className="text-xs text-muted-foreground">Base Flavour: {item.flavours.join(", ")}</p>
                   {item.selectedColors && item.selectedColors.length > 0 && (
                     <p className="text-xs text-muted-foreground">Colors: {item.selectedColors.join(", ")}</p>

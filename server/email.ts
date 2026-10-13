@@ -8,6 +8,7 @@ import {
   flavourLabel,
   dietaryLabels,
   shapeDescription,
+  sportLabel,
 } from "../shared/orderLabels";
 
 const RESEND_API_URL = "https://api.resend.com/emails";
@@ -45,6 +46,7 @@ function extraOptionLines(item: Extract<OrderItem, { collection: "custom" }>): s
   if (colours.length) lines.push(`Colours: ${colours.join(", ")}`);
   if (item.selectedFlowers?.length) lines.push(`Flowers: ${item.selectedFlowers.join(", ")}`);
   if (item.cartoonCharacter) lines.push(`Character: ${item.cartoonCharacter}`);
+  if (item.sport) lines.push(`Sport: ${sportLabel(item.sport)}`);
   if (item.fashionBrand) lines.push(`Brand: ${item.fashionBrand}`);
   if (item.themeCustomText) lines.push(`${item.theme === "nameAndInitial" ? "Name" : "Design"}: ${item.themeCustomText}`);
   if (item.cakeText) lines.push(`Text: ${item.cakeText}`);

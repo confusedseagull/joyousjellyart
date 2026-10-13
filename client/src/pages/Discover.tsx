@@ -1,6 +1,6 @@
 import { useLocation, useSearch } from "wouter";
 import { Button } from "@/components/ui/button";
-import { THEMES, FLOWERS, CARTOON_CHARACTERS } from "@/lib/customizeOptions";
+import { THEMES, FLOWERS, CARTOON_CHARACTERS, SPORTS, SPORTS_THEME } from "@/lib/customizeOptions";
 import { FormatsGuide } from "@/components/discover/FormatsGuide";
 
 const WHATSAPP_NUMBER = "6582999559";
@@ -23,7 +23,7 @@ const THEME_DESCRIPTIONS: Record<string, string> = {
   dinosaurs: "Prehistoric jelly creatures big and small — a roaring favourite for kids' parties.",
   space: "Planets, stars, and astronauts drifting across a jelly night sky.",
   koiPond: "Graceful koi swimming through a tranquil jelly pond, a symbol of luck and prosperity.",
-  golf: "Celebrate a favourite sport — from the greens to the court — recreated in jelly detail.",
+  golf: "Celebrate a favourite sport — golf on the greens or sailing on the open water — recreated in jelly detail.",
   cars: "A jelly tribute to your favourite ride, from classic models to race-day speedsters.",
   coutureFashion: "An elegant, runway-inspired design featuring your favourite fashion house's signature look.",
   cactus: "A lush, botanical arrangement of jelly cacti and greenery for an earthy, modern finish.",
@@ -37,6 +37,7 @@ const THEME_DESCRIPTIONS: Record<string, string> = {
 const THEME_OPTIONS: Record<string, string> = {
   floralBouquet: `Available flowers: ${FLOWERS.map((f) => f.label).join(", ")}.`,
   cartoonCharacters: `Available characters: ${CARTOON_CHARACTERS.join(", ")}.`,
+  [SPORTS_THEME]: `Available sports: ${SPORTS.map((s) => s.label).join(", ")}.`,
 };
 
 // Optional extra note per theme, shown below the description/options.

@@ -12,6 +12,7 @@ import {
   BASE_FLAVORS,
   PLATTER_INDIVIDUAL_SHAPES,
   DIETARY_OPTIONS,
+  SPORTS,
 } from "../client/src/lib/customizeOptions";
 
 export const FORMAT_LABELS: Record<string, string> = {
@@ -54,6 +55,10 @@ export function itemTitle(item: { format: string; theme: string; themeLabel?: st
   const boxes = boxCount(item);
   const theme = themeLabel(item.theme, item.themeLabel);
   return boxes > 1 ? `${boxes} Mini Gift Boxes - ${theme}` : `${theme} ${formatLabel(item.format)}`;
+}
+
+export function sportLabel(sport: string): string {
+  return SPORTS.find((s) => s.value === sport)?.label ?? humanize(sport);
 }
 
 export function shapeLabel(shape: string): string {

@@ -27,6 +27,7 @@ import {
   sizeLabel,
   flavourLabel,
   dietaryLabels,
+  sportLabel,
 } from "../../../shared/orderLabels";
 import { validateCustomItem } from "../../../shared/orderItemRules";
 import type { inferRouterOutputs } from "@trpc/server";
@@ -484,6 +485,9 @@ export default function AdminOrderDetail() {
                         <p className="text-sm text-foreground">{themeLabel(item.theme, item.themeLabel)}</p>
                         {item.cartoonCharacter && (
                           <p className="text-sm text-foreground mt-2">Character: <span className="text-muted-foreground">{item.cartoonCharacter}</span></p>
+                        )}
+                        {item.sport && (
+                          <p className="text-sm text-foreground mt-2">Sport: <span className="text-muted-foreground">{sportLabel(item.sport)}</span></p>
                         )}
                         {item.fashionBrand && (
                           <p className="text-sm text-foreground mt-2">Brand: <span className="text-muted-foreground">{item.fashionBrand}</span></p>

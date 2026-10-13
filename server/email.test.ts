@@ -117,6 +117,15 @@ describe("option names in order emails", () => {
     }
   });
 
+  it("names the sport chosen for a Sports theme item", () => {
+    const html = buildOrderConfirmationEmailHtml(
+      makeOrder({ items: [{ ...custom, theme: "golf", themeLabel: "Sports", sport: "sailing" }] })
+    );
+
+    expect(html).toContain("Sports Cake");
+    expect(html).toContain("Sport: Sailing");
+  });
+
   it("escapes customer-typed text", () => {
     const html = buildOrderConfirmationEmailHtml(makeOrder({ items: [custom] }));
 
