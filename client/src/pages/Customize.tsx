@@ -8,6 +8,7 @@ import { ArrowLeft, ArrowRight, Check, ChevronDown, Minus, Plus, X } from "lucid
 import { SelectablePill } from "@/components/SelectablePill";
 import { upload } from "@vercel/blob/client";
 import { toast } from "sonner";
+import { useLocation } from "wouter";
 import { getCustomOrderPrice, getCustomOrderPriceForThemes } from "../../../shared/customOrderPricing";
 import { requiredFlavourCount } from "../../../shared/orderItemRules";
 import { formatPrice } from "@/lib/utils";
@@ -33,6 +34,7 @@ import {
   THEMES_WITH_EXTRAS,
   TEXT_THEMES,
   CAKE_ONLY_THEMES,
+  CHEESECAKE_OFFERED,
 } from "@/lib/customizeOptions";
 
 const inputClass = "h-[52px] rounded-2xl border-[#e5e5e5]";
@@ -285,6 +287,7 @@ export default function Customize() {
   const specialInstructionsRef = useRef<HTMLTextAreaElement>(null);
 
   // Flavor state
+  const [, navigate] = useLocation();
   const [selectedFlavors, setSelectedFlavors] = useState<string[]>([]);
 
   // Color preferences (optional, generic, all themes)
@@ -333,6 +336,7 @@ export default function Customize() {
   // 10" or 2-tier round sizes), the 6cm round piece within a jelly platter,
   // or the 6cm round option in Mini Gift Boxes (the "cupcake" shape).
   const isCheesecakeEligible = () => {
+    if (!CHEESECAKE_OFFERED) return false;
     if (format === "cake") return shape === "round" && (size === "6inch" || size === "8inch");
     if (format === "jellyPlatter") {
       return (
@@ -759,6 +763,7 @@ export default function Customize() {
     addCustomItem(item);
     toast.success("Added to cart");
     resetBuilder();
+    navigate("/cart");
   };
 
   // Shared between the mobile tap-to-expand bar (below the header) and the

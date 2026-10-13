@@ -296,6 +296,10 @@ export const BASE_FLAVORS = [
   { value: "Hawthorn", label: "Hawthorn", image: "/customize/flavour-hawthorn.webp" },
 ];
 
+// Cheesecake is switched off in the customer builder for now. Set to true to offer it again
+// (where the size allows). The admin editor still keeps it on orders that already have it.
+export const CHEESECAKE_OFFERED = false;
+
 export const DIETARY_OPTIONS = [
   { value: "none", label: "None" },
   { value: "noDairy", label: "No Dairy" },
