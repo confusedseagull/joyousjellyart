@@ -22,12 +22,41 @@ import { sizeLabel } from "../../../../shared/orderLabels";
 
 type Shape = { value: string; label: string; image: string };
 
+// Finished-cake photos for the Cakes section (from the Figma "Discover" frame).
+// The builder's mould pictures are kept for the platters and gift boxes. Round
+// has no photo of its own, so it shows the round two-tier cake; Numbers has a
+// one-number and a two-number cake.
+const CAKE_PHOTOS: Record<string, string[]> = {
+  round: ["/discover/cake-twotier.webp"],
+  square: ["/discover/cake-square.webp"],
+  octagon: ["/discover/cake-octagon.webp"],
+  heart: ["/discover/cake-heart.webp"],
+  star: ["/discover/cake-star.webp"],
+  teddyBear: ["/discover/cake-teddy.webp"],
+  fan: ["/discover/cake-fan.webp"],
+  rectangle: ["/discover/cake-rectangle.webp"],
+  scalloped: ["/discover/cake-scalloped.webp"],
+  numbers: ["/discover/cake-onenumber.webp", "/discover/cake-twonumbers.webp"],
+  sakura: ["/discover/cake-sakura.webp"],
+};
+
 const FORMAT_IMAGE: Record<string, string> = Object.fromEntries(FORMATS.map((f) => [f.value, f.image]));
 
-function ShapeCard({ shape, children }: { shape: Shape; children: ReactNode }) {
+function ShapeCard({ shape, images, children }: { shape: Shape; images?: string[]; children: ReactNode }) {
+  const pictures = images && images.length > 0 ? images : [shape.image];
   return (
     <div className="flex items-start gap-4">
-      <img src={shape.image} alt={shape.label} className="size-20 md:size-24 rounded-full object-cover shrink-0" />
+      {/* Several pictures (e.g. the one- and two-number cakes) overlap slightly. */}
+      <div className="flex shrink-0 -space-x-6">
+        {pictures.map((src) => (
+          <img
+            key={src}
+            src={src}
+            alt={shape.label}
+            className="size-20 md:size-24 rounded-full object-cover border-2 border-background"
+          />
+        ))}
+      </div>
       <div className="flex flex-col gap-1 min-w-0">
         <h4 className="font-medium text-base">{shape.label}</h4>
         <div className="text-sm text-muted-foreground leading-relaxed">{children}</div>
@@ -135,7 +164,7 @@ export function FormatsGuide() {
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
           {cakeShapes.map((shape) => (
-            <ShapeCard key={shape.value} shape={shape}>
+            <ShapeCard key={shape.value} shape={shape} images={CAKE_PHOTOS[shape.value]}>
               <SizeList shape={shape.value} />
             </ShapeCard>
           ))}

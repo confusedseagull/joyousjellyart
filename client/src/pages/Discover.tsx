@@ -1,4 +1,4 @@
-import { useLocation, useSearch } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 import { Button } from "@/components/ui/button";
 import { THEMES, FLOWERS, CARTOON_CHARACTERS, SPORTS, SPORTS_THEME } from "@/lib/customizeOptions";
 import { FormatsGuide } from "@/components/discover/FormatsGuide";
@@ -77,6 +77,45 @@ const INTRO: Record<(typeof VIEWS)[number]["value"], string> = {
     "Cakes, jelly platters and mini gift boxes: what each one is, the shapes it comes in, and the sizes you can choose.",
 };
 
+// Examples of two themes blended into one design (from the Figma "Discover" frame).
+const COMBINED_EXAMPLES = [
+  { image: "/discover/combined-1.webp", caption: "Floral Bouquet + Cartoon Characters" },
+  { image: "/discover/combined-2.webp", caption: "Cartoon Characters + Under the Sea" },
+];
+
+function CombinedThemes() {
+  return (
+    <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-10 py-8 border-b border-[#e5e5e5]">
+      <div className="md:w-64 shrink-0 flex flex-col gap-2">
+        <h3 className="font-normal">Combined themes</h3>
+        <p className="text-muted-foreground text-sm leading-relaxed">
+          Can't pick just one? Blend two themes into a single design — a bouquet beside a favourite character, or a character exploring
+          the deep sea.
+        </p>
+        <p className="text-muted-foreground text-sm leading-relaxed mt-3">
+          Tick "Combine 2 themes" when you choose a theme. Each theme keeps its own options, like flowers or a character.
+        </p>
+        <Link href="/customize" className="text-sm font-medium text-primary underline underline-offset-4 mt-3 w-fit">
+          Combine two themes
+        </Link>
+      </div>
+
+      <div className="flex gap-3 md:gap-4 overflow-x-auto pb-1 -mx-1 px-1">
+        {COMBINED_EXAMPLES.map((example) => (
+          <figure key={example.image} className="flex flex-col items-center gap-3 shrink-0">
+            <img
+              src={example.image}
+              alt={example.caption}
+              className="w-48 h-48 md:w-56 md:h-56 rounded-full object-cover"
+            />
+            <figcaption className="text-sm text-muted-foreground text-center max-w-[12rem]">{example.caption}</figcaption>
+          </figure>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function ThemesView() {
   return (
     <div className="flex flex-col">
@@ -112,6 +151,7 @@ function ThemesView() {
           </div>
         </div>
       ))}
+      <CombinedThemes />
     </div>
   );
 }
