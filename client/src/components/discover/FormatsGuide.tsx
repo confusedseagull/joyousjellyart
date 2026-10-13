@@ -164,23 +164,6 @@ export function FormatsGuide() {
 
   return (
     <div className="flex flex-col">
-      {/* Jump links between the three formats */}
-      <nav aria-label="Formats" className="flex flex-wrap gap-2 mb-2">
-        {[
-          { id: "cake", label: "Cakes" },
-          { id: "jellyPlatter", label: "Jelly Platters" },
-          { id: "miniGiftBox", label: "Mini Gift Boxes" },
-        ].map((item) => (
-          <a
-            key={item.id}
-            href={`#${item.id}`}
-            className="rounded-full border border-[#e5e5e5] bg-white px-4 py-2 text-sm hover:border-primary/40 transition-colors"
-          >
-            {item.label}
-          </a>
-        ))}
-      </nav>
-
       {/* Cakes */}
       <FormatSection
         id="cake"
