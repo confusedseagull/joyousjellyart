@@ -184,7 +184,7 @@ export const SHAPES = [
   { value: "numbers", label: "Numbers", image: "/customize/shape-numbers.webp" },
   { value: "sakura", label: "Sakura", image: "/customize/shape-sakura.webp" },
   { value: "platter9", label: "Platter of 9", image: "/customize/shape-platter9.webp" },
-  { value: "platter6", label: "Platter of 6", image: "/customize/shape-platter4.webp" },
+  { value: "platter6", label: "Platter of 6", image: "/customize/shape-platter6.webp" },
   { value: "platter4", label: "Platter of 4", image: "/customize/shape-platter4.webp" },
   { value: "miniGiftBox", label: "Mini Gift Box", image: "/customize/shape-miniGiftBox.webp" },
   { value: "cupcake", label: "Cupcake", image: "/customize/shape-cupcake.webp" },
