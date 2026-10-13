@@ -58,7 +58,7 @@ function ShapeCard({ shape, images, children }: { shape: Shape; images?: string[
       {/* Several pictures (e.g. the one- and two-number cakes) overlap slightly. */}
       <div className="flex shrink-0 -space-x-10">
         {pictures.map((src) => (
-          <img
+          <img loading="lazy" decoding="async"
             key={src}
             src={src}
             alt={shape.label}
@@ -197,7 +197,7 @@ export function FormatsGuide() {
           <div className="flex flex-col md:flex-row md:items-start gap-6 md:gap-10 mt-6">
             <div className="flex shrink-0 -space-x-10">
               {TWO_TIER_PHOTOS.map((src) => (
-                <img
+                <img loading="lazy" decoding="async"
                   key={src}
                   src={src}
                   alt={TWO_TIER_CARD.label}
@@ -248,7 +248,7 @@ export function FormatsGuide() {
         <ul className="flex flex-wrap gap-6">
           {PLATTER_INDIVIDUAL_SHAPES.map((piece) => (
             <li key={piece.value} className="flex flex-col items-center gap-2 w-24">
-              <img src={piece.image} alt={piece.label} className="size-20 rounded-full object-cover" />
+              <img loading="lazy" decoding="async" src={piece.image} alt={piece.label} className="size-20 rounded-full object-cover" />
               <span className="text-sm">{piece.label}</span>
             </li>
           ))}

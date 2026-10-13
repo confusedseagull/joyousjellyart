@@ -94,7 +94,7 @@ function CombinedThemes() {
       <div className="flex gap-3 md:gap-4 overflow-x-auto pb-1 -mx-1 px-1">
         {COMBINED_EXAMPLES.map((example) => (
           <figure key={example.image} className="flex flex-col items-center gap-3 shrink-0">
-            <img
+            <img loading="lazy" decoding="async"
               src={example.image}
               alt={example.caption}
               className="w-48 h-48 md:w-56 md:h-56 rounded-full object-cover"
@@ -132,7 +132,7 @@ function ThemesView() {
           {/* All reference photos for this theme */}
           <div className="flex gap-3 md:gap-4 overflow-x-auto pb-1 -mx-1 px-1">
             {theme.images.map((image, i) => (
-              <img
+              <img loading="lazy" decoding="async"
                 key={image + i}
                 src={image}
                 alt={theme.name}

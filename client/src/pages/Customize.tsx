@@ -121,7 +121,7 @@ function CircleOption({
         onTouchEnd={handleTouchEnd}
       >
         {images.length > 0 && (
-          <img
+          <img loading="lazy" decoding="async"
             src={images[currentImageIndex]}
             alt={option.label}
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ease-out"

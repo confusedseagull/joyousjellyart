@@ -201,7 +201,7 @@ export default function Home() {
               >
                 <p className="font-display w-full text-lg font-medium line-clamp-2">{item.name}</p>
                 <div className="w-full flex justify-center">
-                  <img
+                  <img loading="lazy" decoding="async"
                     src={item.image}
                     alt={item.name}
                     className="w-full max-w-[250px] aspect-square rounded-full object-cover"

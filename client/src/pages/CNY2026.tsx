@@ -344,7 +344,7 @@ export default function CNY2026() {
   const renderDesignCard = (design: typeof cnyDesigns[0]) => (
     <Card key={design.id} className="overflow-hidden group border-0 shadow-none hover:shadow-none transition-smooth p-0 gap-0 bg-transparent">
       <div className="aspect-[3/4] overflow-hidden rounded-xl">
-        <img 
+        <img loading="lazy" decoding="async" 
           src={design.image} 
           alt={design.name}
           className="w-full h-full object-cover group-hover:scale-110 transition-all duration-500 ease-out"
