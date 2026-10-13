@@ -55,8 +55,8 @@ function ShapeCard({ shape, images, children }: { shape: Shape; images?: string[
   const pictures = images && images.length > 0 ? images : [shape.image];
   return (
     <div className="flex items-start gap-5">
-      {/* Several pictures (e.g. the one- and two-number cakes) stack vertically and overlap slightly. */}
-      <div className="flex flex-col shrink-0 -space-y-10">
+      {/* Several pictures (e.g. the one- and two-number cakes) overlap slightly. */}
+      <div className="flex shrink-0 -space-x-10">
         {pictures.map((src) => (
           <img
             key={src}
@@ -166,7 +166,8 @@ function FormatSection({
 }
 
 export function FormatsGuide() {
-  const cakeShapes: Shape[] = CAKE_SHAPES;
+  // Numbers goes last on this page; the builder keeps its own order.
+  const cakeShapes: Shape[] = [...CAKE_SHAPES.filter((s) => s.value !== "numbers"), ...CAKE_SHAPES.filter((s) => s.value === "numbers")];
   const platterShapes: Shape[] = PLATTER_FORMAT_SHAPES;
 
   return (
