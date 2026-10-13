@@ -1,4 +1,4 @@
-import { Link, useLocation, useSearch } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { Button } from "@/components/ui/button";
 import { THEMES, FLOWERS, CARTOON_CHARACTERS, SPORTS, SPORTS_THEME } from "@/lib/customizeOptions";
 import { FormatsGuide } from "@/components/discover/FormatsGuide";
@@ -84,15 +84,11 @@ function CombinedThemes() {
       <div className="md:w-64 shrink-0 flex flex-col gap-2">
         <h3 className="font-normal">Combined themes</h3>
         <p className="text-muted-foreground text-sm leading-relaxed">
-          Can't pick just one? Blend two themes into a single design — a bouquet beside a favourite character, or a character exploring
-          the deep sea.
+          Can't pick just one? Blend two themes into a single design.
         </p>
         <p className="text-muted-foreground text-sm leading-relaxed mt-3">
           Tick "Combine 2 themes" when you choose a theme. Each theme keeps its own options, like flowers or a character.
         </p>
-        <Link href="/customize" className="text-sm font-medium text-primary underline underline-offset-4 mt-3 w-fit">
-          Combine two themes
-        </Link>
       </div>
 
       <div className="flex gap-3 md:gap-4 overflow-x-auto pb-1 -mx-1 px-1">
