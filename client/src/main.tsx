@@ -6,6 +6,15 @@ import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
 import { CartProvider } from "./contexts/CartContext";
+// Fonts are served from our own domain (latin subset only), not Google Fonts.
+import "@fontsource/instrument-sans/latin-400.css";
+import "@fontsource/instrument-sans/latin-500.css";
+import "@fontsource/instrument-sans/latin-600.css";
+import "@fontsource/instrument-sans/latin-700.css";
+import "@fontsource/newsreader/latin-400.css";
+import "@fontsource/newsreader/latin-500.css";
+import "@fontsource/newsreader/latin-600.css";
+import "@fontsource/newsreader/latin-400-italic.css";
 import "./index.css";
 
 // Client-side route changes (wouter's navigate()) don't reload the page, so
