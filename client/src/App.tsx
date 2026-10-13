@@ -12,7 +12,6 @@ import Customize from "./pages/Customize";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
-import CNY2026 from "./pages/CNY2026";
 import Cart from "./pages/Cart";
 import { useAdminPwaMeta } from "./hooks/useAdminPwaMeta";
 
@@ -56,7 +55,6 @@ function Router() {
         <Route path="/discover" component={Discover} />
         <Route path="/about" component={About} />
         <Route path="/customize" component={Customize} />
-        <Route path="/cny-2026" component={CNY2026} />
         <Route path="/cart" component={Cart} />
         <Route path="/order-confirmation" component={OrderConfirmation} />
         <Route path="/admin/login" component={AdminLogin} />
