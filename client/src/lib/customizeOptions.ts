@@ -110,6 +110,7 @@ export const SPORTS_THEME = "golf";
 export const SPORTS = [
   { value: "sailing", label: "Sailing" },
   { value: "golf", label: "Golf" },
+  { value: "diving", label: "Diving" },
 ];
 
 // Themes that ask a follow-up question (or take typed text) after being chosen.

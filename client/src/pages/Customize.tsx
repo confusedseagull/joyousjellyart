@@ -887,7 +887,7 @@ export default function Customize() {
         <div key={key} ref={section(`themeExtras${slot}`)} className="flex flex-col gap-4 scroll-mt-44">
           {heading}
           <p className="text-sm text-muted-foreground">Choose a sport for your design.</p>
-          <div className="grid grid-cols-2 gap-4 max-w-md">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-w-xl">
             {SPORTS.map((option) => (
               <SelectablePill
                 key={option.value}

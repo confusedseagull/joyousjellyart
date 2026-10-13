@@ -17,6 +17,7 @@ describe("order option labels", () => {
   it("names the sports as the builder does, and the Sports theme as Sports", () => {
     expect(sportLabel("sailing")).toBe("Sailing");
     expect(sportLabel("golf")).toBe("Golf");
+    expect(sportLabel("diving")).toBe("Diving");
     expect(themeLabel("golf")).toBe("Sports");
   });
 

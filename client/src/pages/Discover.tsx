@@ -23,7 +23,7 @@ const THEME_DESCRIPTIONS: Record<string, string> = {
   dinosaurs: "Prehistoric jelly creatures big and small — a roaring favourite for kids' parties.",
   space: "Planets, stars, and astronauts drifting across a jelly night sky.",
   koiPond: "Graceful koi swimming through a tranquil jelly pond, a symbol of luck and prosperity.",
-  golf: "Celebrate a favourite sport — golf on the greens or sailing on the open water — recreated in jelly detail.",
+  golf: "Celebrate a favourite sport — golf on the greens, sailing on the open water or diving beneath it — recreated in jelly detail.",
   cars: "A jelly tribute to your favourite ride, from classic models to race-day speedsters.",
   coutureFashion: "An elegant, runway-inspired design featuring your favourite fashion house's signature look.",
   cactus: "A lush, botanical arrangement of jelly cacti and greenery for an earthy, modern finish.",
