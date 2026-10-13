@@ -49,13 +49,6 @@ const THEME_NOTES: Record<string, string> = {
   lego: "One of our favourites is the Lego Princess Choo Choo Train with Bunnies and Teddy Bears. Yes, we really meant it when we said your imagination can go wild.",
 };
 
-// Extra Discover-only photos per theme, layered on top of the Customize
-// wizard's reference photos — e.g. the Lego Princess Choo Choo Train called
-// out in that theme's copy above.
-const THEME_EXTRA_IMAGES: Record<string, string[]> = {
-  lego: ["/gallery/princess-choochoo.webp"],
-};
-
 // Every reference photo for each customizable theme (the same assets used in
 // the Customize wizard's theme picker), so this page doubles as a full
 // catalog of what can actually be ordered.
@@ -64,7 +57,7 @@ const gallery = THEMES.map((theme) => ({
   description: THEME_DESCRIPTIONS[theme.value] ?? "",
   options: THEME_OPTIONS[theme.value],
   note: THEME_NOTES[theme.value],
-  images: [...(theme.images ?? (theme.image ? [theme.image] : [])), ...(THEME_EXTRA_IMAGES[theme.value] ?? [])],
+  images: theme.images ?? (theme.image ? [theme.image] : []),
 }));
 
 const VIEWS = [
