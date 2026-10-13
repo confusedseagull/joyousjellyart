@@ -136,7 +136,7 @@ function FormatSection({
   children: ReactNode;
 }) {
   return (
-    <section id={id} className="scroll-mt-24 py-10 md:py-14 border-b border-[#e5e5e5] last:border-b-0">
+    <section id={id} className="scroll-mt-24 py-10 md:py-14 first:pt-0 border-b border-[#e5e5e5] last:border-b-0">
       <div className="flex flex-col gap-3 max-w-2xl mb-8">
         <h2 className="text-3xl md:text-4xl font-normal">{title}</h2>
         <p className="text-muted-foreground leading-relaxed">{description}</p>
