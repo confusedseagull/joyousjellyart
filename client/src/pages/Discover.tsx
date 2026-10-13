@@ -75,6 +75,7 @@ const INTRO: Record<(typeof VIEWS)[number]["value"], string> = {
 const COMBINED_EXAMPLES = [
   { image: "/discover/combined-1.webp", caption: "Floral Bouquet + Cartoon Characters" },
   { image: "/discover/combined-2.webp", caption: "Cartoon Characters + Under the Sea" },
+  { image: "/discover/combined-3.webp", caption: "Trains + Lego" },
 ];
 
 function CombinedThemes() {
