@@ -165,7 +165,7 @@ export const SPORTS = [
 ];
 
 // Themes that ask a follow-up question (or take typed text) after being chosen.
-export const THEMES_WITH_EXTRAS = ["floralBouquet", "cartoonCharacters", SPORTS_THEME, "handDrawn", "coutureFashion", "nameAndInitial", "mahjong"];
+export const THEMES_WITH_EXTRAS = ["floralBouquet", "cartoonCharacters", SPORTS_THEME, "handDrawn", "coutureFashion", "nameAndInitial"];
 // Themes whose follow-up is typed text (a description / a name) rather than a pick.
 export const TEXT_THEMES = ["handDrawn", "nameAndInitial"];
 // Not offered for platters or gift boxes, which have no single canvas big enough.

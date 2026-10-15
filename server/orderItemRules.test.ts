@@ -63,12 +63,13 @@ describe("applyItemChange", () => {
     expect(applyItemChange(box, { boxes: 2 }).flavours).toHaveLength(1);
   });
 
-  it("offers the Mahjong Huat Huat Box only to Mahjong cakes, at a flat $128", () => {
+  it("offers the Mahjong Huat Huat Box only to Mahjong cakes and platters, at a flat $128", () => {
     const mahjong = { ...cake, theme: "mahjong", themeLabel: "Mahjong" };
     expect(shapesForItem(cake).some((s) => s.value === "huatBox")).toBe(false);
     expect(shapesForItem(mahjong).some((s) => s.value === "huatBox")).toBe(true);
     expect(shapesForItem({ ...cake, secondTheme: "mahjong" }).some((s) => s.value === "huatBox")).toBe(true);
-    expect(shapesForItem({ ...mahjong, format: "jellyPlatter" }).some((s) => s.value === "huatBox")).toBe(false);
+    expect(shapesForItem({ ...mahjong, format: "jellyPlatter" }).some((s) => s.value === "huatBox")).toBe(true);
+    expect(shapesForItem({ ...mahjong, format: "miniGiftBox" }).some((s) => s.value === "huatBox")).toBe(false);
 
     const box = applyItemChange(mahjong, { shape: "huatBox" });
     expect(box.shape).toBe("huatBox");

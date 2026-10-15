@@ -9,9 +9,9 @@ import { SelectablePill } from "@/components/SelectablePill";
 import { upload } from "@vercel/blob/client";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
-import { getCustomOrderPrice, getCustomOrderPriceForThemes, getCustomOrderPriceRange } from "../../../shared/customOrderPricing";
+import { getCustomOrderPriceForThemes } from "../../../shared/customOrderPricing";
 import { requiredFlavourCount } from "../../../shared/orderItemRules";
-import { formatPrice, formatPriceRange } from "@/lib/utils";
+import { formatPrice } from "@/lib/utils";
 import { useCart, type CakeFormat } from "@/contexts/CartContext";
 import {
   THEMES,
@@ -175,6 +175,7 @@ function getSizeBadge(value: string): string {
   if (tierMatch) return `${tierMatch[1]}+${tierMatch[2]}”`;
   const inchMatch = value.match(/^(\d+)inch$/);
   if (inchMatch) return `${inchMatch[1]}”`;
+  if (value === HUAT_BOX.size) return `7x5”`; // the Huat Huat Box
   const cmMatch = value.match(/^(\d+)cm$/);
   if (cmMatch) return `${cmMatch[1]}cm`;
   const leadingNumber = value.match(/^(\d+)/);
@@ -190,7 +191,7 @@ function SizeOption({
   onClick,
 }: {
   option: { value: string; label: string };
-  price: { min: number; max: number } | null;
+  price: number | null;
   isSelected: boolean;
   onClick: () => void;
 }) {
@@ -213,7 +214,7 @@ function SizeOption({
           <p className="text-muted-foreground">{SERVES_INFO[option.value]}</p>
         )}
       </div>
-      {price && <p className="font-display text-base font-medium">{formatPriceRange(price)}</p>}
+      {price && <p className="font-display text-base font-medium">{formatPrice(price)}</p>}
     </button>
   );
 }
@@ -233,7 +234,7 @@ function NumberCountOption({
   count: 1 | 2;
   dimension: string;
   serves: string;
-  price: { min: number; max: number } | null;
+  price: number | null;
   isSelected: boolean;
   onClick: () => void;
 }) {
@@ -253,7 +254,7 @@ function NumberCountOption({
         <p className="font-medium text-foreground">{dimension}</p>
         <p className="text-muted-foreground">{serves}</p>
       </div>
-      {price && <p className="font-display text-base font-medium">{formatPriceRange(price)}</p>}
+      {price && <p className="font-display text-base font-medium">{formatPrice(price)}</p>}
     </button>
   );
 }
@@ -270,17 +271,6 @@ export default function Customize() {
   const [number2, setNumber2] = useState("");
   const [numberCount, setNumberCount] = useState<1 | 2>(2);
   const [quantity, setQuantity] = useState(1);
-  // The Mahjong Huat Huat Box replaces the chosen format/shape/size; what was chosen is kept so it can be put back.
-  const [huatBox, setHuatBox] = useState(false);
-  const beforeHuatBox = useRef<{
-    format: CakeFormat | "";
-    shape: string;
-    size: string;
-    platterShapes: string[];
-    quantity: number;
-    number1: string;
-    number2: string;
-  } | null>(null);
 
   // Theme & Design state
   const [theme, setTheme] = useState("");
@@ -320,6 +310,22 @@ export default function Customize() {
 
   const shapeOptionsForFormat =
     format === "cake" ? CAKE_SHAPES : format === "jellyPlatter" ? PLATTER_FORMAT_SHAPES : GIFT_BOX_FORMAT_SHAPES;
+
+  // The Mahjong theme adds the Huat Huat Box to the shapes of a cake or platter order.
+  const huatBoxOffered =
+    (format === "cake" || format === "jellyPlatter") && [theme, combineThemes ? theme2 : ""].includes(MAHJONG_THEME);
+  const shapeChoices = huatBoxOffered
+    ? [...shapeOptionsForFormat, SHAPES.find((sh) => sh.value === HUAT_BOX.value)!]
+    : shapeOptionsForFormat;
+
+  // The box only goes with the Mahjong theme: drop it if the theme changes.
+  useEffect(() => {
+    if (shape === HUAT_BOX.value && !huatBoxOffered) {
+      setShape("");
+      setSize("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shape, huatBoxOffered]);
 
   // Hand Drawn and Bespoke Signature only make sense on a full cake — a
   // platter or a box of individually-packaged jellies doesn't have a single
@@ -422,8 +428,6 @@ export default function Customize() {
   };
 
   const handleFormatSelect = (value: CakeFormat) => {
-    setHuatBox(false);
-    beforeHuatBox.current = null;
     setFormat(value);
     setShape("");
     setSize("");
@@ -434,47 +438,11 @@ export default function Customize() {
     if (value === "jellyPlatter" || value === "miniGiftBox") dropCakeOnlyThemes();
   };
 
-  // Picking the Huat Huat Box turns the item into that box (a cake-format item with its own shape and
-  // size); picking it again puts the earlier format, shape and size back.
-  const toggleHuatBox = () => {
-    if (huatBox) {
-      const before = beforeHuatBox.current;
-      if (before) {
-        setFormat(before.format);
-        setShape(before.shape);
-        setSize(before.size);
-        setPlatterShapes(before.platterShapes);
-        setQuantity(before.quantity);
-        setNumber1(before.number1);
-        setNumber2(before.number2);
-        if (before.format === "jellyPlatter" || before.format === "miniGiftBox") dropCakeOnlyThemes();
-      }
-      beforeHuatBox.current = null;
-      setHuatBox(false);
-      return;
-    }
-    beforeHuatBox.current = { format, shape, size, platterShapes, quantity, number1, number2 };
-    setFormat("cake");
-    setShape(HUAT_BOX.value);
-    setSize(HUAT_BOX.size);
-    setPlatterShapes([]);
-    setQuantity(1);
-    setHuatBox(true);
-  };
-
-  // The box belongs to the Mahjong theme: if Mahjong is no longer one of the chosen themes, drop the box.
-  useEffect(() => {
-    if (huatBox && ![theme, combineThemes ? theme2 : ""].includes(MAHJONG_THEME)) toggleHuatBox();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [theme, theme2, combineThemes]);
-
   const handleShapeSelect = (value: string) => {
-    setHuatBox(false);
-    beforeHuatBox.current = null;
     setShape(value);
     setPlatterShapes([]);
     setQuantity(1);
-    if (value === "miniGiftBox" || value === "cupcake") {
+    if (value === "miniGiftBox" || value === "cupcake" || value === HUAT_BOX.value) {
       setSize(SHAPE_SIZES[value][0].value);
     } else {
       setSize("");
@@ -583,11 +551,11 @@ export default function Customize() {
   const isStepComplete = (step: number): boolean => {
     switch (step) {
       case 1: return !!format;
-      case 2: return shapeSizeComplete;
-      case 3:
+      case 2:
         if (!theme) return false;
         if (combineThemes && !theme2) return false; // combining needs both themes
         return [theme, combineThemes ? theme2 : ""].filter(Boolean).every(themeIsComplete);
+      case 3: return shapeSizeComplete;
       case 4: return selectedFlavors.length >= 1;
       case 8: return dietaryRequirements.length > 0;
       default: return true; // steps 5-7 are optional
@@ -651,13 +619,13 @@ export default function Customize() {
     const justScrolledToSubsection = Date.now() - subsectionScrollAtRef.current < 800;
     // For themes that need typed text, the step completes on the first keystroke; don't scroll away mid-typing.
     const typingTheme =
-      currentStep === 3 && [theme, combineThemes ? theme2 : ""].some((t) => TEXT_THEMES.includes(t) || t === "coutureFashion");
+      currentStep === 2 && [theme, combineThemes ? theme2 : ""].some((t) => TEXT_THEMES.includes(t) || t === "coutureFashion");
     // Multi-picks that are "complete" at one choice but expect more (platter flavours / piece shapes), and
     // number digits, scroll to Next themselves once the last pick or digit is in.
     const partialMultiPick =
       (currentStep === 4 && selectedFlavors.length < getRequiredFlavorCount()) ||
-      (currentStep === 2 && shouldShowPlatterShapeSelection() && platterShapes.length < getMaxShapeSelection()) ||
-      (currentStep === 2 && shape === "numbers");
+      (currentStep === 3 && shouldShowPlatterShapeSelection() && platterShapes.length < getMaxShapeSelection()) ||
+      (currentStep === 3 && shape === "numbers");
     if (currentStep === prevStepRef.current && stepComplete && !prevStepCompleteRef.current && !justScrolledToSubsection && !typingTheme && !partialMultiPick) {
       navRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
@@ -686,8 +654,6 @@ export default function Customize() {
     setSpecialInstructions("");
     setReferenceImages([]);
     setSelectedFlavors([]);
-    setHuatBox(false);
-    beforeHuatBox.current = null;
     setBackgroundColor("");
     setColor1("");
     setColor2("");
@@ -926,28 +892,6 @@ export default function Customize() {
         </div>
       );
     }
-    if (themeValue === MAHJONG_THEME) {
-      return (
-        <div key={key} ref={section(`themeExtras${slot}`)} className="flex flex-col gap-4 scroll-mt-44">
-          {heading}
-          <p className="text-sm text-muted-foreground">
-            Optional: Choose the Mahjong Huat Huat Box, a 7" x 5" platter with a large mahjong tile and mini jellies that can be customized.
-          </p>
-          <div className="flex flex-wrap gap-6">
-            <CircleOption
-              option={{ value: HUAT_BOX.value, label: HUAT_BOX.label, image: HUAT_BOX.image }}
-              isSelected={huatBox}
-              caption={`$${HUAT_BOX.price}`}
-              onClick={() => {
-                const choosing = !huatBox;
-                toggleHuatBox();
-                if (choosing) afterThemeExtras(slot);
-              }}
-            />
-          </div>
-        </div>
-      );
-    }
     if (themeValue === "cartoonCharacters") {
       return (
         <div key={key} ref={section(`themeExtras${slot}`)} className="flex flex-col gap-4 scroll-mt-44">
@@ -1042,9 +986,9 @@ export default function Customize() {
 
   const summaryRows: { label: string; value: string }[] = [
     { label: "Format", value: FORMATS.find(f => f.value === format)?.label ?? "None" },
+    { label: "Theme", value: themeSummary || "None" },
     { label: "Shape", value: SHAPES.find(s => s.value === shape)?.label ?? "None" },
     { label: "Size", value: sizeLabel ?? "None" },
-    { label: "Theme", value: themeSummary || "None" },
     { label: "Base Flavour", value: selectedFlavors.length > 0 ? selectedFlavors.join(", ") : "None" },
     { label: "Background Color", value: backgroundColor || "None" },
     { label: "Color Preferences", value: colorPreferences || "None" },
@@ -1124,7 +1068,7 @@ export default function Customize() {
             <section className="flex flex-col gap-4">
               <h1 className="font-normal text-[28px] md:text-[52px]">Customise your jelly cake</h1>
               <p className="text-muted-foreground text-base md:text-lg max-w-2xl">
-                Customize every detail of your perfect jelly art cake — from format and shape to flavour and finishing touches.
+                Customize every detail of your perfect jelly art cake — from format and theme to shape, flavour and finishing touches.
               </p>
             </section>
             )}
@@ -1150,187 +1094,10 @@ export default function Customize() {
             </section>
             )}
 
-            {/* 02 Shape & Size */}
+            {/* 02 Theme */}
             {currentStep === 2 && (
                 <section className="flex flex-col gap-6 animate-in fade-in duration-300">
-                <StepHeader
-                  number={2}
-                  title="Choose a shape and size"
-                  description="Choose a shape to view available size options for the shape."
-                />
-                <div className="flex flex-wrap gap-6">
-                  {shapeOptionsForFormat.map((shapeOption) => (
-                    <CircleOption
-                      key={shapeOption.value}
-                      option={shapeOption}
-                      isSelected={shape === shapeOption.value}
-                      onClick={() => handleShapeSelect(shapeOption.value)}
-                      caption={
-                        format === "miniGiftBox"
-                          ? shapeOption.value === "miniGiftBox"
-                            ? "Square | 10cm"
-                            : "Circle | 6cm"
-                          : undefined
-                      }
-                    />
-                  ))}
-                </div>
-
-                {/* Cake format: size options (or numbers config) */}
-                {format === "cake" && shape && shape !== "numbers" && SHAPE_SIZES[shape] && (
-                  <>
-                    <div className="h-px w-full bg-[#e5e5e5]" />
-                    <div ref={section("size")} className="flex flex-wrap gap-6 scroll-mt-44">
-                      {SHAPE_SIZES[shape].map((sizeOption) => {
-                        const price = getCustomOrderPriceRange(shape, sizeOption.value);
-                        return (
-                          <SizeOption
-                            key={sizeOption.value}
-                            option={sizeOption}
-                            price={price}
-                            isSelected={size === sizeOption.value}
-                            onClick={() => setSize(sizeOption.value)}
-                          />
-                        );
-                      })}
-                    </div>
-                  </>
-                )}
-
-                {format === "cake" && shape === "numbers" && (
-                  <>
-                    <div className="h-px w-full bg-[#e5e5e5]" />
-                    <div ref={section("numbers")} className="flex flex-wrap gap-6 scroll-mt-44">
-                      <NumberCountOption
-                        count={1}
-                        dimension={NUMBER_CAKE_SIZES[0].dimension}
-                        serves={NUMBER_CAKE_SIZES[0].serves}
-                        price={getCustomOrderPriceRange("numbers", "8x8", 1)}
-                        isSelected={numberCount === 1}
-                        onClick={() => {
-                          setNumberCount(1);
-                          setSize("8x8");
-                          setNumber2("");
-                          scrollToSection("numberDigits");
-                        }}
-                      />
-                      <NumberCountOption
-                        count={2}
-                        dimension={NUMBER_CAKE_SIZES[1].dimension}
-                        serves={NUMBER_CAKE_SIZES[1].serves}
-                        price={getCustomOrderPriceRange("numbers", "8x8", 2)}
-                        isSelected={numberCount === 2}
-                        onClick={() => {
-                          setNumberCount(2);
-                          setSize("8x8");
-                          scrollToSection("numberDigits");
-                        }}
-                      />
-                    </div>
-                    <div ref={section("numberDigits")} className="flex flex-col sm:flex-row gap-4 scroll-mt-44">
-                      <div className="flex-1 sm:max-w-[380px] border border-[#e5e5e5] rounded-2xl h-[52px] flex items-center gap-7 px-4 focus-within:border-primary/40 transition-colors">
-                        <label className="shrink-0 text-sm text-foreground">First Number</label>
-                        <input
-                          type="number"
-                          min="0"
-                          max="9"
-                          value={number1}
-                          onChange={(e) => {
-                            setNumber1(e.target.value);
-                            if (e.target.value !== "" && (numberCount === 1 || number2 !== "")) scrollToNextBar();
-                          }}
-                          placeholder="0-9"
-                          className="flex-1 min-w-0 text-sm bg-transparent outline-none placeholder:text-[#808582]"
-                        />
-                      </div>
-                      {numberCount === 2 && (
-                        <div className="flex-1 sm:max-w-[380px] border border-[#e5e5e5] rounded-2xl h-[52px] flex items-center gap-7 px-4 focus-within:border-primary/40 transition-colors">
-                          <label className="shrink-0 text-sm text-foreground">Second Number</label>
-                          <input
-                            type="number"
-                            min="0"
-                            max="9"
-                            value={number2}
-                            onChange={(e) => {
-                              setNumber2(e.target.value);
-                              if (e.target.value !== "" && number1 !== "") scrollToNextBar();
-                            }}
-                            placeholder="0-9"
-                            className="flex-1 min-w-0 text-sm bg-transparent outline-none placeholder:text-[#808582]"
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </>
-                )}
-
-                {/* Jelly Platter format: size, then individual piece shapes */}
-                {format === "jellyPlatter" && shape && SHAPE_SIZES[shape] && (
-                  <>
-                    <div className="h-px w-full bg-[#e5e5e5]" />
-                    <div ref={section("size")} className="flex flex-wrap gap-6 scroll-mt-44">
-                      {SHAPE_SIZES[shape].map((sizeOption) => {
-                        const price = getCustomOrderPriceRange(shape, sizeOption.value);
-                        return (
-                          <SizeOption
-                            key={sizeOption.value}
-                            option={sizeOption}
-                            price={price}
-                            isSelected={size === sizeOption.value}
-                            onClick={() => {
-                              setSize(sizeOption.value);
-                              setPlatterShapes([]);
-                              // Only the 6cm sizes have individual piece shapes to choose next.
-                              if (sizeOption.value === "6cm") scrollToSection("platterShapes");
-                            }}
-                          />
-                        );
-                      })}
-                    </div>
-                  </>
-                )}
-
-                {format === "jellyPlatter" && shouldShowPlatterShapeSelection() && (
-                  <>
-                    <div className="h-px w-full bg-[#e5e5e5]" />
-                    <p ref={section("platterShapes")} className="text-muted-foreground text-[15px] scroll-mt-44">
-                      Select up to {getMaxShapeSelection()} different shapes for your {shape === "platter9" ? "9" : shape === "platter6" ? "6" : "4"} pieces
-                    </p>
-                    <div className="flex flex-wrap gap-6">
-                      {PLATTER_INDIVIDUAL_SHAPES.map((shapeOption) => {
-                        const isSelected = platterShapes.includes(shapeOption.value);
-                        const isDisabled = !isSelected && platterShapes.length >= getMaxShapeSelection();
-                        return (
-                          <CircleOption
-                            key={shapeOption.value}
-                            option={shapeOption}
-                            isSelected={isSelected}
-                            disabled={isDisabled}
-                            onClick={() => handlePlatterShapeToggle(shapeOption.value)}
-                          />
-                        );
-                      })}
-                    </div>
-                  </>
-                )}
-
-                {/* Mini Gift Box format: quantity stepper */}
-                {format === "miniGiftBox" && shape && (
-                  <>
-                    <div className="h-px w-full bg-[#e5e5e5]" />
-                    <div ref={section("quantity")} className="scroll-mt-44">
-                      <Label className="mb-2 block">Quantity</Label>
-                      <QuantityStepper value={quantity} onChange={setQuantity} />
-                    </div>
-                  </>
-                )}
-              </section>
-            )}
-
-            {/* 03 Theme */}
-            {currentStep === 3 && (
-                <section className="flex flex-col gap-6 animate-in fade-in duration-300">
-                <StepHeader number={3} title="Choose a theme" description="Choose the design theme for your jelly cake. The final design will differ based on the customer's requirements on color, and other additional notes provided. If you would like the exact replica of a particular design, you can upload a picture and indicate it in the additional notes." />
+                <StepHeader number={2} title="Choose a theme" description="Choose the design theme for your jelly cake. The final design will differ based on the customer's requirements on color, and other additional notes provided. If you would like the exact replica of a particular design, you can upload a picture and indicate it in the additional notes." />
                 <div className="flex flex-col gap-2">
                   <label className="flex w-fit cursor-pointer items-center gap-3">
                     <Checkbox checked={combineThemes} onCheckedChange={(checked) => handleCombineToggle(checked === true)} />
@@ -1419,6 +1186,190 @@ export default function Customize() {
                       </div>
                     )}
                   </div>
+                )}
+              </section>
+            )}
+
+            {/* 03 Shape & Size */}
+            {currentStep === 3 && (
+                <section className="flex flex-col gap-6 animate-in fade-in duration-300">
+                <StepHeader
+                  number={3}
+                  title="Choose a shape and size"
+                  description="Choose a shape to view available size options for the shape."
+                />
+                {huatBoxOffered && (
+                  <p className="text-sm text-muted-foreground">
+                    Optional: Choose the Mahjong Huat Huat Box, a 7" x 5" platter with a large mahjong tile and mini jellies that can be customized.
+                  </p>
+                )}
+                <div className="flex flex-wrap gap-6">
+                  {shapeChoices.map((shapeOption) => (
+                    <CircleOption
+                      key={shapeOption.value}
+                      option={shapeOption}
+                      isSelected={shape === shapeOption.value}
+                      onClick={() => handleShapeSelect(shapeOption.value)}
+                      caption={
+                        shapeOption.value === HUAT_BOX.value
+                          ? `$${HUAT_BOX.price}`
+                          : format === "miniGiftBox"
+                            ? shapeOption.value === "miniGiftBox"
+                              ? "Square | 10cm"
+                              : "Circle | 6cm"
+                            : undefined
+                      }
+                    />
+                  ))}
+                </div>
+
+                {/* Cake format: size options (or numbers config) */}
+                {format === "cake" && shape && shape !== "numbers" && SHAPE_SIZES[shape] && (
+                  <>
+                    <div className="h-px w-full bg-[#e5e5e5]" />
+                    <div ref={section("size")} className="flex flex-wrap gap-6 scroll-mt-44">
+                      {SHAPE_SIZES[shape].map((sizeOption) => {
+                        const price = getCustomOrderPriceForThemes([theme, combineThemes ? theme2 : ""], shape, sizeOption.value);
+                        return (
+                          <SizeOption
+                            key={sizeOption.value}
+                            option={sizeOption}
+                            price={price}
+                            isSelected={size === sizeOption.value}
+                            onClick={() => setSize(sizeOption.value)}
+                          />
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+
+                {format === "cake" && shape === "numbers" && (
+                  <>
+                    <div className="h-px w-full bg-[#e5e5e5]" />
+                    <div ref={section("numbers")} className="flex flex-wrap gap-6 scroll-mt-44">
+                      <NumberCountOption
+                        count={1}
+                        dimension={NUMBER_CAKE_SIZES[0].dimension}
+                        serves={NUMBER_CAKE_SIZES[0].serves}
+                        price={getCustomOrderPriceForThemes([theme, combineThemes ? theme2 : ""], "numbers", "8x8", 1)}
+                        isSelected={numberCount === 1}
+                        onClick={() => {
+                          setNumberCount(1);
+                          setSize("8x8");
+                          setNumber2("");
+                          scrollToSection("numberDigits");
+                        }}
+                      />
+                      <NumberCountOption
+                        count={2}
+                        dimension={NUMBER_CAKE_SIZES[1].dimension}
+                        serves={NUMBER_CAKE_SIZES[1].serves}
+                        price={getCustomOrderPriceForThemes([theme, combineThemes ? theme2 : ""], "numbers", "8x8", 2)}
+                        isSelected={numberCount === 2}
+                        onClick={() => {
+                          setNumberCount(2);
+                          setSize("8x8");
+                          scrollToSection("numberDigits");
+                        }}
+                      />
+                    </div>
+                    <div ref={section("numberDigits")} className="flex flex-col sm:flex-row gap-4 scroll-mt-44">
+                      <div className="flex-1 sm:max-w-[380px] border border-[#e5e5e5] rounded-2xl h-[52px] flex items-center gap-7 px-4 focus-within:border-primary/40 transition-colors">
+                        <label className="shrink-0 text-sm text-foreground">First Number</label>
+                        <input
+                          type="number"
+                          min="0"
+                          max="9"
+                          value={number1}
+                          onChange={(e) => {
+                            setNumber1(e.target.value);
+                            if (e.target.value !== "" && (numberCount === 1 || number2 !== "")) scrollToNextBar();
+                          }}
+                          placeholder="0-9"
+                          className="flex-1 min-w-0 text-sm bg-transparent outline-none placeholder:text-[#808582]"
+                        />
+                      </div>
+                      {numberCount === 2 && (
+                        <div className="flex-1 sm:max-w-[380px] border border-[#e5e5e5] rounded-2xl h-[52px] flex items-center gap-7 px-4 focus-within:border-primary/40 transition-colors">
+                          <label className="shrink-0 text-sm text-foreground">Second Number</label>
+                          <input
+                            type="number"
+                            min="0"
+                            max="9"
+                            value={number2}
+                            onChange={(e) => {
+                              setNumber2(e.target.value);
+                              if (e.target.value !== "" && number1 !== "") scrollToNextBar();
+                            }}
+                            placeholder="0-9"
+                            className="flex-1 min-w-0 text-sm bg-transparent outline-none placeholder:text-[#808582]"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {/* Jelly Platter format: size, then individual piece shapes */}
+                {format === "jellyPlatter" && shape && SHAPE_SIZES[shape] && (
+                  <>
+                    <div className="h-px w-full bg-[#e5e5e5]" />
+                    <div ref={section("size")} className="flex flex-wrap gap-6 scroll-mt-44">
+                      {SHAPE_SIZES[shape].map((sizeOption) => {
+                        const price = getCustomOrderPriceForThemes([theme, combineThemes ? theme2 : ""], shape, sizeOption.value);
+                        return (
+                          <SizeOption
+                            key={sizeOption.value}
+                            option={sizeOption}
+                            price={price}
+                            isSelected={size === sizeOption.value}
+                            onClick={() => {
+                              setSize(sizeOption.value);
+                              setPlatterShapes([]);
+                              // Only the 6cm sizes have individual piece shapes to choose next.
+                              if (sizeOption.value === "6cm") scrollToSection("platterShapes");
+                            }}
+                          />
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+
+                {format === "jellyPlatter" && shouldShowPlatterShapeSelection() && (
+                  <>
+                    <div className="h-px w-full bg-[#e5e5e5]" />
+                    <p ref={section("platterShapes")} className="text-muted-foreground text-[15px] scroll-mt-44">
+                      Select up to {getMaxShapeSelection()} different shapes for your {shape === "platter9" ? "9" : shape === "platter6" ? "6" : "4"} pieces
+                    </p>
+                    <div className="flex flex-wrap gap-6">
+                      {PLATTER_INDIVIDUAL_SHAPES.map((shapeOption) => {
+                        const isSelected = platterShapes.includes(shapeOption.value);
+                        const isDisabled = !isSelected && platterShapes.length >= getMaxShapeSelection();
+                        return (
+                          <CircleOption
+                            key={shapeOption.value}
+                            option={shapeOption}
+                            isSelected={isSelected}
+                            disabled={isDisabled}
+                            onClick={() => handlePlatterShapeToggle(shapeOption.value)}
+                          />
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+
+                {/* Mini Gift Box format: quantity stepper */}
+                {format === "miniGiftBox" && shape && (
+                  <>
+                    <div className="h-px w-full bg-[#e5e5e5]" />
+                    <div ref={section("quantity")} className="scroll-mt-44">
+                      <Label className="mb-2 block">Quantity</Label>
+                      <QuantityStepper value={quantity} onChange={setQuantity} />
+                    </div>
+                  </>
                 )}
               </section>
             )}

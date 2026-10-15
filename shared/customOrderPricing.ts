@@ -111,21 +111,3 @@ export function getCustomOrderPriceForThemes(
     .filter((price): price is number => price !== null);
   return prices.length > 0 ? Math.max(...prices) : null;
 }
-
-/**
- * The lowest and highest price a shape and size can have, across every theme. The size step comes before
- * the theme is chosen, so a size can only be quoted as a range (e.g. Floral Bouquet is cheaper than the
- * other themes). Returns null if no theme has a price for it.
- */
-export function getCustomOrderPriceRange(
-  shape: string,
-  size: string,
-  numberCount?: 1 | 2
-): { min: number; max: number } | null {
-  // Any theme without its own price list is priced like "lego", so one extra key covers all of them.
-  const themes = [...Object.keys(CUSTOM_ORDER_PRICING), "anyOtherTheme"];
-  const prices = themes
-    .map((theme) => getCustomOrderPrice(theme, shape, size, numberCount))
-    .filter((price): price is number => price !== null);
-  return prices.length > 0 ? { min: Math.min(...prices), max: Math.max(...prices) } : null;
-}

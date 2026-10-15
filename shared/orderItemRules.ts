@@ -30,14 +30,14 @@ export function shapesForFormat(format: string) {
 }
 
 /**
- * The shapes an item can have. Cakes also offer the Mahjong Huat Huat Box when the Mahjong
- * theme is one of the item's themes.
+ * The shapes an item can have. Cakes and platters also offer the Mahjong Huat Huat Box when the
+ * Mahjong theme is one of the item's themes.
  */
 export function shapesForItem(item: EditableCustomItem) {
   const shapes = shapesForFormat(item.format);
   const hasMahjong = item.theme === MAHJONG_THEME || item.secondTheme === MAHJONG_THEME;
   const box = SHAPES.find((s) => s.value === "huatBox");
-  return item.format === "cake" && hasMahjong && box ? [...shapes, box] : shapes;
+  return (item.format === "cake" || item.format === "jellyPlatter") && hasMahjong && box ? [...shapes, box] : shapes;
 }
 
 /** Hand Drawn and Bespoke Signature are cake-only; platters and gift boxes don't offer them. */

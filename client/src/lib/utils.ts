@@ -9,12 +9,6 @@ export function formatPrice(amount: number): string {
   return `$${amount.toFixed(2)}`;
 }
 
-// "$88-99" for a range, "$138" for a single price; cents only when there are some (e.g. "$12.90").
-export function formatPriceRange(range: { min: number; max: number }): string {
-  const amount = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(2));
-  return range.min === range.max ? `$${amount(range.min)}` : `$${amount(range.min)}-${amount(range.max)}`;
-}
-
 /**
  * Strips a parenthetical instruction suffix (e.g. "6cm (Choose up to 3
  * shapes: Heart, Square, Round, Clover)") down to just the dimension. That
