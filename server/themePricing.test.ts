@@ -29,7 +29,7 @@ describe("quoting a size before a theme is chosen", () => {
   it("gives the lowest to highest price across themes", () => {
     expect(getCustomOrderPriceRange("round", "6inch")).toEqual({ min: 88, max: 99 });
     expect(getCustomOrderPriceRange("round", "10inch")).toEqual({ min: 158, max: 169 });
-    expect(getCustomOrderPriceRange("round", "8inch")).toEqual({ min: 108, max: 129 });
+    expect(getCustomOrderPriceRange("round", "8inch")).toEqual({ min: 118, max: 129 });
 
   });
 
@@ -61,7 +61,7 @@ describe("Other themes' pricing", () => {
 
   it("leaves Floral Bouquet and the 2 Tier sizes alone", () => {
     expect(getCustomOrderPrice("floralBouquet", "round", "6inch")).toBe(88);
-    expect(getCustomOrderPrice("floralBouquet", "round", "8inch")).toBe(108);
+    expect(getCustomOrderPrice("floralBouquet", "round", "8inch")).toBe(118);
     expect(getCustomOrderPrice("lego", "round", "2tier_6_10")).toBe(168);
   });
 });
