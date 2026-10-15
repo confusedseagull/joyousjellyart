@@ -6,6 +6,7 @@ import {
   isCheesecakeEligible,
   requiredFlavourCount,
   numberCountOf,
+  shapesForItem,
 } from "../shared/orderItemRules";
 
 const cake = {
@@ -60,6 +61,24 @@ describe("applyItemChange", () => {
     expect(box.flavours).toHaveLength(2);
     expect(applyItemChange(box, { boxes: 9 }).flavours).toHaveLength(3);
     expect(applyItemChange(box, { boxes: 2 }).flavours).toHaveLength(1);
+  });
+
+  it("offers the Mahjong Huat Huat Box only to Mahjong cakes, at a flat $128", () => {
+    const mahjong = { ...cake, theme: "mahjong", themeLabel: "Mahjong" };
+    expect(shapesForItem(cake).some((s) => s.value === "huatBox")).toBe(false);
+    expect(shapesForItem(mahjong).some((s) => s.value === "huatBox")).toBe(true);
+    expect(shapesForItem({ ...cake, secondTheme: "mahjong" }).some((s) => s.value === "huatBox")).toBe(true);
+    expect(shapesForItem({ ...mahjong, format: "jellyPlatter" }).some((s) => s.value === "huatBox")).toBe(false);
+
+    const box = applyItemChange(mahjong, { shape: "huatBox" });
+    expect(box.shape).toBe("huatBox");
+    expect(box.size).toBe("standard");
+    expect(box.price).toBe(128);
+    // Combined with another theme, only Mahjong has a box price, so that is the price.
+    expect(unitPrice({ ...box, secondTheme: "chess" })).toBe(128);
+
+    // Moving off Mahjong takes the box away again.
+    expect(applyItemChange(box, { theme: "chess" }).shape).toBe("round");
   });
 
   it("trims platter pieces when the platter gets smaller", () => {

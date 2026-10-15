@@ -13,6 +13,8 @@ import {
   SPORTS_THEME,
   TEXT_THEMES,
   CAKE_ONLY_THEMES,
+  SHAPES,
+  MAHJONG_THEME,
 } from "../client/src/lib/customizeOptions";
 import { getCustomOrderPriceForThemes } from "./customOrderPricing";
 import { boxCount } from "./orderLabels";
@@ -25,6 +27,17 @@ export const COLOR_SLOTS = 3;
 
 export function shapesForFormat(format: string) {
   return format === "cake" ? CAKE_SHAPES : format === "jellyPlatter" ? PLATTER_FORMAT_SHAPES : GIFT_BOX_FORMAT_SHAPES;
+}
+
+/**
+ * The shapes an item can have. Cakes also offer the Mahjong Huat Huat Box when the Mahjong
+ * theme is one of the item's themes.
+ */
+export function shapesForItem(item: EditableCustomItem) {
+  const shapes = shapesForFormat(item.format);
+  const hasMahjong = item.theme === MAHJONG_THEME || item.secondTheme === MAHJONG_THEME;
+  const box = SHAPES.find((s) => s.value === "huatBox");
+  return item.format === "cake" && hasMahjong && box ? [...shapes, box] : shapes;
 }
 
 /** Hand Drawn and Bespoke Signature are cake-only; platters and gift boxes don't offer them. */
@@ -121,7 +134,7 @@ function pricingChanged(before: EditableCustomItem, after: EditableCustomItem): 
 export function applyItemChange(item: EditableCustomItem, changes: EditableCustomItem): EditableCustomItem {
   const next: EditableCustomItem = { ...item, ...changes };
 
-  if (!shapesForFormat(next.format).some((s) => s.value === next.shape)) {
+  if (!shapesForItem(next).some((s) => s.value === next.shape)) {
     next.shape = shapesForFormat(next.format)[0].value;
   }
   const sizes = SHAPE_SIZES[next.shape] ?? [];

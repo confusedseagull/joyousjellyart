@@ -20,7 +20,7 @@ import {
   numberCountOf,
   numberDigits,
   requiredFlavourCount,
-  shapesForFormat,
+  shapesForItem,
   themesForFormat,
   unitPrice,
 } from "../../../../shared/orderItemRules";
@@ -279,7 +279,7 @@ export function OrderItemEditor({ item, onChange }: { item: Item; onChange: (nex
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label="Shape">
           <select value={item.shape} onChange={(e) => update({ shape: e.target.value })} className={adminInput}>
-            {shapesForFormat(item.format).map((s) => (
+            {shapesForItem(item).map((s) => (
               <option key={s.value} value={s.value}>
                 {s.label}
               </option>

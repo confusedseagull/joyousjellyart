@@ -18,6 +18,7 @@ export interface PriceEntry {
   numbers?: { [size: string]: number | { "1number": number; "2numbers": number } };
   miniGiftBox?: { [size: string]: number };
   cupcake?: { [size: string]: number };
+  huatBox?: { [size: string]: number };
 }
 
 const floralBouquet: PriceEntry = {
@@ -63,11 +64,15 @@ const otherCustomTheme: PriceEntry = {
   cupcake: { "6cm": 12.90 },
 };
 
+// Mahjong is priced like any custom theme, plus its Huat Huat Box at a flat $128.
+const mahjong: PriceEntry = { ...otherCustomTheme, huatBox: { standard: 128 } };
+
 export const CUSTOM_ORDER_PRICING: { [theme: string]: PriceEntry } = {
   floralBouquet,
   cartoonCharacters: otherCustomTheme,
   handDrawn: otherCustomTheme,
   lego: otherCustomTheme,
+  mahjong,
 };
 
 // Helper function to get price

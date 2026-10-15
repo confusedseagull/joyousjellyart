@@ -165,7 +165,7 @@ export const SPORTS = [
 ];
 
 // Themes that ask a follow-up question (or take typed text) after being chosen.
-export const THEMES_WITH_EXTRAS = ["floralBouquet", "cartoonCharacters", SPORTS_THEME, "handDrawn", "coutureFashion", "nameAndInitial"];
+export const THEMES_WITH_EXTRAS = ["floralBouquet", "cartoonCharacters", SPORTS_THEME, "handDrawn", "coutureFashion", "nameAndInitial", "mahjong"];
 // Themes whose follow-up is typed text (a description / a name) rather than a pick.
 export const TEXT_THEMES = ["handDrawn", "nameAndInitial"];
 // Not offered for platters or gift boxes, which have no single canvas big enough.
@@ -188,7 +188,20 @@ export const SHAPES = [
   { value: "platter4", label: "Platter of 4", image: "/customize/shape-platter4.webp" },
   { value: "miniGiftBox", label: "Mini Gift Box", image: "/customize/shape-miniGiftBox.webp" },
   { value: "cupcake", label: "Cupcake", image: "/customize/shape-cupcake.webp" },
+  // Only offered as a choice inside the Mahjong theme (see HUAT_BOX); not part of any format's shape list.
+  { value: "huatBox", label: "Mahjong Huat Huat Box", image: "/customize/mahjong-5.webp" },
 ];
+
+// The Mahjong theme's special option: a fixed 7" x 5" box with a large mahjong tile. Picking it replaces
+// the format/shape/size the customer chose with this box, at a flat price (see customOrderPricing.ts).
+export const MAHJONG_THEME = "mahjong";
+export const HUAT_BOX = {
+  value: "huatBox",
+  size: "standard",
+  label: "Mahjong Huat Huat Box",
+  image: "/customize/mahjong-5.webp",
+  price: 128,
+};
 
 export const CAKE_SHAPE_VALUES = ["round", "square", "octagon", "heart", "star", "teddyBear", "fan", "rectangle", "scalloped", "numbers", "sakura"];
 export const CAKE_SHAPES = SHAPES.filter(s => CAKE_SHAPE_VALUES.includes(s.value));
@@ -276,6 +289,9 @@ export const SHAPE_SIZES: { [key: string]: { value: string; label: string }[] } 
   ],
   cupcake: [
     { value: "6cm", label: '6cm' },
+  ],
+  huatBox: [
+    { value: "standard", label: '7" x 5" / 18 cm x 13 cm' },
   ],
 };
 

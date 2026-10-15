@@ -85,7 +85,8 @@ export function formatText(item: { format: string; boxes?: number }): string {
 }
 
 /** The item's headline: "Space Cake", or "3 Mini Gift Boxes - Space" for a multi-box order. */
-export function itemTitle(item: { format: string; boxes?: number } & ThemedItem): string {
+export function itemTitle(item: { format: string; shape?: string; boxes?: number } & ThemedItem): string {
+  if (item.shape === "huatBox") return "Mahjong Huat Huat Box";
   const boxes = boxCount(item);
   const theme = themeNames(item);
   return boxes > 1 ? `${boxes} Mini Gift Boxes - ${theme}` : `${theme} ${formatLabel(item.format)}`;

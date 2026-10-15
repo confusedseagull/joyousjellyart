@@ -32,6 +32,7 @@ describe("order option labels", () => {
     expect(themeNames(combined)).toBe("Hand Drawn + Bespoke Signature");
     expect(themeSlots(combined).map((s) => s.text)).toEqual(["A dragon", "Doreen"]);
     expect(itemTitle({ format: "cake", theme: "floralBouquet", secondTheme: "chess" })).toBe("Floral Bouquet + Chess Cake");
+    expect(itemTitle({ format: "cake", shape: "huatBox", theme: "mahjong" })).toBe("Mahjong Huat Huat Box");
     expect(itemTitle({ format: "miniGiftBox", boxes: 3, theme: "space", secondTheme: "chess" })).toBe("3 Mini Gift Boxes - Space + Chess");
   });
 

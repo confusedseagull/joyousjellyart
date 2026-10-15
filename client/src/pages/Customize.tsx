@@ -35,6 +35,8 @@ import {
   TEXT_THEMES,
   CAKE_ONLY_THEMES,
   CHEESECAKE_OFFERED,
+  HUAT_BOX,
+  MAHJONG_THEME,
 } from "@/lib/customizeOptions";
 
 const inputClass = "h-[52px] rounded-2xl border-[#e5e5e5]";
@@ -268,6 +270,17 @@ export default function Customize() {
   const [number2, setNumber2] = useState("");
   const [numberCount, setNumberCount] = useState<1 | 2>(2);
   const [quantity, setQuantity] = useState(1);
+  // The Mahjong Huat Huat Box replaces the chosen format/shape/size; what was chosen is kept so it can be put back.
+  const [huatBox, setHuatBox] = useState(false);
+  const beforeHuatBox = useRef<{
+    format: CakeFormat | "";
+    shape: string;
+    size: string;
+    platterShapes: string[];
+    quantity: number;
+    number1: string;
+    number2: string;
+  } | null>(null);
 
   // Theme & Design state
   const [theme, setTheme] = useState("");
@@ -393,7 +406,24 @@ export default function Customize() {
     return true;
   }, [shape, size, platterShapes, number1]);
 
+  // Hand Drawn and Bespoke Signature aren't offered for platters/gift boxes —
+  // drop a stale selection (and what was typed for it) if the customer
+  // switches into one; a valid second theme moves up to be the first.
+  const dropCakeOnlyThemes = () => {
+    const dropped = (t: string) => CAKE_ONLY_THEMES.includes(t);
+    if (dropped(theme)) {
+      setTheme(theme2 && !dropped(theme2) ? theme2 : "");
+      setTheme2("");
+    } else if (dropped(theme2)) {
+      setTheme2("");
+    }
+    setHandDrawnDesign("");
+    setNameAndInitialName("");
+  };
+
   const handleFormatSelect = (value: CakeFormat) => {
+    setHuatBox(false);
+    beforeHuatBox.current = null;
     setFormat(value);
     setShape("");
     setSize("");
@@ -401,23 +431,46 @@ export default function Customize() {
     setQuantity(1);
     setNumber1("");
     setNumber2("");
-    // Hand Drawn and Bespoke Signature aren't offered for platters/gift boxes —
-    // drop a stale selection (and what was typed for it) if the customer
-    // switches into one; a valid second theme moves up to be the first.
-    if (value === "jellyPlatter" || value === "miniGiftBox") {
-      const dropped = (t: string) => CAKE_ONLY_THEMES.includes(t);
-      if (dropped(theme)) {
-        setTheme(theme2 && !dropped(theme2) ? theme2 : "");
-        setTheme2("");
-      } else if (dropped(theme2)) {
-        setTheme2("");
-      }
-      setHandDrawnDesign("");
-      setNameAndInitialName("");
-    }
+    if (value === "jellyPlatter" || value === "miniGiftBox") dropCakeOnlyThemes();
   };
 
+  // Picking the Huat Huat Box turns the item into that box (a cake-format item with its own shape and
+  // size); picking it again puts the earlier format, shape and size back.
+  const toggleHuatBox = () => {
+    if (huatBox) {
+      const before = beforeHuatBox.current;
+      if (before) {
+        setFormat(before.format);
+        setShape(before.shape);
+        setSize(before.size);
+        setPlatterShapes(before.platterShapes);
+        setQuantity(before.quantity);
+        setNumber1(before.number1);
+        setNumber2(before.number2);
+        if (before.format === "jellyPlatter" || before.format === "miniGiftBox") dropCakeOnlyThemes();
+      }
+      beforeHuatBox.current = null;
+      setHuatBox(false);
+      return;
+    }
+    beforeHuatBox.current = { format, shape, size, platterShapes, quantity, number1, number2 };
+    setFormat("cake");
+    setShape(HUAT_BOX.value);
+    setSize(HUAT_BOX.size);
+    setPlatterShapes([]);
+    setQuantity(1);
+    setHuatBox(true);
+  };
+
+  // The box belongs to the Mahjong theme: if Mahjong is no longer one of the chosen themes, drop the box.
+  useEffect(() => {
+    if (huatBox && ![theme, combineThemes ? theme2 : ""].includes(MAHJONG_THEME)) toggleHuatBox();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [theme, theme2, combineThemes]);
+
   const handleShapeSelect = (value: string) => {
+    setHuatBox(false);
+    beforeHuatBox.current = null;
     setShape(value);
     setPlatterShapes([]);
     setQuantity(1);
@@ -633,6 +686,8 @@ export default function Customize() {
     setSpecialInstructions("");
     setReferenceImages([]);
     setSelectedFlavors([]);
+    setHuatBox(false);
+    beforeHuatBox.current = null;
     setBackgroundColor("");
     setColor1("");
     setColor2("");
@@ -867,6 +922,29 @@ export default function Customize() {
                 />
               );
             })}
+          </div>
+        </div>
+      );
+    }
+    if (themeValue === MAHJONG_THEME) {
+      return (
+        <div key={key} ref={section(`themeExtras${slot}`)} className="flex flex-col gap-4 scroll-mt-44">
+          {heading}
+          <p className="text-sm text-muted-foreground">
+            Optional: choose the Mahjong Huat Huat Box, a 7" x 5" box with a large mahjong tile, for ${HUAT_BOX.price}. It replaces the format,
+            shape and size you picked; tap it again to go back to them.
+          </p>
+          <div className="flex flex-wrap gap-6">
+            <CircleOption
+              option={{ value: HUAT_BOX.value, label: HUAT_BOX.label, image: HUAT_BOX.image }}
+              isSelected={huatBox}
+              caption={`$${HUAT_BOX.price}`}
+              onClick={() => {
+                const choosing = !huatBox;
+                toggleHuatBox();
+                if (choosing) afterThemeExtras(slot);
+              }}
+            />
           </div>
         </div>
       );
