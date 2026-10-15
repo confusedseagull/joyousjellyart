@@ -931,8 +931,7 @@ export default function Customize() {
         <div key={key} ref={section(`themeExtras${slot}`)} className="flex flex-col gap-4 scroll-mt-44">
           {heading}
           <p className="text-sm text-muted-foreground">
-            Optional: choose the Mahjong Huat Huat Box, a 7" x 5" box with a large mahjong tile, for ${HUAT_BOX.price}. It replaces the format,
-            shape and size you picked; tap it again to go back to them.
+            Optional: Choose the Mahjong Huat Huat Box, a 7" x 5" platter with a large mahjong tile and mini jellies that can be customized.
           </p>
           <div className="flex flex-wrap gap-6">
             <CircleOption
