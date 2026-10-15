@@ -875,6 +875,9 @@ export default function Customize() {
       return (
         <div key={key} ref={section(`themeExtras${slot}`)} className="flex flex-col gap-4 scroll-mt-44">
           {heading}
+          <p className="text-sm text-muted-foreground">
+            If you can’t find the cartoon character you’re looking for, please select the hand drawn option instead
+          </p>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-4xl">
             {CARTOON_CHARACTERS.map((character) => (
               <SelectablePill
