@@ -40,19 +40,19 @@ const floralBouquet: PriceEntry = {
   cupcake: { "6cm": 12.90 },
 };
 
-// All other themes (cartoonCharacters, lego, and every
+// All non-Floral-Bouquet themes (cartoonCharacters, handDrawn, lego, and every
 // other custom theme via the getCustomOrderPrice fallback) share this pricing.
 const otherCustomTheme: PriceEntry = {
-  round: { "6inch": 99, "8inch": 118, "10inch": 138, "2tier_6_8": 138, "2tier_6_10": 168, "2tier_8_10": 188 },
-  square: { "6inch": 99, "8inch": 118, "10inch": 138, "2tier_6_8": 138, "2tier_6_10": 168, "2tier_8_10": 188 },
-  octagon: { "6inch": 99, "8inch": 118, "2tier_6_8": 148 },
-  heart: { "7inch": 99, "8inch": 118, "10inch": 138, "2tier_7_8": 138, "2tier_7_10": 168, "2tier_8_10": 188 },
-  star: { "10inch": 138 },
-  teddyBear: { "10inch": 138 },
-  fan: { "10inch": 138 },
+  round: { "6inch": 99, "8inch": 129, "10inch": 169, "2tier_6_8": 138, "2tier_6_10": 168, "2tier_8_10": 188 },
+  square: { "6inch": 99, "8inch": 129, "10inch": 169, "2tier_6_8": 138, "2tier_6_10": 168, "2tier_8_10": 188 },
+  octagon: { "6inch": 99, "8inch": 129, "2tier_6_8": 148 },
+  heart: { "7inch": 99, "8inch": 129, "10inch": 169, "2tier_7_8": 138, "2tier_7_10": 168, "2tier_8_10": 188 },
+  star: { "10inch": 169 },
+  teddyBear: { "10inch": 169 },
+  fan: { "10inch": 169 },
   rectangle: { "10x7inch": 138 },
-  scalloped: { "8inch": 118 },
-  sakura: { "6inch": 99, "8inch": 118, "2tier_6_8": 138 },
+  scalloped: { "8inch": 129 },
+  sakura: { "6inch": 99, "8inch": 129, "2tier_6_8": 138 },
   platter9: { "6cm": 129 },
   platter6: { "6cm": 78 },
   platter4: { "6cm": 48, "10cm": 68 },
@@ -64,25 +64,10 @@ const otherCustomTheme: PriceEntry = {
 // Mahjong is priced like any custom theme, plus its Huat Huat Box at a flat $128.
 const mahjong: PriceEntry = { ...otherCustomTheme, huatBox: { standard: 128 } };
 
-// Hand Drawn is dearer than the other custom themes at the larger sizes: from $99 at 6", $129 at 8" and
-// $169 at 10" (7" hearts stay at the 6" price). Rectangle, Numbers and the 2 Tier sizes are priced as usual.
-const handDrawn: PriceEntry = {
-  ...otherCustomTheme,
-  round: { ...otherCustomTheme.round, "6inch": 99, "8inch": 129, "10inch": 169 },
-  square: { ...otherCustomTheme.square, "6inch": 99, "8inch": 129, "10inch": 169 },
-  octagon: { ...otherCustomTheme.octagon, "6inch": 99, "8inch": 129 },
-  heart: { ...otherCustomTheme.heart, "7inch": 99, "8inch": 129, "10inch": 169 },
-  star: { "10inch": 169 },
-  teddyBear: { "10inch": 169 },
-  fan: { "10inch": 169 },
-  scalloped: { "8inch": 129 },
-  sakura: { ...otherCustomTheme.sakura, "6inch": 99, "8inch": 129 },
-};
-
 export const CUSTOM_ORDER_PRICING: { [theme: string]: PriceEntry } = {
   floralBouquet,
   cartoonCharacters: otherCustomTheme,
-  handDrawn,
+  handDrawn: otherCustomTheme,
   lego: otherCustomTheme,
   mahjong,
 };

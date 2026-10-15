@@ -28,7 +28,7 @@ describe("applyItemChange", () => {
 
     expect(next.size).toBe("7inch");
     expect(next.price).toBe(99);
-    expect(applyItemChange(cake, { size: "10inch" }).price).toBe(138);
+    expect(applyItemChange(cake, { size: "10inch" }).price).toBe(169);
   });
 
   it("keeps a hand-set price when something unrelated to price changes", () => {
@@ -36,7 +36,7 @@ describe("applyItemChange", () => {
 
     expect(applyItemChange(discounted, { cakeText: "Happy Birthday" }).price).toBe(80);
     expect(applyItemChange(discounted, { flavours: ["Lychee"] }).price).toBe(80);
-    expect(applyItemChange(discounted, { size: "8inch" }).price).toBe(118);
+    expect(applyItemChange(discounted, { size: "8inch" }).price).toBe(129);
   });
 
   it("switching to a platter picks a valid shape and size, and asks for the right number of flavours", () => {
