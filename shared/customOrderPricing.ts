@@ -32,10 +32,7 @@ const floralBouquet: PriceEntry = {
   rectangle: { "10x7inch": 128 },
   scalloped: { "8inch": 108 },
   sakura: { "6inch": 88, "8inch": 108, "2tier_6_8": 138 },
-  // Excel quotes a $108-$128 range for both Floral Bouquet and other-theme
-  // Platter of 9 pricing; kept at the low/high ends of that range respectively
-  // rather than guessing a single mid-point.
-  platter9: { "6cm": 108 },
+  platter9: { "6cm": 129 },
   platter6: { "6cm": 78 },
   platter4: { "6cm": 48, "10cm": 68 },
   numbers: { "8x8": { "1number": 118, "2numbers": 188 } },
@@ -56,7 +53,7 @@ const otherCustomTheme: PriceEntry = {
   rectangle: { "10x7inch": 138 },
   scalloped: { "8inch": 118 },
   sakura: { "6inch": 99, "8inch": 118, "2tier_6_8": 138 },
-  platter9: { "6cm": 128 },
+  platter9: { "6cm": 129 },
   platter6: { "6cm": 78 },
   platter4: { "6cm": 48, "10cm": 68 },
   numbers: { "8x8": { "1number": 118, "2numbers": 188 } },

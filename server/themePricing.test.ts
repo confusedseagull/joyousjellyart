@@ -30,7 +30,6 @@ describe("quoting a size before a theme is chosen", () => {
     expect(getCustomOrderPriceRange("round", "6inch")).toEqual({ min: 88, max: 99 });
     expect(getCustomOrderPriceRange("round", "10inch")).toEqual({ min: 138, max: 169 });
     expect(getCustomOrderPriceRange("round", "8inch")).toEqual({ min: 108, max: 129 });
-    expect(getCustomOrderPriceRange("platter9", "6cm")).toEqual({ min: 108, max: 128 });
 
   });
 
@@ -38,6 +37,7 @@ describe("quoting a size before a theme is chosen", () => {
     expect(getCustomOrderPriceRange("numbers", "8x8", 1)).toEqual({ min: 118, max: 118 });
     expect(getCustomOrderPriceRange("numbers", "8x8", 2)).toEqual({ min: 188, max: 188 });
     expect(getCustomOrderPriceRange("platter6", "6cm")).toEqual({ min: 78, max: 78 });
+    expect(getCustomOrderPriceRange("platter9", "6cm")).toEqual({ min: 129, max: 129 });
     expect(getCustomOrderPriceRange("round", "2tier_6_8")).toEqual({ min: 138, max: 138 });
   });
 
