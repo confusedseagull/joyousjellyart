@@ -24,7 +24,7 @@ export function shortSizeLabel(sizeLabel: string): string {
  * Builds a WhatsApp deep-link (wa.me) from a free-text phone number.
  * Strips everything but digits; an 8-digit result (a bare local number
  * typed without a country code) gets Singapore's "65" prepended, matching
- * the "+65 8123 4567" placeholder format used throughout the checkout form.
+ * the "+65 1234 5678" placeholder format used throughout the checkout form.
  * Returns null if there aren't enough digits to be a real number.
  */
 export function toWhatsAppLink(phone: string | null | undefined): string | null {

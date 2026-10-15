@@ -740,7 +740,7 @@ export default function Cart() {
                 type="email"
                 value={customerEmail}
                 onChange={(e) => setCustomerEmail(e.target.value)}
-                placeholder="e.g. doreenleexy@gmail.com"
+                placeholder="e.g. name@example.com"
               />
               <PhoneInput
                 label="WhatsApp Number"
@@ -749,7 +749,7 @@ export default function Cart() {
                 onCountryChange={setCustomerPhoneCountry}
                 value={customerPhoneNumber}
                 onChange={setCustomerPhoneNumber}
-                placeholder="8123 4567"
+                placeholder="1234 5678"
               />
             </div>
 
@@ -854,7 +854,7 @@ export default function Cart() {
                     onCountryChange={setRecipientWhatsappCountry}
                     value={recipientWhatsappNumber}
                     onChange={setRecipientWhatsappNumber}
-                    placeholder="8123 4567"
+                    placeholder="1234 5678"
                     disabled={sameAsBilling}
                   />
                   {deliveryDistance !== null && (
