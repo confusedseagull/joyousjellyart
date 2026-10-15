@@ -43,7 +43,7 @@ const floralBouquet: PriceEntry = {
   cupcake: { "6cm": 12.90 },
 };
 
-// All non-Floral-Bouquet themes (cartoonCharacters, handDrawn, lego, and every
+// All other themes (cartoonCharacters, lego, and every
 // other custom theme via the getCustomOrderPrice fallback) share this pricing.
 const otherCustomTheme: PriceEntry = {
   round: { "6inch": 99, "8inch": 118, "10inch": 138, "2tier_6_8": 138, "2tier_6_10": 168, "2tier_8_10": 188 },
@@ -67,10 +67,25 @@ const otherCustomTheme: PriceEntry = {
 // Mahjong is priced like any custom theme, plus its Huat Huat Box at a flat $128.
 const mahjong: PriceEntry = { ...otherCustomTheme, huatBox: { standard: 128 } };
 
+// Hand Drawn is dearer than the other custom themes at the larger sizes: from $99 at 6", $129 at 8" and
+// $169 at 10" (7" hearts stay at the 6" price). Rectangle, Numbers and the 2 Tier sizes are priced as usual.
+const handDrawn: PriceEntry = {
+  ...otherCustomTheme,
+  round: { ...otherCustomTheme.round, "6inch": 99, "8inch": 129, "10inch": 169 },
+  square: { ...otherCustomTheme.square, "6inch": 99, "8inch": 129, "10inch": 169 },
+  octagon: { ...otherCustomTheme.octagon, "6inch": 99, "8inch": 129 },
+  heart: { ...otherCustomTheme.heart, "7inch": 99, "8inch": 129, "10inch": 169 },
+  star: { "10inch": 169 },
+  teddyBear: { "10inch": 169 },
+  fan: { "10inch": 169 },
+  scalloped: { "8inch": 129 },
+  sakura: { ...otherCustomTheme.sakura, "6inch": 99, "8inch": 129 },
+};
+
 export const CUSTOM_ORDER_PRICING: { [theme: string]: PriceEntry } = {
   floralBouquet,
   cartoonCharacters: otherCustomTheme,
-  handDrawn: otherCustomTheme,
+  handDrawn,
   lego: otherCustomTheme,
   mahjong,
 };

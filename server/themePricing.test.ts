@@ -28,7 +28,8 @@ describe("pricing a design that combines themes", () => {
 describe("quoting a size before a theme is chosen", () => {
   it("gives the lowest to highest price across themes", () => {
     expect(getCustomOrderPriceRange("round", "6inch")).toEqual({ min: 88, max: 99 });
-    expect(getCustomOrderPriceRange("round", "10inch")).toEqual({ min: 138, max: 158 });
+    expect(getCustomOrderPriceRange("round", "10inch")).toEqual({ min: 138, max: 169 });
+    expect(getCustomOrderPriceRange("round", "8inch")).toEqual({ min: 108, max: 129 });
     expect(getCustomOrderPriceRange("platter9", "6cm")).toEqual({ min: 108, max: 128 });
     expect(getCustomOrderPriceRange("numbers", "8x8", 1)).toEqual({ min: 108, max: 118 });
   });
@@ -40,5 +41,22 @@ describe("quoting a size before a theme is chosen", () => {
 
   it("has no price for a size that does not exist", () => {
     expect(getCustomOrderPriceRange("round", "99inch")).toBeNull();
+  });
+});
+
+describe("Hand Drawn pricing", () => {
+  it("is $99 at 6 inch, $129 at 8 inch and $169 at 10 inch", () => {
+    for (const shape of ["round", "square"]) {
+      expect(getCustomOrderPrice("handDrawn", shape, "6inch")).toBe(99);
+      expect(getCustomOrderPrice("handDrawn", shape, "8inch")).toBe(129);
+      expect(getCustomOrderPrice("handDrawn", shape, "10inch")).toBe(169);
+    }
+    expect(getCustomOrderPrice("handDrawn", "heart", "7inch")).toBe(99);
+    expect(getCustomOrderPrice("handDrawn", "star", "10inch")).toBe(169);
+  });
+
+  it("leaves other themes and the 2 Tier sizes alone", () => {
+    expect(getCustomOrderPrice("lego", "round", "8inch")).toBe(118);
+    expect(getCustomOrderPrice("handDrawn", "round", "2tier_6_10")).toBe(168);
   });
 });
