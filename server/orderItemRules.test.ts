@@ -158,7 +158,7 @@ describe("applyItemChange", () => {
 
     expect(numbers.size).toBe("8x8");
     expect(numberCountOf(numbers)).toBe(2);
-    expect(unitPrice(numbers)).toBe(158);
+    expect(unitPrice(numbers)).toBe(188);
     expect(applyItemChange(numbers, { numbers: "8" }).price).toBe(118);
   });
 

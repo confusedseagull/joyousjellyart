@@ -38,7 +38,7 @@ const floralBouquet: PriceEntry = {
   platter9: { "6cm": 108 },
   platter6: { "6cm": 78 },
   platter4: { "6cm": 48, "10cm": 68 },
-  numbers: { "8x8": { "1number": 108, "2numbers": 158 } },
+  numbers: { "8x8": { "1number": 118, "2numbers": 188 } },
   miniGiftBox: { "10cm": 18.90 },
   cupcake: { "6cm": 12.90 },
 };
@@ -59,7 +59,7 @@ const otherCustomTheme: PriceEntry = {
   platter9: { "6cm": 128 },
   platter6: { "6cm": 78 },
   platter4: { "6cm": 48, "10cm": 68 },
-  numbers: { "8x8": { "1number": 118, "2numbers": 158 } },
+  numbers: { "8x8": { "1number": 118, "2numbers": 188 } },
   miniGiftBox: { "10cm": 18.90 },
   cupcake: { "6cm": 12.90 },
 };
