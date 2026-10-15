@@ -38,9 +38,19 @@ describe("Other themes' pricing", () => {
     expect(getCustomOrderPrice("lego", "star", "10inch")).toBe(169);
   });
 
-  it("leaves Floral Bouquet and the 2 Tier sizes alone", () => {
+  it("prices 2 Tier cakes: Floral Bouquet 148 / 178 / 198, every other theme 159 / 189 / 209", () => {
+    const tiers = ["2tier_6_8", "2tier_6_10", "2tier_8_10"];
+    expect(tiers.map((t) => getCustomOrderPrice("floralBouquet", "round", t))).toEqual([148, 178, 198]);
+    expect(tiers.map((t) => getCustomOrderPrice("lego", "square", t))).toEqual([159, 189, 209]);
+    expect(tiers.map((t) => getCustomOrderPrice("handDrawn", "round", t))).toEqual([159, 189, 209]);
+    // the other shapes that come in two tiers follow the same three prices
+    expect(getCustomOrderPrice("floralBouquet", "heart", "2tier_7_10")).toBe(178);
+    expect(getCustomOrderPrice("chess", "octagon", "2tier_6_8")).toBe(159);
+    expect(getCustomOrderPrice("floralBouquet", "sakura", "2tier_6_8")).toBe(148);
+  });
+
+  it("leaves Floral Bouquet's single-tier sizes alone", () => {
     expect(getCustomOrderPrice("floralBouquet", "round", "6inch")).toBe(88);
     expect(getCustomOrderPrice("floralBouquet", "round", "8inch")).toBe(118);
-    expect(getCustomOrderPrice("lego", "round", "2tier_6_10")).toBe(168);
   });
 });

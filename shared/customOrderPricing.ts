@@ -22,16 +22,16 @@ export interface PriceEntry {
 }
 
 const floralBouquet: PriceEntry = {
-  round: { "6inch": 88, "8inch": 118, "10inch": 158, "2tier_6_8": 138, "2tier_6_10": 168, "2tier_8_10": 188 },
-  square: { "6inch": 88, "8inch": 118, "10inch": 158, "2tier_6_8": 138, "2tier_6_10": 168, "2tier_8_10": 188 },
-  octagon: { "6inch": 88, "8inch": 118, "2tier_6_8": 138 },
-  heart: { "7inch": 88, "8inch": 118, "10inch": 158, "2tier_7_8": 138, "2tier_7_10": 168, "2tier_8_10": 188 },
+  round: { "6inch": 88, "8inch": 118, "10inch": 158, "2tier_6_8": 148, "2tier_6_10": 178, "2tier_8_10": 198 },
+  square: { "6inch": 88, "8inch": 118, "10inch": 158, "2tier_6_8": 148, "2tier_6_10": 178, "2tier_8_10": 198 },
+  octagon: { "6inch": 88, "8inch": 118, "2tier_6_8": 148 },
+  heart: { "7inch": 88, "8inch": 118, "10inch": 158, "2tier_7_8": 148, "2tier_7_10": 178, "2tier_8_10": 198 },
   star: { "10inch": 158 },
   teddyBear: { "10inch": 158 },
   fan: { "10inch": 158 },
   rectangle: { "10x7inch": 128 },
   scalloped: { "8inch": 118 },
-  sakura: { "6inch": 88, "8inch": 118, "2tier_6_8": 138 },
+  sakura: { "6inch": 88, "8inch": 118, "2tier_6_8": 148 },
   platter9: { "6cm": 129 },
   platter6: { "6cm": 78 },
   platter4: { "6cm": 48, "10cm": 68 },
@@ -43,16 +43,16 @@ const floralBouquet: PriceEntry = {
 // All non-Floral-Bouquet themes (cartoonCharacters, handDrawn, lego, and every
 // other custom theme via the getCustomOrderPrice fallback) share this pricing.
 const otherCustomTheme: PriceEntry = {
-  round: { "6inch": 99, "8inch": 129, "10inch": 169, "2tier_6_8": 138, "2tier_6_10": 168, "2tier_8_10": 188 },
-  square: { "6inch": 99, "8inch": 129, "10inch": 169, "2tier_6_8": 138, "2tier_6_10": 168, "2tier_8_10": 188 },
-  octagon: { "6inch": 99, "8inch": 129, "2tier_6_8": 148 },
-  heart: { "7inch": 99, "8inch": 129, "10inch": 169, "2tier_7_8": 138, "2tier_7_10": 168, "2tier_8_10": 188 },
+  round: { "6inch": 99, "8inch": 129, "10inch": 169, "2tier_6_8": 159, "2tier_6_10": 189, "2tier_8_10": 209 },
+  square: { "6inch": 99, "8inch": 129, "10inch": 169, "2tier_6_8": 159, "2tier_6_10": 189, "2tier_8_10": 209 },
+  octagon: { "6inch": 99, "8inch": 129, "2tier_6_8": 159 },
+  heart: { "7inch": 99, "8inch": 129, "10inch": 169, "2tier_7_8": 159, "2tier_7_10": 189, "2tier_8_10": 209 },
   star: { "10inch": 169 },
   teddyBear: { "10inch": 169 },
   fan: { "10inch": 169 },
   rectangle: { "10x7inch": 138 },
   scalloped: { "8inch": 129 },
-  sakura: { "6inch": 99, "8inch": 129, "2tier_6_8": 138 },
+  sakura: { "6inch": 99, "8inch": 129, "2tier_6_8": 159 },
   platter9: { "6cm": 129 },
   platter6: { "6cm": 78 },
   platter4: { "6cm": 48, "10cm": 68 },
