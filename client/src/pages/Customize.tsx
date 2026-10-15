@@ -9,9 +9,9 @@ import { SelectablePill } from "@/components/SelectablePill";
 import { upload } from "@vercel/blob/client";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
-import { getCustomOrderPrice, getCustomOrderPriceForThemes } from "../../../shared/customOrderPricing";
+import { getCustomOrderPrice, getCustomOrderPriceForThemes, getCustomOrderPriceRange } from "../../../shared/customOrderPricing";
 import { requiredFlavourCount } from "../../../shared/orderItemRules";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, formatPriceRange } from "@/lib/utils";
 import { useCart, type CakeFormat } from "@/contexts/CartContext";
 import {
   THEMES,
@@ -190,7 +190,7 @@ function SizeOption({
   onClick,
 }: {
   option: { value: string; label: string };
-  price: number | null;
+  price: { min: number; max: number } | null;
   isSelected: boolean;
   onClick: () => void;
 }) {
@@ -213,7 +213,7 @@ function SizeOption({
           <p className="text-muted-foreground">{SERVES_INFO[option.value]}</p>
         )}
       </div>
-      {price && <p className="font-display text-base font-medium">{formatPrice(price)}</p>}
+      {price && <p className="font-display text-base font-medium">{formatPriceRange(price)}</p>}
     </button>
   );
 }
@@ -233,7 +233,7 @@ function NumberCountOption({
   count: 1 | 2;
   dimension: string;
   serves: string;
-  price: number;
+  price: { min: number; max: number } | null;
   isSelected: boolean;
   onClick: () => void;
 }) {
@@ -253,7 +253,7 @@ function NumberCountOption({
         <p className="font-medium text-foreground">{dimension}</p>
         <p className="text-muted-foreground">{serves}</p>
       </div>
-      <p className="font-display text-base font-medium">{formatPrice(price)}</p>
+      {price && <p className="font-display text-base font-medium">{formatPriceRange(price)}</p>}
     </button>
   );
 }
@@ -1182,7 +1182,7 @@ export default function Customize() {
                     <div className="h-px w-full bg-[#e5e5e5]" />
                     <div ref={section("size")} className="flex flex-wrap gap-6 scroll-mt-44">
                       {SHAPE_SIZES[shape].map((sizeOption) => {
-                        const price = getCustomOrderPrice(theme, shape, sizeOption.value);
+                        const price = getCustomOrderPriceRange(shape, sizeOption.value);
                         return (
                           <SizeOption
                             key={sizeOption.value}
@@ -1205,7 +1205,7 @@ export default function Customize() {
                         count={1}
                         dimension={NUMBER_CAKE_SIZES[0].dimension}
                         serves={NUMBER_CAKE_SIZES[0].serves}
-                        price={getCustomOrderPrice(theme, "numbers", "8x8", 1) || 0}
+                        price={getCustomOrderPriceRange("numbers", "8x8", 1)}
                         isSelected={numberCount === 1}
                         onClick={() => {
                           setNumberCount(1);
@@ -1218,7 +1218,7 @@ export default function Customize() {
                         count={2}
                         dimension={NUMBER_CAKE_SIZES[1].dimension}
                         serves={NUMBER_CAKE_SIZES[1].serves}
-                        price={getCustomOrderPrice(theme, "numbers", "8x8", 2) || 0}
+                        price={getCustomOrderPriceRange("numbers", "8x8", 2)}
                         isSelected={numberCount === 2}
                         onClick={() => {
                           setNumberCount(2);
@@ -1270,7 +1270,7 @@ export default function Customize() {
                     <div className="h-px w-full bg-[#e5e5e5]" />
                     <div ref={section("size")} className="flex flex-wrap gap-6 scroll-mt-44">
                       {SHAPE_SIZES[shape].map((sizeOption) => {
-                        const price = getCustomOrderPrice(theme, shape, sizeOption.value);
+                        const price = getCustomOrderPriceRange(shape, sizeOption.value);
                         return (
                           <SizeOption
                             key={sizeOption.value}
