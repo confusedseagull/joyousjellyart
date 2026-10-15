@@ -984,24 +984,28 @@ export default function Customize() {
     return null;
   };
 
+  // My Order only lists what has been chosen so far, so the price stays near the top of the panel.
   const summaryRows: { label: string; value: string }[] = [
-    { label: "Format", value: FORMATS.find(f => f.value === format)?.label ?? "None" },
-    { label: "Theme", value: themeSummary || "None" },
-    { label: "Shape", value: SHAPES.find(s => s.value === shape)?.label ?? "None" },
-    { label: "Size", value: sizeLabel ?? "None" },
-    { label: "Base Flavour", value: selectedFlavors.length > 0 ? selectedFlavors.join(", ") : "None" },
-    { label: "Background Color", value: backgroundColor || "None" },
-    { label: "Color Preferences", value: colorPreferences || "None" },
-    { label: "Design Details", value: designDetails || "None" },
-    { label: "Personalized Text", value: textOnCake || "None" },
-    { label: "Dietary Requirements", value: dietaryLabel || "None" },
-  ];
+    { label: "Format", value: format ? (FORMATS.find(f => f.value === format)?.label ?? format) : "" },
+    { label: "Theme", value: themeSummary || "" },
+    { label: "Shape", value: shape ? (SHAPES.find(s => s.value === shape)?.label ?? shape) : "" },
+    { label: "Size", value: size ? (sizeLabel ?? "") : "" },
+    { label: "Base Flavour", value: selectedFlavors.join(", ") },
+    { label: "Background Color", value: backgroundColor },
+    { label: "Color Preferences", value: colorPreferences },
+    { label: "Design Details", value: designDetails },
+    { label: "Personalized Text", value: textOnCake },
+    { label: "Dietary Requirements", value: dietaryRequirements.length > 0 ? dietaryLabel : "" },
+  ].filter((row) => row.value.trim() !== "");
 
   const renderOrderSummary = (addToCartRef: React.RefObject<HTMLButtonElement | null>) => (
     <>
       <div className="flex flex-col shrink-0 border border-[#e4e6e8] divide-y divide-[#e4e6e8]">
+        {summaryRows.length === 0 && (
+          <p className="px-4 py-5 text-sm text-muted-foreground">Your choices will appear here as you make them.</p>
+        )}
         {summaryRows.map((row) => (
-          <div key={row.label} className="min-h-[95px] flex flex-col justify-center gap-3 px-4 py-5">
+          <div key={row.label} className="min-h-[95px] flex flex-col justify-center gap-3 px-4 py-5 animate-in fade-in duration-300">
             <p className="text-sm uppercase tracking-wide text-muted-foreground">{row.label}</p>
             <p className="font-display text-xl">{row.value}</p>
           </div>
