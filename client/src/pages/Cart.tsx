@@ -67,19 +67,24 @@ const inputClass = "h-[52px] rounded-2xl border-[#e5e5e5]";
 
 // Bordered box with an always-visible label + inline placeholder text,
 // matching the Figma "input-field-wrapper" pattern (also used for Additional
-// Notes on the Customize page).
+// Notes on the Customize page). On phones the label sits above the box so the
+// field keeps its full width; from the sm breakpoint it sits inside, beside the text.
 function LabeledInput({
   label,
   labelWidth,
   ...props
 }: { label: string; labelWidth?: string } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
-    <div className="border border-[#e5e5e5] rounded-2xl h-[52px] flex items-center gap-4 px-4 w-full focus-within:border-primary/40 transition-colors">
-      <label className={`shrink-0 text-sm text-foreground ${labelWidth || ""}`}>{label}</label>
-      <input
-        {...props}
-        className="flex-1 min-w-0 text-sm bg-transparent outline-none placeholder:text-[#808582]"
-      />
+    <div className="w-full flex flex-col gap-1.5">
+      <label className="sm:hidden text-sm text-foreground">{label}</label>
+      <div className="border border-[#e5e5e5] rounded-2xl h-[52px] flex items-center gap-4 px-4 w-full focus-within:border-primary/40 transition-colors">
+        <label className={`hidden sm:block shrink-0 text-sm text-foreground ${labelWidth || ""}`}>{label}</label>
+        <input
+          aria-label={label}
+          {...props}
+          className="flex-1 min-w-0 text-sm bg-transparent outline-none placeholder:text-[#808582]"
+        />
+      </div>
     </div>
   );
 }
@@ -108,8 +113,10 @@ function PhoneInput({
 }) {
   const selected = COUNTRY_CODES.find((c) => c.code === country) ?? COUNTRY_CODES[0];
   return (
+    <div className="w-full flex flex-col gap-1.5">
+    <label className="sm:hidden text-sm text-foreground">{label}</label>
     <div className={`border border-[#e5e5e5] rounded-2xl h-[52px] flex items-center gap-2 pl-4 pr-2 w-full focus-within:border-primary/40 transition-colors ${disabled ? "bg-muted/50" : ""}`}>
-      <label className={`shrink-0 text-sm text-foreground ${labelWidth || ""}`}>{label}</label>
+      <label className={`hidden sm:block shrink-0 text-sm text-foreground ${labelWidth || ""}`}>{label}</label>
       <Select value={country} onValueChange={onCountryChange} disabled={disabled}>
         <SelectTrigger className="shrink-0 w-[88px] h-9 border-0 bg-transparent shadow-none px-2 gap-1 focus-visible:ring-0">
           <SelectValue>
@@ -134,12 +141,14 @@ function PhoneInput({
       <div className="h-5 w-px bg-[#e5e5e5] shrink-0" />
       <input
         type="tel"
+        aria-label={label}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         disabled={disabled}
         className="flex-1 min-w-0 text-sm bg-transparent outline-none placeholder:text-[#808582] disabled:cursor-not-allowed"
       />
+    </div>
     </div>
   );
 }
